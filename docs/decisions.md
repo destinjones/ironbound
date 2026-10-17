@@ -364,6 +364,16 @@ and skirmish, and it rewards fast scouts. All numbers live in data/supply_drops.
 are not saved (a loaded match just drops new ones), so the save format is untouched.
 
 
+## 2026-10-17: a unit that stopped next to a building counts as there
+A truck could stand next to a site or extractor for the rest of the match. Units sent to
+a building stop anywhere within their target_desired_distance (0.5 m for vehicles) of their
+spot, but "touching" was measured with a 0.3 m margin, so a truck that stopped 1 cm too far
+out headed for the building's centre, was blocked, and did it again forever. Now adherence
+adds the mover's own arrival tolerance (UnitMovementUtils.units_adhere), and MovingToUnit
+heads for the target itself only once before handing back to its caller. In the movement
+bench, more units end next to their target building (squeezed mine 3 -> 6) and settle sooner;
+in a 10-minute Oil and Iron match that had a truck stuck 1 cm out, none get stuck.
+
 ## 2026-10-17: v0.10.0 desktop builds, and docs screenshots kept out of the game
 The release workflow already exported Windows, Linux and macOS zips; v0.9.0 was published
 on 6 October but was 190 commits behind main, and the README never linked to it. Bumped
