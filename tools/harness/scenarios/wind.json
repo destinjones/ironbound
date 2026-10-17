@@ -1,0 +1,208 @@
+{
+  "name": "wind",
+  "description": "What the wind does on a desert map: tumbleweeds rolling, a dust devil, and palms, reeds and grass bending. Screenshots a moment apart of each, to show the motion.",
+  "map": "oil_and_iron",
+  "seed": 2,
+  "minutes": 1.15,
+  "speed": 1,
+  "view": "window",
+  "players": [
+    {
+      "type": "human"
+    },
+    {
+      "type": "ai",
+      "personality": "balanced"
+    }
+  ],
+  "setup": [
+    {
+      "do": "reveal"
+    },
+    {
+      "do": "weather",
+      "set": "hazy"
+    }
+  ],
+  "events": [
+    {
+      "at": 6,
+      "do": "camera",
+      "follow": "wind:tumbleweeds"
+    },
+    {
+      "at": 7,
+      "do": "screenshot",
+      "name": "tumbleweed-0"
+    },
+    {
+      "at": 7.5,
+      "do": "screenshot",
+      "name": "tumbleweed-1"
+    },
+    {
+      "at": 8,
+      "do": "screenshot",
+      "name": "tumbleweed-2"
+    },
+    {
+      "at": 8.5,
+      "do": "screenshot",
+      "name": "tumbleweed-3"
+    },
+    {
+      "at": 9,
+      "do": "screenshot",
+      "name": "tumbleweed-4"
+    },
+    {
+      "at": 9.5,
+      "do": "screenshot",
+      "name": "tumbleweed-5"
+    },
+    {
+      "at": 15,
+      "do": "camera",
+      "follow": "wind:dust_devils"
+    },
+    {
+      "at": 16,
+      "do": "screenshot",
+      "name": "dust-devil-15-0"
+    },
+    {
+      "at": 16.5,
+      "do": "screenshot",
+      "name": "dust-devil-15-1"
+    },
+    {
+      "at": 17,
+      "do": "screenshot",
+      "name": "dust-devil-15-2"
+    },
+    {
+      "at": 25,
+      "do": "camera",
+      "follow": "wind:dust_devils"
+    },
+    {
+      "at": 26,
+      "do": "screenshot",
+      "name": "dust-devil-25-0"
+    },
+    {
+      "at": 26.5,
+      "do": "screenshot",
+      "name": "dust-devil-25-1"
+    },
+    {
+      "at": 27,
+      "do": "screenshot",
+      "name": "dust-devil-25-2"
+    },
+    {
+      "at": 35,
+      "do": "camera",
+      "follow": "wind:dust_devils"
+    },
+    {
+      "at": 36,
+      "do": "screenshot",
+      "name": "dust-devil-35-0"
+    },
+    {
+      "at": 36.5,
+      "do": "screenshot",
+      "name": "dust-devil-35-1"
+    },
+    {
+      "at": 37,
+      "do": "screenshot",
+      "name": "dust-devil-35-2"
+    },
+    {
+      "at": 45,
+      "do": "camera",
+      "follow": "wind:dust_devils"
+    },
+    {
+      "at": 46,
+      "do": "screenshot",
+      "name": "dust-devil-45-0"
+    },
+    {
+      "at": 46.5,
+      "do": "screenshot",
+      "name": "dust-devil-45-1"
+    },
+    {
+      "at": 47,
+      "do": "screenshot",
+      "name": "dust-devil-45-2"
+    },
+    {
+      "at": 55,
+      "do": "camera",
+      "follow": "wind:dust_devils"
+    },
+    {
+      "at": 56,
+      "do": "screenshot",
+      "name": "dust-devil-55-0"
+    },
+    {
+      "at": 56.5,
+      "do": "screenshot",
+      "name": "dust-devil-55-1"
+    },
+    {
+      "at": 57,
+      "do": "screenshot",
+      "name": "dust-devil-55-2"
+    },
+    {
+      "at": 62,
+      "do": "camera",
+      "spot": [
+        62,
+        40
+      ]
+    },
+    {
+      "at": 63,
+      "do": "screenshot",
+      "name": "palms-0"
+    },
+    {
+      "at": 63.4,
+      "do": "screenshot",
+      "name": "palms-1"
+    },
+    {
+      "at": 63.8,
+      "do": "screenshot",
+      "name": "palms-2"
+    },
+    {
+      "at": 64.2,
+      "do": "screenshot",
+      "name": "palms-3"
+    },
+    {
+      "at": 64.6,
+      "do": "screenshot",
+      "name": "palms-4"
+    },
+    {
+      "at": 65,
+      "do": "screenshot",
+      "name": "palms-5"
+    }
+  ],
+  "checks": [
+    {
+      "end": true,
+      "expect": "no_errors"
+    }
+  ]
+}

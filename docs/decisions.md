@@ -242,3 +242,19 @@ wrecks and circle for about 45 s. Choices that shape later world-life work:
   normal view on a 110 m map with 100 units, about 0.3 ms with every flock in view.
 - Birds and vultures are simple shapes, not textured models: at play zoom they are 20 to
   50 px across and read by their motion and silhouette, so the unit pipeline does not apply.
+
+## 2026-10-17: the wind moves the land
+Second piece of the living world (source/match/environment/Wind.gd, data/wind.json): trees,
+palms, reeds, bushes and grass of the desert scatter bend with Atmosphere's wind, gusts
+rolling across the map as a slow wave; a few tumbleweeds roll over open ground, around rocks
+and tree clumps, and fade out at water or after a while; on clear or hazy days a dust devil
+spins up every half minute or so and drifts off. Choices:
+- Purely visual, its own random numbers, nothing saved.
+- The plants keep their flat colours: Wind.gd copies each swaying prop's mesh and swaps its
+  StandardMaterial3D for foliage_sway.gdshader with the same albedo, roughness and specular,
+  so they look as before when the air is still. Only the props named in data/wind.json sway;
+  rocks, cacti and dead trees stay put.
+- The plants and dust devils move in vertex shaders, so they cost no script time; the script
+  sets the wind on the plant materials four times a second and moves only the tumbleweeds
+  (one MultiMesh). Headless on the cloud CPU that is about 0.05 ms a frame for 7 tumbleweeds.
+- Dust devils stay away in rain and sandstorms (the sandstorm is its own dust).

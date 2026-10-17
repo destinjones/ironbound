@@ -1,0 +1,30 @@
+{
+  "sway": {
+    "grass_tuft": 0.09,
+    "reeds": 0.16,
+    "bush_a": 0.05,
+    "bush_b": 0.05,
+    "palm_a": 0.22,
+    "palm_b": 0.22,
+    "tree_acacia_a": 0.1,
+    "tree_acacia_b": 0.1,
+    "pine_a": 0.09,
+    "pine_b": 0.09
+  },
+  "tumbleweeds": {
+    "m2_per_tumbleweed": 1800.0,
+    "max": 8,
+    "min_wind_mps": 2.0,
+    "speed_per_wind": 0.55,
+    "radius_m": 0.45,
+    "life_s": [25.0, 50.0]
+  },
+  "dust_devils": {
+    "max": 2,
+    "every_s": [20.0, 45.0],
+    "life_s": [15.0, 25.0],
+    "drift_per_wind": 0.35,
+    "height_m": 8.0,
+    "max_dust": 0.4
+  }
+}
