@@ -8,7 +8,7 @@ import sys
 OUT = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else "site")
 REPO = "https://github.com/destinjones/godot-open-rts"
 # Where the site is published. Change this if a custom domain is added.
-BASE = "https://destinjones.github.io/godot-open-rts/"
+BASE = "https://destinjones.github.io/ironbound/"
 HERE = pathlib.Path(__file__).resolve().parent
 CREATOR = json.loads((HERE / "creator.json").read_text())
 LATEST = REPO + "/releases/latest/download/"

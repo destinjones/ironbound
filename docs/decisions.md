@@ -364,6 +364,16 @@ and skirmish, and it rewards fast scouts. All numbers live in data/supply_drops.
 are not saved (a loaded match just drops new ones), so the save format is untouched.
 
 
+## 2026-10-17: the website lives at destinjones.github.io/ironbound/
+The repo was renamed from godot-open-rts to ironbound. GitHub redirects the repo's own
+URLs after a rename, but a GitHub Pages project site moves to the new name with no
+redirect, so every link to destinjones.github.io/godot-open-rts/ (README, canonical tags,
+sitemap, robots.txt) pointed at a dead path. BASE in tools/site/build.py now uses
+/ironbound/ and site/ was regenerated. github.com/destinjones/godot-open-rts links were
+left alone because those still redirect. The README now opens with the hook ("You never
+place a house. The city builds itself.") and names the engine second, because players
+decide from the mechanic, not the tech.
+
 ## 2026-10-17: a unit that stopped next to a building counts as there
 A truck could stand next to a site or extractor for the rest of the match. Units sent to
 a building stop anywhere within their target_desired_distance (0.5 m for vehicles) of their
