@@ -167,6 +167,10 @@ buildings too keeps a raid on a factory or a supply line at the same pace relati
 fight. Known effect: a save made before this loads its units at a third of their health,
 since saved hp is kept and hp_max triples.
 
+## 2026-10-17: the resource bar shows whole numbers
+Stock is fractional because upkeep drains it bit by bit, so the bar read "46.0". It now
+shows whole units, rounded down so it never shows more than you can spend.
+
 ## 2026-10-17: new players start on Desert Expanse
 The main menu's first map and the guided first match moved from Plain & Simple to Desert
 Expanse. Plain & Simple is the template's 50 m test plane: flat beige ground with the base
