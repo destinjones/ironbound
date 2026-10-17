@@ -154,6 +154,20 @@ runs), so the gap is inside run-to-run noise. At 150 copies it is 0.78 against 0
 exaggerates, so the textured pipeline (one base colour plus one normal map per unit) stays
 the plan for the other units and no decimation or texture cut is needed for the tank.
 
+## 2026-10-17: late-game hitches came from extractor planning, not the GPU
+On an RTX 3060 at 1080p High the GPU needs 4.5 to 5.7 ms a frame in a 4-player match, so
+rendering is not what lags. What players feel is a 60 to 90 ms frame every few seconds from
+minute 2 on. The helper's auto-build (AutoExpand._think) and the AI's economy
+(EconomyController._refresh) re-plan extractors every 1.5 s and spent up to 70 and 30 ms
+doing it: every deposit re-scanned every unit (and every deposit again, through a deep
+find_child per radius read), the AI instantiated a building just to read its radius on each
+try and searched every spot twice, and placement checks rebuilt the obstacle list per try.
+They now scan once per plan, cache radii, and rank a deposit by its cheap score before the
+unit scans and path queries. The plans they make are the same. The fix is in the planning
+code rather than a longer think interval, because a slower helper would build later.
+tools/harness/scenarios/bench-late-game.json is the benchmark for this; see
+docs/testing/play-harness.md.
+
 ## 2026-10-17: fights last long enough to watch and steer
 Every unit and structure has 3x the HP it had, and direct-fire weapons reach about 40%
 further (tank 5 -> 7 m, heavy tank 5.5 -> 7.5 m, militia 4.5 -> 6 m, artillery 11 -> 15 m;
@@ -285,6 +299,44 @@ so no unit or combat code changed. Turrets and militia posts do not rank, becaus
 CivilDefense drives their fire rate. Known gap: ranks are not in save files yet (save format
 needs Destin's OK), so a loaded match starts everyone green. MatchSignals.unit_promoted is
 there for the sound and UI threads to bind a promotion sting and a card line.
+
+## 2026-10-17: the wind moves the land
+Second piece of the living world (source/match/environment/Wind.gd, data/wind.json): trees,
+palms, reeds, bushes and grass of the desert scatter bend with Atmosphere's wind, gusts
+rolling across the map as a slow wave; a few tumbleweeds roll over open ground, around rocks
+and tree clumps, and fade out at water or after a while; on clear or hazy days a dust devil
+spins up every half minute or so and drifts off. Choices:
+- Purely visual, its own random numbers, nothing saved.
+- The plants keep their flat colours: Wind.gd copies each swaying prop's mesh and swaps its
+  StandardMaterial3D for foliage_sway.gdshader with the same albedo, roughness and specular,
+  so they look as before when the air is still. Only the props named in data/wind.json sway;
+  rocks, cacti and dead trees stay put.
+- The plants and dust devils move in vertex shaders, so they cost no script time; the script
+  sets the wind on the plant materials four times a second and moves only the tumbleweeds
+  (one MultiMesh). Headless on the cloud CPU that is about 0.05 ms a frame for 7 tumbleweeds.
+- Dust devils stay away in rain and sandstorms (the sandstorm is its own dust).
+
+## 2026-10-17: cities smoke and their people walk the streets
+Cities were the dullest thing on the map: rings of houses that never change. CityLife.gd
+(data/city_life.json) gives them two signs of life, both visual only and invisible until the
+player has seen the building:
+- Chimney smoke: workshops pour dark smoke most of the time, houses send up thin pale smoke
+  now and then, leaning with Atmosphere's wind and damped by rain. The models have no chimney
+  nodes, so the chimney tops are points per model in the data file (workshop stack, roof vents
+  of the houses); a model with no entry does not smoke. Each chimney is one instance of a
+  32-puff column in one MultiMesh, moved in chimney_smoke.gdshader, so smoke costs no script
+  time beyond writing one strength per chimney four times a second.
+- Townsfolk: people step out of a building, walk to a neighbour, the city centre or down the
+  street, chat on the doorstep and go in. They come out of and go into the buildings (they
+  start and end inside the walls), so no one pops into view. Paths are straight lines checked
+  against the city's buildings and nearby units, with one detour point if blocked; they do
+  not use the navigation map, because they are decoration and should never touch pathing.
+  When a unit is hit or something explodes within 10 m they run for the nearest door and
+  nobody comes out there for 15 to 30 s, so a fight in town empties the streets.
+- Limbs swing in townsfolk.gdshader; the script only moves and turns each person. Up to 22
+  per city and 70 in all, hidden when zoomed out past camera size 40. Headless on the cloud
+  CPU: about 0.05 ms a frame for a 21-person city, 0.17 ms with 69 people.
+- No traffic: the supply trucks on the roads (Logistics) already are the traffic.
 
 ## 2026-10-17: neutral outposts to capture between the cities
 Part of Destin's ask for more to do and more ways to expand. Each match places one outpost
