@@ -57,7 +57,7 @@ Program, or a Windows code-signing certificate) and can be added to the workflow
 1. Settings > Pages > Source: GitHub Actions. (Pages on a private repository needs a
    paid GitHub plan; on a public repository it is free.)
 2. Actions > Website > Run workflow. The site appears at
-   https://destinjones.github.io/godot-open-rts/ unless a custom domain is set.
+   https://destinjones.github.io/ironbound/ unless a custom domain is set.
 3. After that, every change to `site/` merged into main publishes itself.
 
 ## Later: a browser build

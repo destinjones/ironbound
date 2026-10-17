@@ -1,11 +1,19 @@
 # Ironbound
 
-![Ironbound](./site/assets/img/battle.webp "Ironbound")
+**You never place a house. The city builds itself.**
 
-Ironbound is an open source real-time strategy game made with Godot 4.7. Your city builds
-itself; you run the mines, supply lines, trade, diplomacy and the army.
+<!-- hero-gif: replace this screenshot with the hero GIF from the trailer work -->
+![Ironbound gameplay](./site/assets/img/battle.webp "Ironbound")
 
-Website: https://destinjones.github.io/godot-open-rts/
+Ironbound is a real-time strategy game where your city grows from what you deliver to it.
+You don't lay out streets or drop houses one by one: you run the mines, the trucks and
+trains, the power grid, trade and diplomacy, and the army that keeps it all alive. Feed
+the city and it climbs from Frontier to Industrial to Electric on its own.
+
+Free and open source (MIT), made with Godot 4.7. A fork of
+[Open RTS](https://github.com/lampe-games/godot-open-rts) that kept going.
+
+**Website:** https://destinjones.github.io/ironbound/
 
 Also by Destin: [Open Overwatch](https://destinjones.github.io/open-overwatch/), a live map of the whole planet, and [CarFinder](https://destinjones.github.io/carfinder/), every new car on sale in 11 countries with what it really costs.
 

@@ -363,3 +363,13 @@ stretches with nothing to do outside the base; a crate is a small, visible reaso
 and skirmish, and it rewards fast scouts. All numbers live in data/supply_drops.json; crates
 are not saved (a loaded match just drops new ones), so the save format is untouched.
 
+
+## 2026-10-17: the website lives at destinjones.github.io/ironbound/
+The repo was renamed from godot-open-rts to ironbound. GitHub redirects the repo's own
+URLs after a rename, but a GitHub Pages project site moves to the new name with no
+redirect, so every link to destinjones.github.io/godot-open-rts/ (README, canonical tags,
+sitemap, robots.txt) pointed at a dead path. BASE in tools/site/build.py now uses
+/ironbound/ and site/ was regenerated. github.com/destinjones/godot-open-rts links were
+left alone because those still redirect. The README now opens with the hook ("You never
+place a house. The city builds itself.") and names the engine second, because players
+decide from the mechanic, not the tech.
