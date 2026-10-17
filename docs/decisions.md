@@ -251,3 +251,15 @@ lifts the hold. The standard tutorial of a normal match still lets offers throug
 teaches trading itself, and PlaytestChecks expects an offer box there. Why: in the first
 match a deal box opened inside the city card within two minutes, before the player had
 built a mine.
+
+## 2026-10-17: the interface has sounds
+Every button in the menus and the HUD now clicks, toggles latch, cancel and close tick lower,
+and hover ticks in the menus (not in a match, where the HUD is always under the pointer).
+An order nobody can carry out knocks, and minimap pings blip (two urgent blips for a hit,
+one soft blip for a mark), taking up the two hooks the control threads left for audio
+(units_ordered "cannot" and the minimap pings). One autoload (audio/InterfaceSounds.gd)
+wires buttons as they enter the tree, so no scene was edited and new UI is covered for free.
+Why: the game had no interface sound at all, which is a large part of why it felt dead
+under the hand. Levels in data/sounds/interface.json; sounds synthesized by
+tools/audio/make_interface_sounds.py like the rest.
+
