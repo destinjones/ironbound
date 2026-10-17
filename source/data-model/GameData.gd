@@ -265,6 +265,12 @@ static func city_centres():
 	return merged
 
 
+static func veterancy():
+	"""ranks units earn from kills and what each rank adds, see data/veterancy.json and
+	source/match/veterancy/Veterancy.gd"""
+	return get_data().get("veterancy", {})
+
+
 static func outposts(map_scene_path = null):
 	"""neutral outposts players capture for income, see data/outposts.json and
 	source/match/outposts/Outposts.gd; a map entry's "outposts" key may list their spots
@@ -439,6 +445,7 @@ static func _load_all():
 		"logistics": _parse_dict_file(BASE_DATA_DIR + "/logistics.json"),
 		"city_centres": _parse_dict_file(BASE_DATA_DIR + "/city_centres.json"),
 		"wildlife": _parse_dict_file(BASE_DATA_DIR + "/wildlife.json"),
+		"veterancy": _parse_dict_file(BASE_DATA_DIR + "/veterancy.json"),
 		"outposts": _parse_dict_file(BASE_DATA_DIR + "/outposts.json"),
 		"voices": _parse_dict_file(BASE_DATA_DIR + "/sounds/voices.json"),
 		"voice_sets": _load_dir(BASE_DATA_DIR + "/sounds/voice_sets"),
@@ -467,6 +474,7 @@ static func _load_all():
 		_deep_merge(data["logistics"], _parse_dict_file(mod_dir + "/logistics.json"))
 		data["city_centres"].merge(_parse_dict_file(mod_dir + "/city_centres.json"), true)
 		_deep_merge(data["wildlife"], _parse_dict_file(mod_dir + "/wildlife.json"))
+		data["veterancy"].merge(_parse_dict_file(mod_dir + "/veterancy.json"), true)
 		data["outposts"].merge(_parse_dict_file(mod_dir + "/outposts.json"), true)
 		_merge_voices(data["voices"], _parse_dict_file(mod_dir + "/sounds/voices.json"))
 		_merge_voice_sets(data["voice_sets"], _load_dir(mod_dir + "/sounds/voice_sets"))
