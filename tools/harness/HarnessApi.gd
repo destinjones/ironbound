@@ -68,6 +68,8 @@ const COMMANDS = [
 	"reload",
 	"end"
 ]
+const EXTRACT_RETRIES = 3  # clicks on a deposit a unit still stands on, before giving up
+const EXTRACT_RETRY_S = 1.0
 const VALIDITY_NAMES = [
 	"valid",
 	"collides",
@@ -662,6 +664,17 @@ func _do_extract(order):
 	if handler.get("_auto_deposit") != deposit:
 		return {"ok": false, "error": "hovering the deposit did not pick an extractor"}
 	var validity = handler._calculate_blueprint_position_validity()
+	# like a player waiting for a unit to roll off the deposit before clicking again
+	for _wait in range(EXTRACT_RETRIES):
+		if VALIDITY_NAMES[validity] != "collides":
+			break
+		var until = elapsed_s + EXTRACT_RETRY_S
+		while elapsed_s < until:
+			await get_tree().process_frame
+		await mouse.move(screen + offset * 2.0)
+		await mouse.move(screen + offset, 2)
+		await _frames(2)
+		validity = handler._calculate_blueprint_position_validity()
 	var before = _structures_of(builder.player)
 	await mouse.button(MOUSE_BUTTON_LEFT, true)
 	await mouse.button(MOUSE_BUTTON_LEFT, false)
