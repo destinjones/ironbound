@@ -263,3 +263,12 @@ Why: the game had no interface sound at all, which is a large part of why it fel
 under the hand. Levels in data/sounds/interface.json; sounds synthesized by
 tools/audio/make_interface_sounds.py like the rest.
 
+## 2026-10-17: new players start on Desert Expanse
+The main menu's first map and the guided first match moved from Plain & Simple to Desert
+Expanse. Plain & Simple is the template's 50 m test plane: flat beige ground with the base
+7 m from the edge, so about 40% of a new player's first screen was black void. Desert Expanse
+is generated (cracked ground, scrub, palms, a lake) with even resources on every side, unlike
+Oil and Iron, which gives one side no copper. Plain & Simple stays in the map list and stays
+the harness's default map, so no test fixture moved. The tutorial ran to its end on the new map.
+The tutorial's last step now sends one rival scout instead of two: with fights lasting longer
+(see above), the second scout escaped across the bigger map and the step never ended.
