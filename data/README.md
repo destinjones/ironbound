@@ -13,6 +13,7 @@ mods add to it or patch it (see [mods](#mods)).
 | `city_centres.json` | City centre circle, how many a player may have, rebuild countdown and surrender |
 | `logistics.json` | Trucks' job board, extractor buffers, storage, trains, fleet upkeep and recycling |
 | `time_of_day.json` | The match clock: start hour, day length, and the light, exposure and sight at each hour |
+| `veterancy.json` | Ranks units earn from kills (Veteran, Elite, Heroic) and what each adds |
 | `supply_drops.json` | Supply crates that parachute in mid-match: how often, what they hold, how long they wait |
 | `movement.json` | How ground and air units steer around each other and through crowds |
 | `units/*.json` | One file per unit or structure |

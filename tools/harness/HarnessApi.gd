@@ -766,11 +766,14 @@ func _do_camera(order):
 	if camera == null or not camera.has_method("set_position_safely"):
 		return {"ok": false, "error": "no match camera"}
 	var target = order.get("spot")
-	if str(order.get("follow", "")).begins_with("wildlife"):  # "wildlife:birds", "...:vultures"
-		var wildlife = match_node.find_child("Wildlife", true, false)
-		var spots = wildlife.sightings(order["follow"].get_slice(":", 1)) if wildlife else []
+	# "wildlife:birds", "wildlife:vultures", "wind:dust_devils", "wind:tumbleweeds"
+	var follow = str(order.get("follow", ""))
+	var finder = {"wildlife": "Wildlife", "wind": "Wind"}.get(follow.get_slice(":", 0))
+	if ":" in follow and finder != null:
+		var found = match_node.find_child(finder, true, false)
+		var spots = found.sightings(follow.get_slice(":", 1)) if found else []
 		if spots.is_empty():
-			return {"ok": false, "error": "no wildlife of that kind on the map"}
+			return {"ok": false, "error": "nothing of that kind on the map"}
 		# the ground spot the camera's 30 degree view puts behind something that high up
 		target = Vector3(spots[0].x, 0, spots[0].z - spots[0].y * sqrt(3.0))
 	elif order.has("follow"):

@@ -121,6 +121,8 @@ func _run():
 	_check_logistics(data["logistics"], data["units"], resources)
 	_check_city_centres(data.get("city_centres", {}))
 	_check_wildlife(data.get("wildlife", {}))
+	_check_wind(data.get("wind", {}))
+	_check_city_life(data.get("city_life", {}))
 	_check_voices(data["units"])
 	print(
 		(
@@ -755,6 +757,138 @@ func _check_wildlife(wildlife):
 	var birds = wildlife.get("birds", {})
 	if birds is Dictionary and birds.get("min_flocks", 0) > birds.get("max_flocks", 0):
 		_error(where, "birds.min_flocks is above birds.max_flocks")
+
+
+# section -> key -> [min, max] for every number in wind.json; a pair is [low, high]
+const WIND_RANGES = {
+	"tumbleweeds":
+	{
+		"m2_per_tumbleweed": [100.0, 100000.0],
+		"max": [0, 50],
+		"min_wind_mps": [0.0, 30.0],
+		"speed_per_wind": [0.0, 3.0],
+		"radius_m": [0.1, 2.0],
+		"life_s": [1.0, 600.0],
+	},
+	"dust_devils":
+	{
+		"max": [0, 10],
+		"every_s": [1.0, 3600.0],
+		"life_s": [1.0, 600.0],
+		"drift_per_wind": [0.0, 3.0],
+		"height_m": [1.0, 40.0],
+		"max_dust": [0.0, 1.0],
+	},
+}
+
+
+func _check_wind(wind):
+	var where = "wind.json"
+	var sway = wind.get("sway")
+	if not sway is Dictionary:
+		_error(where, "section 'sway' is missing")
+	else:
+		for model in sway:
+			if not (sway[model] is float or sway[model] is int) or sway[model] < 0.0 or sway[model] > 2.0:
+				_error(where, "'sway.{0}' = {1} must be a bend in metres, 0..2".format([model, sway[model]]))
+			if not ResourceLoader.exists("res://assets/models/ironbound/env/{0}.glb".format([model])):
+				_warn(where, "'sway.{0}' names no prop in assets/models/ironbound/env".format([model]))
+	for section in WIND_RANGES:
+		var values = wind.get(section)
+		if not values is Dictionary:
+			_error(where, "section '{0}' is missing".format([section]))
+			continue
+		for key in WIND_RANGES[section]:
+			var bounds = WIND_RANGES[section][key]
+			var value = values.get(key)
+			if value == null or (value is Array and value.size() != 2):
+				_error(where, "'{0}.{1}' is missing or not a [low, high] pair".format([section, key]))
+				continue
+			for number in value if value is Array else [value]:
+				if not (number is float or number is int) or number < bounds[0] or number > bounds[1]:
+					_error(
+						where,
+						"'{0}.{1}' = {2} is outside {3}..{4}".format(
+							[section, key, value, bounds[0], bounds[1]]
+						)
+					)
+			if value is Array and value[0] > value[1]:
+				_error(where, "'{0}.{1}' must be [low, high]".format([section, key]))
+
+
+# section -> key -> [min, max] for every number in city_life.json; a pair is [low, high]
+const CITY_LIFE_RANGES = {
+	"smoke": {"column_height_m": [0.5, 20.0], "fade_per_s": [0.01, 10.0]},
+	"smoke.house":
+	{
+		"chance": [0.0, 1.0],
+		"strength": [0.0, 1.0],
+		"on_s": [1.0, 3600.0],
+		"off_s": [1.0, 3600.0],
+		"soot": [0.0, 1.0],
+	},
+	"smoke.workshop":
+	{
+		"chance": [0.0, 1.0],
+		"strength": [0.0, 1.0],
+		"on_s": [1.0, 3600.0],
+		"off_s": [1.0, 3600.0],
+		"soot": [0.0, 1.0],
+	},
+	"townsfolk":
+	{
+		"spawn_every_s": [0.5, 600.0],
+		"max_per_city": [0, 200],
+		"max": [0, 500],
+		"reach_m": [1.0, 40.0],
+		"walk_speed": [0.1, 5.0],
+		"run_speed": [0.1, 10.0],
+		"chat_s": [0.0, 60.0],
+		"stroll_chance": [0.0, 1.0],
+		"scare_m": [0.0, 60.0],
+		"hide_s": [0.0, 600.0],
+		"height_m": [0.1, 2.0],
+	},
+}
+
+
+func _check_city_life(city_life):
+	var where = "city_life.json"
+	var chimneys = city_life.get("smoke", {}).get("chimneys")
+	if not chimneys is Dictionary:
+		_error(where, "'smoke.chimneys' is missing")
+	else:
+		for model in chimneys:
+			var at = chimneys[model]
+			if not at is Array or at.size() != 3 or at.any(func(n): return not (n is float or n is int)):
+				_error(where, "'smoke.chimneys.{0}' must be a point [x, y, z]".format([model]))
+			elif absf(at[0]) > 1.5 or absf(at[2]) > 1.5 or at[1] < 0.0 or at[1] > 4.0:
+				_error(where, "'smoke.chimneys.{0}' = {1} is off the building".format([model, str(at)]))
+			if not ResourceLoader.exists("res://assets/models/ironbound/buildings/{0}.glb".format([model])):
+				_warn(where, "'smoke.chimneys.{0}' names no building model".format([model]))
+	for section in CITY_LIFE_RANGES:
+		var values = city_life
+		for part in section.split("."):
+			values = values.get(part) if values is Dictionary else null
+		if not values is Dictionary:
+			_error(where, "section '{0}' is missing".format([section]))
+			continue
+		for key in CITY_LIFE_RANGES[section]:
+			var bounds = CITY_LIFE_RANGES[section][key]
+			var value = values.get(key)
+			if value == null or (value is Array and value.size() != 2):
+				_error(where, "'{0}.{1}' is missing or not a [low, high] pair".format([section, key]))
+				continue
+			for number in value if value is Array else [value]:
+				if not (number is float or number is int) or number < bounds[0] or number > bounds[1]:
+					_error(
+						where,
+						"'{0}.{1}' = {2} is outside {3}..{4}".format(
+							[section, key, value, bounds[0], bounds[1]]
+						)
+					)
+			if value is Array and value[0] > value[1]:
+				_error(where, "'{0}.{1}' must be [low, high]".format([section, key]))
 
 
 func _check_voices(units):
