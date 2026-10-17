@@ -272,3 +272,16 @@ Oil and Iron, which gives one side no copper. Plain & Simple stays in the map li
 the harness's default map, so no test fixture moved. The tutorial ran to its end on the new map.
 The tutorial's last step now sends one rival scout instead of two: with fights lasting longer
 (see above), the second scout escaped across the bigger map and the step never ended.
+
+## 2026-10-17: units earn ranks from kills (veterancy)
+Destin asked for more features to make matches less dull, lifting the feature freeze for
+this. Mobile units now earn experience from kills, worth the victim's cost (half for a
+structure), and rank up to Veteran (12), Elite (32) and Heroic (64): +15/30/50% damage,
++10/20/35% hp, and from Elite on faster fire and self-repair after 6 s out of the fight.
+Gold chevrons sit over the health bar, with a star for Heroic. Why: it gives players a
+reason to keep a unit alive and pull it back, and a fight leaves a mark beyond losses. All
+numbers are in data/veterancy.json. Kill credit reads Unit.take_damage's "last_hit_by" meta,
+so no unit or combat code changed. Turrets and militia posts do not rank, because
+CivilDefense drives their fire rate. Known gap: ranks are not in save files yet (save format
+needs Destin's OK), so a loaded match starts everyone green. MatchSignals.unit_promoted is
+there for the sound and UI threads to bind a promotion sting and a card line.

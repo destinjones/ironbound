@@ -27,6 +27,7 @@ const CityCentres = preload("res://source/match/city/CityCentres.gd")
 const CombatEffects = preload("res://source/match/effects/CombatEffects.gd")
 const MotionManager = preload("res://source/match/motion/MotionManager.gd")
 const Wildlife = preload("res://source/match/environment/Wildlife.gd")
+const Veterancy = preload("res://source/match/veterancy/Veterancy.gd")
 
 const CommandCenter = preload("res://source/match/units/CommandCenter.tscn")
 const Factions = preload("res://source/data-model/Factions.gd")
@@ -96,6 +97,10 @@ func _ready():
 		var combat_effects = CombatEffects.new()
 		combat_effects.name = "CombatEffects"
 		add_child(combat_effects)
+	if get_node_or_null("Veterancy") == null:  # ranks units earn from kills
+		var veterancy = Veterancy.new()
+		veterancy.name = "Veterancy"
+		add_child(veterancy)
 	if get_node_or_null("ReplayRecorder") == null:
 		var replay_recorder = ReplayRecorder.new()
 		replay_recorder.name = "ReplayRecorder"
