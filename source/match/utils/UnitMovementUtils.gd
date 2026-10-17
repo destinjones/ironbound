@@ -36,8 +36,12 @@ static func calculate_aabb_crowd_pivot_yless(units):
 
 
 static func units_adhere(unit_a, unit_b):
-	"""checks if distance between unit borders is within margin"""
-	return _unit_in_range_of_other(unit_a, unit_b, Constants.Match.Units.ADHERENCE_MARGIN_M)
+	"""checks if distance between unit borders is within margin; unit_a's own arrival
+	tolerance counts too: sent next to unit_b, it stops anywhere within that distance of
+	its spot, and a truck stopped 1 cm outside the margin used to retry forever"""
+	var movement = unit_a.get_node_or_null("Movement")
+	var slack = movement.target_desired_distance if movement is NavigationAgent3D else 0.0
+	return _unit_in_range_of_other(unit_a, unit_b, Constants.Match.Units.ADHERENCE_MARGIN_M + slack)
 
 
 static func _unit_in_range_of_other(unit_a, unit_b, b_range):
