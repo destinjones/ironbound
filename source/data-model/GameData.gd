@@ -281,6 +281,18 @@ static func veterancy():
 	return get_data().get("veterancy", {})
 
 
+static func outposts(map_scene_path = null):
+	"""neutral outposts players capture for income, see data/outposts.json and
+	source/match/outposts/Outposts.gd; a map entry's "outposts" key may list their spots
+	([[x, z], ...]) or turn them off (0)"""
+	var merged = get_data().get("outposts", {}).duplicate(true)
+	if map_scene_path != null:
+		for a_map in get_data()["maps"]:
+			if a_map.get("scene") == map_scene_path and "outposts" in a_map:
+				merged["spots"] = a_map["outposts"]
+	return merged
+
+
 static func is_generated_scene(scene_path):
 	return scene_path.begins_with(GENERATED_SCENES_ROOT)
 
@@ -446,6 +458,7 @@ static func _load_all():
 		"wind": _parse_dict_file(BASE_DATA_DIR + "/wind.json"),
 		"veterancy": _parse_dict_file(BASE_DATA_DIR + "/veterancy.json"),
 		"city_life": _parse_dict_file(BASE_DATA_DIR + "/city_life.json"),
+		"outposts": _parse_dict_file(BASE_DATA_DIR + "/outposts.json"),
 		"voices": _parse_dict_file(BASE_DATA_DIR + "/sounds/voices.json"),
 		"voice_sets": _load_dir(BASE_DATA_DIR + "/sounds/voice_sets"),
 		"sounds": _load_sound_configs(BASE_DATA_DIR),
@@ -476,6 +489,7 @@ static func _load_all():
 		_deep_merge(data["wind"], _parse_dict_file(mod_dir + "/wind.json"))
 		data["veterancy"].merge(_parse_dict_file(mod_dir + "/veterancy.json"), true)
 		_deep_merge(data["city_life"], _parse_dict_file(mod_dir + "/city_life.json"))
+		data["outposts"].merge(_parse_dict_file(mod_dir + "/outposts.json"), true)
 		_merge_voices(data["voices"], _parse_dict_file(mod_dir + "/sounds/voices.json"))
 		_merge_voice_sets(data["voice_sets"], _load_dir(mod_dir + "/sounds/voice_sets"))
 		_deep_merge(data["sounds"], _load_sound_configs(mod_dir))

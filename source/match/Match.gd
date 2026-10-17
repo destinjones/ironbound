@@ -30,6 +30,7 @@ const Wildlife = preload("res://source/match/environment/Wildlife.gd")
 const Wind = preload("res://source/match/environment/Wind.gd")
 const Veterancy = preload("res://source/match/veterancy/Veterancy.gd")
 const CityLife = preload("res://source/match/environment/CityLife.gd")
+const Outposts = preload("res://source/match/outposts/Outposts.gd")
 
 const CommandCenter = preload("res://source/match/units/CommandCenter.tscn")
 const Factions = preload("res://source/data-model/Factions.gd")
@@ -140,6 +141,10 @@ func _ready():
 		var city_centres = CityCentres.new()
 		city_centres.name = "CityCentres"
 		add_child(city_centres)
+	if get_node_or_null("Outposts") == null:  # neutral spots to capture for income
+		var outposts = Outposts.new()
+		outposts.name = "Outposts"
+		add_child(outposts)
 	if get_node_or_null("Market") == null:
 		var market = Market.new()
 		market.name = "Market"
