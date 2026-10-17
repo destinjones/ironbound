@@ -31,6 +31,7 @@ const Wind = preload("res://source/match/environment/Wind.gd")
 const Veterancy = preload("res://source/match/veterancy/Veterancy.gd")
 const CityLife = preload("res://source/match/environment/CityLife.gd")
 const Outposts = preload("res://source/match/outposts/Outposts.gd")
+const SupplyDrops = preload("res://source/match/supply-drops/SupplyDrops.gd")
 
 const CommandCenter = preload("res://source/match/units/CommandCenter.tscn")
 const Factions = preload("res://source/data-model/Factions.gd")
@@ -145,6 +146,10 @@ func _ready():
 		var outposts = Outposts.new()
 		outposts.name = "Outposts"
 		add_child(outposts)
+	if get_node_or_null("SupplyDrops") == null:  # crates that parachute in now and then
+		var supply_drops = SupplyDrops.new()
+		supply_drops.name = "SupplyDrops"
+		add_child(supply_drops)
 	if get_node_or_null("Market") == null:
 		var market = Market.new()
 		market.name = "Market"
