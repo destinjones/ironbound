@@ -60,8 +60,15 @@ Program, or a Windows code-signing certificate) and can be added to the workflow
    https://destinjones.github.io/ironbound/ unless a custom domain is set.
 3. After that, every change to `site/` merged into main publishes itself.
 
-## Later: a browser build
+## The browser build
 
-Godot can export to the web, but only with the Compatibility renderer, and the game's
-shaders and navmesh rebakes need checking there first. See the research notes on browser
-play before adding a web export preset; the site would then get a Play in browser page.
+The Website workflow also exports the game with the "Web" preset (tools/web/export.sh)
+into site/web/, so every merge that touches the game or the site republishes it at
+<site>/web/. It is a single-threaded build, because GitHub Pages cannot send the
+cross-origin isolation headers a threaded build needs, and it renders with the
+Compatibility renderer (Godot's only renderer in a browser). The web build hides Quit,
+starts in the page instead of fullscreen (a browser only goes fullscreen from a click)
+and turns the crash reporter off. To try it locally:
+
+    GODOT=/path/to/godot-4.7.2 tools/web/export.sh
+    python3 -m http.server -d build/web 8060   # then open http://localhost:8060/

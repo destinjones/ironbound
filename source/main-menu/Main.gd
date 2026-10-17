@@ -46,6 +46,8 @@ func _ready():
 	tutorial_button.tooltip_text = tr("TUTORIAL_BUTTON_TOOLTIP")
 	tutorial_button.pressed.connect(start_tutorial)
 	play_button.add_sibling(tutorial_button)  # right under Play
+	if OS.has_feature("web"):
+		find_child("Button4").hide()  # Quit would only freeze the page; closing the tab quits
 	_lay_out_menu()
 
 

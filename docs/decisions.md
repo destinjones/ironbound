@@ -392,3 +392,19 @@ the version to 0.10.0 (project.godot and the export presets, which still said Op
 links follow every new release. Added docs/.gdignore: the export filter is all_resources,
 so Godot was importing the 40 README screenshots in docs/images and packing them into
 every build. Nothing in the game loads them; the Linux zip drops from 140 MB to 94 MB.
+
+## 2026-10-17: a browser build at <site>/web/
+Step 2 of Destin's path to players: a link that opens the game with no download. The
+"Web" export preset is single-threaded (no SharedArrayBuffer), so it runs on GitHub Pages,
+which cannot send the COOP/COEP headers a threaded build needs, and on itch.io without
+their SharedArrayBuffer switch. The browser uses the Compatibility renderer; the game's
+shaders and the match render correctly there with no changes. The Website workflow exports
+it into site/web/ on every merge that touches the game or the site. It lives at /web/, not
+/play/, because play.html is already the manual and Pages would serve /play as that page.
+Web-only changes: Quit is hidden (it would freeze the page), the stored fullscreen option
+is not applied at start (a browser refuses fullscreen without a click; the Options screen
+still switches it), and the crash reporter is off (a closed tab looks exactly like a crash
+to it, it cannot open its folder, and its hang watchdog needs threads). The preset leaves
+out docs/, tests/, media/ and site/. Download is 73 MB of game data plus a 38 MB engine;
+on a 50 Mbps line the menu is up in about 23 s, locally in 3 s. Shrinking the textures for
+the web is the next lever if that proves too slow.

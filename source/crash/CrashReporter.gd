@@ -142,7 +142,9 @@ func _ready():
 		if argument.begins_with("--"):
 			var parts = argument.substr(2).split("=", true, 1)
 			_args[parts[0]] = parts[1] if parts.size() > 1 else ""
-	if "no-crash-reports" in _args:
+	# in a browser every closed tab looks like a crash, there is no folder to open and the
+	# hang watchdog needs threads, so the web build reports nothing
+	if "no-crash-reports" in _args or OS.has_feature("web"):
 		enabled = false
 		return
 	_hang_exit_s = float(_args.get("hang-exit", "0"))

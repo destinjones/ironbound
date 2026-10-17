@@ -1,14 +1,27 @@
 name: Website
 
-# Publishes site/ to GitHub Pages whenever the site changes on main, or when
-# started by hand from the Actions tab. Pages must be on (Settings > Pages >
-# Source: GitHub Actions).
+# Publishes site/ to GitHub Pages, with the browser build of the game exported
+# into site/web/ (played at <site>/web/), whenever the site or the game changes on
+# main, or when started by hand from the Actions tab. Pages must be on (Settings >
+# Pages > Source: GitHub Actions).
 
 on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["site/**", "tools/site/**", ".github/workflows/pages.yml"]
+    paths:
+      - "site/**"
+      - "tools/site/**"
+      - "tools/web/**"
+      - ".github/workflows/pages.yml"
+      # the game itself, for the browser build
+      - "source/**"
+      - "assets/**"
+      - "data/**"
+      - "tools/harness/**"
+      - "project.godot"
+      - "export_presets.cfg"
+      - "default_bus_layout.tres"
 
 permissions:
   contents: read
@@ -19,10 +32,14 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
+env:
+  GODOT_VERSION: "4.7.2"
+
 jobs:
   deploy:
     name: Publish the website
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -32,6 +49,31 @@ jobs:
         run: |
           python3 tools/site/build.py site
           git diff --exit-code -- site || { echo "Run python3 tools/site/build.py and commit the result"; exit 1; }
+      - name: Cache Godot and the web export template
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot
+            ~/.local/share/godot/export_templates/${{ env.GODOT_VERSION }}.stable
+          key: godot-web-${{ env.GODOT_VERSION }}
+      - name: Download Godot and the web export template
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          base="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          mkdir -p ~/godot ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          curl -sSLf -o /tmp/godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q /tmp/godot.zip -d ~/godot
+          curl -sSLf -o /tmp/templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q /tmp/templates.tpz 'templates/web_nothreads_release.zip' 'templates/version.txt' -d /tmp/tpl
+          mv /tmp/tpl/templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
+          rm -f /tmp/godot.zip /tmp/templates.tpz
+      - name: Export the browser build into site/web
+        env:
+          BUILD_BRANCH: ${{ github.ref_name }}
+        run: |
+          export GODOT="$HOME/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64"
+          bash tools/web/export.sh site/web
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

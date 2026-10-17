@@ -197,7 +197,10 @@ func _set_mouse_restricted(value):
 
 
 func _apply_stored_options():
-	_apply_screen()
+	# a browser only goes fullscreen from a click, so the web build starts in the page and the
+	# Window mode option still works from the Options screen
+	if not OS.has_feature("web"):
+		_apply_screen()
 	_apply_mouse_restricted()
 	apply_audio()
 	_set_vsync(vsync)
