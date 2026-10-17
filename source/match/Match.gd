@@ -30,6 +30,7 @@ const Wildlife = preload("res://source/match/environment/Wildlife.gd")
 const Wind = preload("res://source/match/environment/Wind.gd")
 const Veterancy = preload("res://source/match/veterancy/Veterancy.gd")
 const CityLife = preload("res://source/match/environment/CityLife.gd")
+const Outposts = preload("res://source/match/outposts/Outposts.gd")
 const SupplyDrops = preload("res://source/match/supply-drops/SupplyDrops.gd")
 
 const CommandCenter = preload("res://source/match/units/CommandCenter.tscn")
@@ -141,6 +142,10 @@ func _ready():
 		var city_centres = CityCentres.new()
 		city_centres.name = "CityCentres"
 		add_child(city_centres)
+	if get_node_or_null("Outposts") == null:  # neutral spots to capture for income
+		var outposts = Outposts.new()
+		outposts.name = "Outposts"
+		add_child(outposts)
 	if get_node_or_null("SupplyDrops") == null:  # crates that parachute in now and then
 		var supply_drops = SupplyDrops.new()
 		supply_drops.name = "SupplyDrops"
