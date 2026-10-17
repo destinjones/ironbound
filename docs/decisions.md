@@ -242,3 +242,12 @@ wrecks and circle for about 45 s. Choices that shape later world-life work:
   normal view on a 110 m map with 100 units, about 0.3 ms with every flock in view.
 - Birds and vultures are simple shapes, not textured models: at play zoom they are 20 to
   50 px across and read by their motion and silhouette, so the unit pipeline does not apply.
+
+## 2026-10-17: no trade or treaty offers during the guided first match
+Rival trade offers and treaty offers to the player are dropped while a scripted tutorial
+(the guided first match) runs, until it reaches a trade step if it has one. The AI keeps
+offering, so the first offer after the tutorial still arrives, and skipping the tutorial
+lifts the hold. The standard tutorial of a normal match still lets offers through: it
+teaches trading itself, and PlaytestChecks expects an offer box there. Why: in the first
+match a deal box opened inside the city card within two minutes, before the player had
+built a mine.
