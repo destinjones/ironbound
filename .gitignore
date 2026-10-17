@@ -10,3 +10,4 @@ harness-out/
 
 # release builds
 dist/
+site/web/
