@@ -42,15 +42,12 @@ func _ready():
 	var cancel = Button.new()
 	cancel.text = "CANCEL"
 	add_child(cancel)
-	await _frames(3)  # past the gap between two presses
 	_click()
 	cancel.pressed.emit()
 	_expect(_count("back") == 1, "a cancel button ticks lower")
-	await _frames(3)
 	_click()
 	check.button_pressed = true
 	_expect(_count("toggle_on") == 1, "a check box latches on")
-	await _frames(3)
 	_click()
 	check.button_pressed = false
 	_expect(_count("toggle_off") == 1, "and off")
@@ -67,11 +64,11 @@ func _ready():
 	_click()
 	radios[1].button_pressed = true  # unpresses the first one too
 	_expect(_count("toggle_on") + _count("toggle_off") == before + 1, "a radio group sounds once")
+	_expect(_count("toggle_on") == 2, "with the new choice latching on")
 	var quiet = Button.new()
 	quiet.set_meta("silent", true)
 	add_child(quiet)
 	sounds._last_ms.clear()
-	await _frames(3)
 	_click()
 	quiet.pressed.emit()
 	_expect(_count("click") == 1, "a silent button stays quiet")
@@ -109,6 +106,9 @@ func _ready():
 
 
 func _click():
+	"""a fresh click by the player, well after the last press (no frame timing involved)"""
+	InterfaceSounds._last_press_ms = -1e9
+	InterfaceSounds._last_ms.clear()
 	var event = InputEventMouseButton.new()
 	event.button_index = MOUSE_BUTTON_LEFT
 	InterfaceSounds._input(event)

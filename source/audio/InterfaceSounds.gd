@@ -116,7 +116,9 @@ func _on_button_pressed(button):
 	_press(button)
 
 
-func _on_button_toggled(_pressed, button):
+func _on_button_toggled(pressed, button):
+	if not pressed and is_instance_valid(button) and button.button_group != null:
+		return  # a radio group lets go of its old choice: the new one latches on instead
 	_press(button)
 
 
