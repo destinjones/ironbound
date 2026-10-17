@@ -154,6 +154,65 @@ runs), so the gap is inside run-to-run noise. At 150 copies it is 0.78 against 0
 exaggerates, so the textured pipeline (one base colour plus one normal map per unit) stays
 the plan for the other units and no decimation or texture cut is needed for the tank.
 
+## 2026-10-17: fights last long enough to watch and steer
+Every unit and structure has 3x the HP it had, and direct-fire weapons reach about 40%
+further (tank 5 -> 7 m, heavy tank 5.5 -> 7.5 m, militia 4.5 -> 6 m, artillery 11 -> 15 m;
+defences keep their ranges; sight grows with range so units still spot an enemy
+3 m before it is in range). Damage, fire rates and costs are unchanged. Measured in open
+ground on Big Arena with the play harness: a 1 v 1 tank fight went from about 4 s to about
+13 s, and in 5 v 5 tanks the time from the first loss to the last went from 5 s to 16 s.
+Why: the values were the Open RTS template's, so armies met hull to hull and were gone
+before the turret aim, recoil, wrecks or control groups could matter. Scaling HP for
+buildings too keeps a raid on a factory or a supply line at the same pace relative to a
+fight. Known effect: a save made before this loads its units at a third of their health,
+since saved hp is kept and hp_max triples.
+
+## 2026-10-17: the resource bar shows whole numbers
+Stock is fractional because upkeep drains it bit by bit, so the bar read "46.0". It now
+shows whole units, rounded down so it never shows more than you can spend.
+
+## 2026-10-17: building sites no longer stall
+Two stalls in a 10-minute match on Oil and Iron, traced with a probe that logged every site,
+truck and constructor every 15 s. First, a site whose constructor was given another order
+stayed at 0% for the rest of the match while the other constructors stood idle; the AI
+already sends idle workers to unfinished sites (ConstructionWorksController), the player
+only did with auto-expand. Now Human has IdleConstructors: a constructor with no order for
+3 s goes to the nearest site nobody is building, skipping sites with an enemy within 14 m.
+Second, trucks carry 10 and the oil derrick costs 11, so its last unit of copper was a
+1-unit supply job; the job board values a trip by its load, so it lost to every pickup and
+the derrick stood at 91% for 8 minutes. Supply trips are now valued as a full truck. After
+both, the derrick finishes at about 90 s and the player ends the match with 179 oil instead
+of 9. Not fixed, because it is pathing: once, a truck carrying materials for a derrick 1 m
+from where it is usually placed never arrived (MovingToUnit retries the same spot forever).
+Copper staying at 5 on Oil and Iron is by design: that map gives this side oil, and copper
+comes from trade or the contested deposits.
+
+## 2026-10-17: matches have a clock: dawn, day, dusk and night
+data/time_of_day.json drives one light through 24 hours (TimeOfDay.gd, owned by
+Atmosphere). The look still sets the noon sun; the clock scales its height, swings its
+azimuth, and multiplies energy, colour, ambient, exposure and haze tint on top of weather and
+look. The moon is the same DirectionalLight: it swaps in during twilight while the light is
+dim, so there is no second shadow-casting light and no extra frame cost. A day is 16 minutes
+and night hours pass 2.5 times faster, so a match starts at 10:00, gets dusk at about minute 8
+and has about 3 minutes of night per day. Why: one fixed noon light made every minute of
+every match look the same. Night lowers sight to 0.85 through the same WeatherEffects
+multiplier weather already uses (sandstorms go to 0.55), so it is felt but mild. Night must
+stay readable: exposure drops to about half and the light turns blue rather than going dark.
+The sun turns in 0.25 degree steps so shadow edges do not crawl. The hour is not saved
+(the save format is untouched), so a loaded game restarts at 10:00, as weather already
+restarts. tests/screenshots/WeatherShots renders any weather at any hour.
+
+## 2026-10-17: text over units shows only when it needs you
+Labels floating over buildings and units ("Iron 6/16", "Constructor on the way", "Hauler 2")
+now show only while that thing is hovered or selected, or while a constructor is selected
+for site labels. Three states stay visible all the time because nothing happens until the
+player acts: a site nobody is building, a full extractor that has stopped, and an aircraft
+with no airport to return to. All of them use the HUD's Barlow font as a signed distance
+field (WorldLabel.gd), so they stay sharp at any zoom instead of the tiny pixel font, and
+the shouting capitals ("NO AIRPORT - WILL CRASH") became sentence case. Why: the playtest
+of 17 Oct found debug-looking text all over the base; the tests that check a waiting site
+and a full mine still see their labels.
+
 ## 2026-10-17: the interface has sounds
 Every button in the menus and the HUD now clicks, toggles latch, cancel and close tick lower,
 and hover ticks in the menus (not in a match, where the HUD is always under the pointer).
