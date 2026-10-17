@@ -213,6 +213,36 @@ the shouting capitals ("NO AIRPORT - WILL CRASH") became sentence case. Why: the
 of 17 Oct found debug-looking text all over the base; the tests that check a waiting site
 and a full mine still see their labels.
 
+## 2026-10-17: rain soaks the ground, and lightning is a bolt you can see
+Rain used to be thin streaks over a sunny, dry desert. Now the terrain shader has a
+`wetness` uniform that Atmosphere raises over about 30 s of rain and lets fall over about
+2 minutes after it (faster in sandstorm wind): soaked sand darkens and turns glossy, and
+small puddles collect in low noise spots on flat ground. Rings splash on the ground under
+the rain (one more GPUParticles3D, 900 flat quads, following the camera like the rain and
+thinned when zoomed out). Heavy rain's lightning now draws a branching bolt somewhere in
+view, built once per strike as an ImmediateMesh, with a short unshadowed OmniLight3D where
+it lands, so nothing runs between strikes. Atmosphere emits `lightning_struck(position)` so
+the sound side can add thunder with a delay; this PR adds no audio because the sound thread
+owns the mix. Wetness is visual only: ground speed and sight still come from the weather.
+
+## 2026-10-17: birds and vultures, the first piece of a living world
+Destin asked for a game that feels alive rather than dull, and lifted the feature freeze for
+it. The first piece is wildlife (source/match/environment/Wildlife.gd, data/wildlife.json):
+small flocks of birds wander over the map, settle on dry open ground to feed, and burst into
+the air when a unit walks up or something is hit nearby; vultures turn up over some fresh
+wrecks and circle for about 45 s. Choices that shape later world-life work:
+- Purely visual: its own random numbers, nothing saved, no effect on the simulation or on
+  replays. Wildlife reacts to the war (MatchSignals.unit_damaged, camera_shake, new wrecks)
+  and never the other way round.
+- One MultiMesh per kind, wings beaten in the vertex shader (bird.gdshader), so all birds
+  cost two draw calls plus shadows. The script moves only the flocks on screen; a flock off
+  screen moves as a point and its birds take their places when it comes back into view, and
+  nothing is drawn zoomed out past camera size 45, where a bird is a speck.
+- Cost, measured headless on the cloud CPU (slow GDScript): about 0.15 ms a frame in a
+  normal view on a 110 m map with 100 units, about 0.3 ms with every flock in view.
+- Birds and vultures are simple shapes, not textured models: at play zoom they are 20 to
+  50 px across and read by their motion and silhouette, so the unit pipeline does not apply.
+
 ## 2026-10-17: no trade or treaty offers during the guided first match
 Rival trade offers and treaty offers to the player are dropped while a scripted tutorial
 (the guided first match) runs, until it reaches a trade step if it has one. The AI keeps

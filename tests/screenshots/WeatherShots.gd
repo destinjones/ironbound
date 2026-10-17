@@ -5,6 +5,8 @@ extends Node
 #     res://tests/screenshots/WeatherShots.tscn -- --out=/tmp/weather \
 #     --weathers=clear,rain,sandstorm --hours=7,13,18.8,23 --size=22 --hide_hud
 # Saves <weather>_<hour>.png. --settle=<frames> lets particles fill the view before each shot.
+# The ground is soaked to match the rain at once. --lightning adds <weather>_<hour>_bolt.png,
+# taken just after a strike.
 
 var _args = {}
 
@@ -41,12 +43,19 @@ func _ready():
 		camera.set_position_safely(depots[0].global_position)
 	for weather in _args.get("weathers", "clear").split(","):
 		atmosphere.set_weather_immediately(weather)
+		atmosphere.set_wetness(atmosphere.get_rain_intensity())
 		for hour_text in _args.get("hours", "13").split(","):
 			clock.set_hour(float(hour_text))
 			await _frames(int(_args.get("settle", "40")))
 			var path = "{0}/{1}_{2}.png".format([out_dir, weather, hour_text])
 			get_viewport().get_texture().get_image().save_png(path)
 			print("saved ", path)
+			if _args.has("lightning"):
+				atmosphere.strike_lightning()
+				await _frames(2)
+				path = path.replace(".png", "_bolt.png")
+				get_viewport().get_texture().get_image().save_png(path)
+				print("saved ", path)
 	get_tree().quit()
 
 

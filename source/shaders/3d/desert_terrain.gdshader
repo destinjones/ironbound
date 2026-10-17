@@ -24,6 +24,8 @@ uniform float relief_strength = 0.45;
 uniform float ripple_frequency = 5.0;
 uniform float crack_scale = 0.75;
 uniform vec2 wind_direction = vec2(0.8, 0.6);
+// 0 dry .. 1 soaked; set by Atmosphere.gd, lags behind the rain and dries out after it
+uniform float wetness = 0.0;
 uniform sampler2D noise_large : hint_default_white, filter_linear_mipmap, repeat_enable;
 uniform sampler2D noise_detail : hint_default_white, filter_linear_mipmap, repeat_enable;
 
@@ -163,9 +165,26 @@ void fragment()
   float submerged = smoothstep(-0.2, -1.4, world_position.y);
   color = mix(color, color * lakebed_tint, submerged);
 
+  // rain: soaked ground darkens and turns glossy, and puddles collect in the low spots
+  float puddle_w = 0.0;
+  if (wetness > 0.001)
+  {
+    float flat_ground = smoothstep(0.85, 0.97, world_normal.y) * (1.0 - rock_w) * (1.0 - submerged);
+    // small, scattered pools: mostly mid-scale noise, gated by the large noise's low ground
+    float low = (1.0 - n_mid) * 0.7 + (1.0 - n_large) * 0.3 + (n_detail - 0.5) * 0.12;
+    float fill = mix(0.84, 0.69, smoothstep(0.35, 1.0, wetness));
+    puddle_w = smoothstep(fill, fill + 0.05, low) * flat_ground * (1.0 - vegetation_w) *
+        smoothstep(0.3, 0.8, wetness) * 0.85;
+    float soak = wetness * (1.0 - rock_w * 0.4);
+    color = mix(color, pow(color, vec3(1.3)) * 0.68, soak);
+    // shallow water: the ground shows through, tinted by the grey sky it mirrors
+    color = mix(color, color * 0.5 + vec3(0.07, 0.08, 0.1), puddle_w);
+  }
+
   ALBEDO = color;
-  ROUGHNESS = mix(0.95, 0.55, wet_w);
-  SPECULAR = 0.3;
+  ROUGHNESS = mix(mix(0.95, 0.55, wet_w), 0.42, wetness * (1.0 - rock_w * 0.5));
+  ROUGHNESS = mix(ROUGHNESS, 0.06, puddle_w);
+  SPECULAR = mix(0.3, 0.6, puddle_w);
 
   // normal perturbation: wind ripples on open sand plus grainy detail everywhere
   vec2 wind = normalize(wind_direction);
@@ -189,6 +208,8 @@ void fragment()
   slope_xz += vec2(relief_x, relief_z) / le * relief_strength * world_normal.y * (1.0 - rock_w);
   // crack edges catch a little light
   slope_xz += vec2(n_detail - 0.5) * crack_w * hardpan_w * 0.3;
+  // standing water is flat
+  slope_xz *= 1.0 - puddle_w;
   vec3 perturbed = normalize(world_normal + vec3(-slope_xz.x, 0.0, -slope_xz.y));
   NORMAL = normalize((VIEW_MATRIX * vec4(perturbed, 0.0)).xyz);
 }
