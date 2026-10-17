@@ -4,6 +4,7 @@ const RETRY_WHEN_SURROUNDED_S = 1.0
 
 var _target_unit = null
 var _waiting = false
+var _headed_for_target = false
 
 
 func _init(target_unit):
@@ -52,8 +53,14 @@ func _on_movement_finished():
 			return
 		_movement_trait.move(_pick_destination())
 		return
+	if _headed_for_target:
+		# as close as the ground around the target lets it get: done, the caller decides
+		# (it used to head for the target again, forever)
+		queue_free()
+		return
 	# arrived at the picked spot but a little short of touching the target (units stop
 	# within their target_desired_distance of a spot): head for the target itself, which
 	# takes the unit to the closest walkable point next to it, as before
+	_headed_for_target = true
 	_target_position = _target_unit.global_position
 	_movement_trait.move(_target_position)
