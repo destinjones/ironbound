@@ -202,6 +202,77 @@ The sun turns in 0.25 degree steps so shadow edges do not crawl. The hour is not
 (the save format is untouched), so a loaded game restarts at 10:00, as weather already
 restarts. tests/screenshots/WeatherShots renders any weather at any hour.
 
+## 2026-10-17: text over units shows only when it needs you
+Labels floating over buildings and units ("Iron 6/16", "Constructor on the way", "Hauler 2")
+now show only while that thing is hovered or selected, or while a constructor is selected
+for site labels. Three states stay visible all the time because nothing happens until the
+player acts: a site nobody is building, a full extractor that has stopped, and an aircraft
+with no airport to return to. All of them use the HUD's Barlow font as a signed distance
+field (WorldLabel.gd), so they stay sharp at any zoom instead of the tiny pixel font, and
+the shouting capitals ("NO AIRPORT - WILL CRASH") became sentence case. Why: the playtest
+of 17 Oct found debug-looking text all over the base; the tests that check a waiting site
+and a full mine still see their labels.
+
+## 2026-10-17: rain soaks the ground, and lightning is a bolt you can see
+Rain used to be thin streaks over a sunny, dry desert. Now the terrain shader has a
+`wetness` uniform that Atmosphere raises over about 30 s of rain and lets fall over about
+2 minutes after it (faster in sandstorm wind): soaked sand darkens and turns glossy, and
+small puddles collect in low noise spots on flat ground. Rings splash on the ground under
+the rain (one more GPUParticles3D, 900 flat quads, following the camera like the rain and
+thinned when zoomed out). Heavy rain's lightning now draws a branching bolt somewhere in
+view, built once per strike as an ImmediateMesh, with a short unshadowed OmniLight3D where
+it lands, so nothing runs between strikes. Atmosphere emits `lightning_struck(position)` so
+the sound side can add thunder with a delay; this PR adds no audio because the sound thread
+owns the mix. Wetness is visual only: ground speed and sight still come from the weather.
+
+## 2026-10-17: birds and vultures, the first piece of a living world
+Destin asked for a game that feels alive rather than dull, and lifted the feature freeze for
+it. The first piece is wildlife (source/match/environment/Wildlife.gd, data/wildlife.json):
+small flocks of birds wander over the map, settle on dry open ground to feed, and burst into
+the air when a unit walks up or something is hit nearby; vultures turn up over some fresh
+wrecks and circle for about 45 s. Choices that shape later world-life work:
+- Purely visual: its own random numbers, nothing saved, no effect on the simulation or on
+  replays. Wildlife reacts to the war (MatchSignals.unit_damaged, camera_shake, new wrecks)
+  and never the other way round.
+- One MultiMesh per kind, wings beaten in the vertex shader (bird.gdshader), so all birds
+  cost two draw calls plus shadows. The script moves only the flocks on screen; a flock off
+  screen moves as a point and its birds take their places when it comes back into view, and
+  nothing is drawn zoomed out past camera size 45, where a bird is a speck.
+- Cost, measured headless on the cloud CPU (slow GDScript): about 0.15 ms a frame in a
+  normal view on a 110 m map with 100 units, about 0.3 ms with every flock in view.
+- Birds and vultures are simple shapes, not textured models: at play zoom they are 20 to
+  50 px across and read by their motion and silhouette, so the unit pipeline does not apply.
+
+## 2026-10-17: no trade or treaty offers during the guided first match
+Rival trade offers and treaty offers to the player are dropped while a scripted tutorial
+(the guided first match) runs, until it reaches a trade step if it has one. The AI keeps
+offering, so the first offer after the tutorial still arrives, and skipping the tutorial
+lifts the hold. The standard tutorial of a normal match still lets offers through: it
+teaches trading itself, and PlaytestChecks expects an offer box there. Why: in the first
+match a deal box opened inside the city card within two minutes, before the player had
+built a mine.
+
+## 2026-10-17: the interface has sounds
+Every button in the menus and the HUD now clicks, toggles latch, cancel and close tick lower,
+and hover ticks in the menus (not in a match, where the HUD is always under the pointer).
+An order nobody can carry out knocks, and minimap pings blip (two urgent blips for a hit,
+one soft blip for a mark), taking up the two hooks the control threads left for audio
+(units_ordered "cannot" and the minimap pings). One autoload (audio/InterfaceSounds.gd)
+wires buttons as they enter the tree, so no scene was edited and new UI is covered for free.
+Why: the game had no interface sound at all, which is a large part of why it felt dead
+under the hand. Levels in data/sounds/interface.json; sounds synthesized by
+tools/audio/make_interface_sounds.py like the rest.
+
+## 2026-10-17: new players start on Desert Expanse
+The main menu's first map and the guided first match moved from Plain & Simple to Desert
+Expanse. Plain & Simple is the template's 50 m test plane: flat beige ground with the base
+7 m from the edge, so about 40% of a new player's first screen was black void. Desert Expanse
+is generated (cracked ground, scrub, palms, a lake) with even resources on every side, unlike
+Oil and Iron, which gives one side no copper. Plain & Simple stays in the map list and stays
+the harness's default map, so no test fixture moved. The tutorial ran to its end on the new map.
+The tutorial's last step now sends one rival scout instead of two: with fights lasting longer
+(see above), the second scout escaped across the bigger map and the step never ended.
+
 ## 2026-10-17: units earn ranks from kills (veterancy)
 Destin asked for more features to make matches less dull, lifting the feature freeze for
 this. Mobile units now earn experience from kills, worth the victim's cost (half for a

@@ -32,7 +32,7 @@ const GENERATED_SCENES_ROOT = "res://data-units/"
 const MODEL_FIELDS = ["model", "model_scale", "model_offset", "model_rotation_y_deg"]
 const NOT_INHERITED = ["factions"]
 # data/sounds/<name>.json, see sounds()
-const SOUND_CONFIGS = ["ambience", "units", "combat", "economy", "mix"]
+const SOUND_CONFIGS = ["ambience", "units", "combat", "economy", "mix", "interface"]
 # used for keys data/city_centres.json leaves out
 const CITY_CENTRE_DEFAULTS = {
 	"max_per_player": 2,
@@ -199,6 +199,11 @@ static func roads():
 static func logistics():
 	"""tunables of trucks, storage, trains and the fleet, see data/logistics.json"""
 	return get_data()["logistics"]
+
+
+static func wildlife():
+	"""birds and vultures, see data/wildlife.json and source/match/environment/Wildlife.gd"""
+	return get_data()["wildlife"]
 
 
 static func voices():
@@ -427,6 +432,7 @@ static func _load_all():
 		"caps": _load_object_file(BASE_DATA_DIR + "/caps.json"),
 		"logistics": _parse_dict_file(BASE_DATA_DIR + "/logistics.json"),
 		"city_centres": _parse_dict_file(BASE_DATA_DIR + "/city_centres.json"),
+		"wildlife": _parse_dict_file(BASE_DATA_DIR + "/wildlife.json"),
 		"veterancy": _parse_dict_file(BASE_DATA_DIR + "/veterancy.json"),
 		"voices": _parse_dict_file(BASE_DATA_DIR + "/sounds/voices.json"),
 		"voice_sets": _load_dir(BASE_DATA_DIR + "/sounds/voice_sets"),
@@ -454,6 +460,7 @@ static func _load_all():
 		data["caps"].merge(_load_object_file(mod_dir + "/caps.json"), true)
 		_deep_merge(data["logistics"], _parse_dict_file(mod_dir + "/logistics.json"))
 		data["city_centres"].merge(_parse_dict_file(mod_dir + "/city_centres.json"), true)
+		_deep_merge(data["wildlife"], _parse_dict_file(mod_dir + "/wildlife.json"))
 		data["veterancy"].merge(_parse_dict_file(mod_dir + "/veterancy.json"), true)
 		_merge_voices(data["voices"], _parse_dict_file(mod_dir + "/sounds/voices.json"))
 		_merge_voice_sets(data["voice_sets"], _load_dir(mod_dir + "/sounds/voice_sets"))
