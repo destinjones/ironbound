@@ -167,6 +167,112 @@ buildings too keeps a raid on a factory or a supply line at the same pace relati
 fight. Known effect: a save made before this loads its units at a third of their health,
 since saved hp is kept and hp_max triples.
 
+## 2026-10-17: the resource bar shows whole numbers
+Stock is fractional because upkeep drains it bit by bit, so the bar read "46.0". It now
+shows whole units, rounded down so it never shows more than you can spend.
+
+## 2026-10-17: building sites no longer stall
+Two stalls in a 10-minute match on Oil and Iron, traced with a probe that logged every site,
+truck and constructor every 15 s. First, a site whose constructor was given another order
+stayed at 0% for the rest of the match while the other constructors stood idle; the AI
+already sends idle workers to unfinished sites (ConstructionWorksController), the player
+only did with auto-expand. Now Human has IdleConstructors: a constructor with no order for
+3 s goes to the nearest site nobody is building, skipping sites with an enemy within 14 m.
+Second, trucks carry 10 and the oil derrick costs 11, so its last unit of copper was a
+1-unit supply job; the job board values a trip by its load, so it lost to every pickup and
+the derrick stood at 91% for 8 minutes. Supply trips are now valued as a full truck. After
+both, the derrick finishes at about 90 s and the player ends the match with 179 oil instead
+of 9. Not fixed, because it is pathing: once, a truck carrying materials for a derrick 1 m
+from where it is usually placed never arrived (MovingToUnit retries the same spot forever).
+Copper staying at 5 on Oil and Iron is by design: that map gives this side oil, and copper
+comes from trade or the contested deposits.
+
+## 2026-10-17: matches have a clock: dawn, day, dusk and night
+data/time_of_day.json drives one light through 24 hours (TimeOfDay.gd, owned by
+Atmosphere). The look still sets the noon sun; the clock scales its height, swings its
+azimuth, and multiplies energy, colour, ambient, exposure and haze tint on top of weather and
+look. The moon is the same DirectionalLight: it swaps in during twilight while the light is
+dim, so there is no second shadow-casting light and no extra frame cost. A day is 16 minutes
+and night hours pass 2.5 times faster, so a match starts at 10:00, gets dusk at about minute 8
+and has about 3 minutes of night per day. Why: one fixed noon light made every minute of
+every match look the same. Night lowers sight to 0.85 through the same WeatherEffects
+multiplier weather already uses (sandstorms go to 0.55), so it is felt but mild. Night must
+stay readable: exposure drops to about half and the light turns blue rather than going dark.
+The sun turns in 0.25 degree steps so shadow edges do not crawl. The hour is not saved
+(the save format is untouched), so a loaded game restarts at 10:00, as weather already
+restarts. tests/screenshots/WeatherShots renders any weather at any hour.
+
+## 2026-10-17: text over units shows only when it needs you
+Labels floating over buildings and units ("Iron 6/16", "Constructor on the way", "Hauler 2")
+now show only while that thing is hovered or selected, or while a constructor is selected
+for site labels. Three states stay visible all the time because nothing happens until the
+player acts: a site nobody is building, a full extractor that has stopped, and an aircraft
+with no airport to return to. All of them use the HUD's Barlow font as a signed distance
+field (WorldLabel.gd), so they stay sharp at any zoom instead of the tiny pixel font, and
+the shouting capitals ("NO AIRPORT - WILL CRASH") became sentence case. Why: the playtest
+of 17 Oct found debug-looking text all over the base; the tests that check a waiting site
+and a full mine still see their labels.
+
+## 2026-10-17: rain soaks the ground, and lightning is a bolt you can see
+Rain used to be thin streaks over a sunny, dry desert. Now the terrain shader has a
+`wetness` uniform that Atmosphere raises over about 30 s of rain and lets fall over about
+2 minutes after it (faster in sandstorm wind): soaked sand darkens and turns glossy, and
+small puddles collect in low noise spots on flat ground. Rings splash on the ground under
+the rain (one more GPUParticles3D, 900 flat quads, following the camera like the rain and
+thinned when zoomed out). Heavy rain's lightning now draws a branching bolt somewhere in
+view, built once per strike as an ImmediateMesh, with a short unshadowed OmniLight3D where
+it lands, so nothing runs between strikes. Atmosphere emits `lightning_struck(position)` so
+the sound side can add thunder with a delay; this PR adds no audio because the sound thread
+owns the mix. Wetness is visual only: ground speed and sight still come from the weather.
+
+## 2026-10-17: birds and vultures, the first piece of a living world
+Destin asked for a game that feels alive rather than dull, and lifted the feature freeze for
+it. The first piece is wildlife (source/match/environment/Wildlife.gd, data/wildlife.json):
+small flocks of birds wander over the map, settle on dry open ground to feed, and burst into
+the air when a unit walks up or something is hit nearby; vultures turn up over some fresh
+wrecks and circle for about 45 s. Choices that shape later world-life work:
+- Purely visual: its own random numbers, nothing saved, no effect on the simulation or on
+  replays. Wildlife reacts to the war (MatchSignals.unit_damaged, camera_shake, new wrecks)
+  and never the other way round.
+- One MultiMesh per kind, wings beaten in the vertex shader (bird.gdshader), so all birds
+  cost two draw calls plus shadows. The script moves only the flocks on screen; a flock off
+  screen moves as a point and its birds take their places when it comes back into view, and
+  nothing is drawn zoomed out past camera size 45, where a bird is a speck.
+- Cost, measured headless on the cloud CPU (slow GDScript): about 0.15 ms a frame in a
+  normal view on a 110 m map with 100 units, about 0.3 ms with every flock in view.
+- Birds and vultures are simple shapes, not textured models: at play zoom they are 20 to
+  50 px across and read by their motion and silhouette, so the unit pipeline does not apply.
+
+## 2026-10-17: no trade or treaty offers during the guided first match
+Rival trade offers and treaty offers to the player are dropped while a scripted tutorial
+(the guided first match) runs, until it reaches a trade step if it has one. The AI keeps
+offering, so the first offer after the tutorial still arrives, and skipping the tutorial
+lifts the hold. The standard tutorial of a normal match still lets offers through: it
+teaches trading itself, and PlaytestChecks expects an offer box there. Why: in the first
+match a deal box opened inside the city card within two minutes, before the player had
+built a mine.
+
+## 2026-10-17: the interface has sounds
+Every button in the menus and the HUD now clicks, toggles latch, cancel and close tick lower,
+and hover ticks in the menus (not in a match, where the HUD is always under the pointer).
+An order nobody can carry out knocks, and minimap pings blip (two urgent blips for a hit,
+one soft blip for a mark), taking up the two hooks the control threads left for audio
+(units_ordered "cannot" and the minimap pings). One autoload (audio/InterfaceSounds.gd)
+wires buttons as they enter the tree, so no scene was edited and new UI is covered for free.
+Why: the game had no interface sound at all, which is a large part of why it felt dead
+under the hand. Levels in data/sounds/interface.json; sounds synthesized by
+tools/audio/make_interface_sounds.py like the rest.
+
+## 2026-10-17: new players start on Desert Expanse
+The main menu's first map and the guided first match moved from Plain & Simple to Desert
+Expanse. Plain & Simple is the template's 50 m test plane: flat beige ground with the base
+7 m from the edge, so about 40% of a new player's first screen was black void. Desert Expanse
+is generated (cracked ground, scrub, palms, a lake) with even resources on every side, unlike
+Oil and Iron, which gives one side no copper. Plain & Simple stays in the map list and stays
+the harness's default map, so no test fixture moved. The tutorial ran to its end on the new map.
+The tutorial's last step now sends one rival scout instead of two: with fights lasting longer
+(see above), the second scout escaped across the bigger map and the step never ended.
+
 ## 2026-10-17: neutral outposts to capture between the cities
 Part of Destin's ask for more to do and more ways to expand. Each match places one outpost
 in the centre and one between each pair of neighbouring spawn points (5 on a 4-player map),
