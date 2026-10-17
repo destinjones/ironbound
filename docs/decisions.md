@@ -170,3 +170,19 @@ since saved hp is kept and hp_max triples.
 ## 2026-10-17: the resource bar shows whole numbers
 Stock is fractional because upkeep drains it bit by bit, so the bar read "46.0". It now
 shows whole units, rounded down so it never shows more than you can spend.
+
+## 2026-10-17: building sites no longer stall
+Two stalls in a 10-minute match on Oil and Iron, traced with a probe that logged every site,
+truck and constructor every 15 s. First, a site whose constructor was given another order
+stayed at 0% for the rest of the match while the other constructors stood idle; the AI
+already sends idle workers to unfinished sites (ConstructionWorksController), the player
+only did with auto-expand. Now Human has IdleConstructors: a constructor with no order for
+3 s goes to the nearest site nobody is building, skipping sites with an enemy within 14 m.
+Second, trucks carry 10 and the oil derrick costs 11, so its last unit of copper was a
+1-unit supply job; the job board values a trip by its load, so it lost to every pickup and
+the derrick stood at 91% for 8 minutes. Supply trips are now valued as a full truck. After
+both, the derrick finishes at about 90 s and the player ends the match with 179 oil instead
+of 9. Not fixed, because it is pathing: once, a truck carrying materials for a derrick 1 m
+from where it is usually placed never arrived (MovingToUnit retries the same spot forever).
+Copper staying at 5 on Oil and Iron is by design: that map gives this side oil, and copper
+comes from trade or the contested deposits.
