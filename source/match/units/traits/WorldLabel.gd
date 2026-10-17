@@ -40,11 +40,17 @@ static func track_focus(label, unit, on_change = null):
 	on_change when the unit is hovered, left, selected or deselected"""
 	label.set_meta("hovered", false)
 	for entry in [[unit.mouse_entered, true], [unit.mouse_exited, false]]:
-		entry[0].connect(
+		var on_hover = func():
+			label.set_meta("hovered", entry[1])
+			if on_change != null:
+				on_change.call()
+		entry[0].connect(on_hover)
+		# a label can go before its unit (a site's label once it is built): calling the
+		# lambda after that is an engine error, so it must not stay connected
+		label.tree_exiting.connect(
 			func():
-				label.set_meta("hovered", entry[1])
-				if on_change != null:
-					on_change.call()
+				if entry[0].is_connected(on_hover):
+					entry[0].disconnect(on_hover)
 		)
 	if on_change != null and unit.has_signal("selected"):
 		unit.selected.connect(on_change)

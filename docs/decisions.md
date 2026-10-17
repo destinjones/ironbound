@@ -243,6 +243,36 @@ wrecks and circle for about 45 s. Choices that shape later world-life work:
 - Birds and vultures are simple shapes, not textured models: at play zoom they are 20 to
   50 px across and read by their motion and silhouette, so the unit pipeline does not apply.
 
+## 2026-10-17: no trade or treaty offers during the guided first match
+Rival trade offers and treaty offers to the player are dropped while a scripted tutorial
+(the guided first match) runs, until it reaches a trade step if it has one. The AI keeps
+offering, so the first offer after the tutorial still arrives, and skipping the tutorial
+lifts the hold. The standard tutorial of a normal match still lets offers through: it
+teaches trading itself, and PlaytestChecks expects an offer box there. Why: in the first
+match a deal box opened inside the city card within two minutes, before the player had
+built a mine.
+
+## 2026-10-17: the interface has sounds
+Every button in the menus and the HUD now clicks, toggles latch, cancel and close tick lower,
+and hover ticks in the menus (not in a match, where the HUD is always under the pointer).
+An order nobody can carry out knocks, and minimap pings blip (two urgent blips for a hit,
+one soft blip for a mark), taking up the two hooks the control threads left for audio
+(units_ordered "cannot" and the minimap pings). One autoload (audio/InterfaceSounds.gd)
+wires buttons as they enter the tree, so no scene was edited and new UI is covered for free.
+Why: the game had no interface sound at all, which is a large part of why it felt dead
+under the hand. Levels in data/sounds/interface.json; sounds synthesized by
+tools/audio/make_interface_sounds.py like the rest.
+
+## 2026-10-17: new players start on Desert Expanse
+The main menu's first map and the guided first match moved from Plain & Simple to Desert
+Expanse. Plain & Simple is the template's 50 m test plane: flat beige ground with the base
+7 m from the edge, so about 40% of a new player's first screen was black void. Desert Expanse
+is generated (cracked ground, scrub, palms, a lake) with even resources on every side, unlike
+Oil and Iron, which gives one side no copper. Plain & Simple stays in the map list and stays
+the harness's default map, so no test fixture moved. The tutorial ran to its end on the new map.
+The tutorial's last step now sends one rival scout instead of two: with fights lasting longer
+(see above), the second scout escaped across the bigger map and the step never ended.
+
 ## 2026-10-17: the wind moves the land
 Second piece of the living world (source/match/environment/Wind.gd, data/wind.json): trees,
 palms, reeds, bushes and grass of the desert scatter bend with Atmosphere's wind, gusts
