@@ -5,9 +5,9 @@ render_mode blend_mix, depth_draw_never, cull_disabled, unshaded, shadows_disabl
 // Chimney smoke for the city (source/match/environment/CityLife.gd): every chimney is one
 // MultiMesh instance of a column of puffs that all sit at the chimney top; the vertex shader
 // lifts each puff, lets the wind lean the column over and turns the puff to face the camera,
-// so the smoke costs no script time. Per vertex: UV is the corner of its puff, COLOR.r where
-// it starts up the column, .g and .b sideways jitter, .a size jitter. Per instance:
-// INSTANCE_CUSTOM.r a random seed, .g strength (0 = no smoke), .b soot (0 = pale wood
+// so the smoke costs no script time. Per vertex: UV is the corner of its puff, UV2.x where
+// it starts up the column, UV2.y its jitter (UV2, not COLOR, as colours may be read as sRGB). Per
+// instance: INSTANCE_CUSTOM.r a random seed, .g strength (0 = no smoke), .b soot (0 = pale wood
 // smoke, 1 = dark workshop smoke).
 
 uniform vec3 pale_color : source_color = vec3(0.6, 0.6, 0.63);
@@ -25,14 +25,15 @@ void vertex()
   vec3 origin = MODEL_MATRIX[3].xyz;
   float seed = INSTANCE_CUSTOM.r;
   float strength = INSTANCE_CUSTOM.g;
-  float h = fract(COLOR.r + TIME * rise + seed * 7.0);
+  float jitter = UV2.y;
+  float h = fract(UV2.x + TIME * rise + seed * 7.0);
   float up = h * column_height * mix(0.6, 1.0, strength);
   vec2 side = wind * lean * up * smoothstep(0.0, 0.5, h);
   vec3 center = origin + vec3(side.x, up, side.y);
-  float wobble = TIME * 0.7 + seed * 13.0 + COLOR.r * 9.0;
-  center.x += sin(wobble) * 0.18 * h + (COLOR.g - 0.5) * 0.12 * h;
-  center.z += cos(wobble * 1.3) * 0.18 * h + (COLOR.b - 0.5) * 0.12 * h;
-  float size = mix(0.2, 1.1, pow(h, 0.6)) * (0.75 + 0.5 * COLOR.a) * mix(0.55, 1.0, strength);
+  float wobble = TIME * 0.7 + seed * 13.0 + UV2.x * 9.0;
+  center.x += sin(wobble) * 0.18 * h + (fract(jitter * 7.3) - 0.5) * 0.12 * h;
+  center.z += cos(wobble * 1.3) * 0.18 * h + (fract(jitter * 13.7) - 0.5) * 0.12 * h;
+  float size = mix(0.2, 1.1, pow(h, 0.6)) * (0.75 + 0.5 * jitter) * mix(0.55, 1.0, strength);
   vec3 right = INV_VIEW_MATRIX[0].xyz;
   vec3 camera_up = INV_VIEW_MATRIX[1].xyz;
   VERTEX = center + (right * (UV.x - 0.5) + camera_up * (UV.y - 0.5)) * size;

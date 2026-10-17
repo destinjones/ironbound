@@ -485,21 +485,21 @@ func _make_smoke_layer():
 	)
 	var vertices = PackedVector3Array()
 	var uvs = PackedVector2Array()
-	var colors = PackedColorArray()
+	var data = PackedVector2Array()
 	var indices = PackedInt32Array()
 	for puff in range(SMOKE_PUFFS):
-		var color = Color(float(puff) / SMOKE_PUFFS, _rng.randf(), _rng.randf(), _rng.randf())
+		var puff_data = Vector2(float(puff) / SMOKE_PUFFS, _rng.randf())
 		var first = vertices.size()
 		for corner in [Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]:
 			vertices.append(Vector3.ZERO)
 			uvs.append(corner)
-			colors.append(color)
+			data.append(puff_data)
 		indices.append_array([first, first + 1, first + 2, first, first + 2, first + 3])
 	var arrays = []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = vertices
 	arrays[Mesh.ARRAY_TEX_UV] = uvs
-	arrays[Mesh.ARRAY_COLOR] = colors
+	arrays[Mesh.ARRAY_TEX_UV2] = data
 	arrays[Mesh.ARRAY_INDEX] = indices
 	var mesh = ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
@@ -527,17 +527,15 @@ func _make_folk_layer():
 	material.set_shader_parameter("scarves", _to_vec3s(scarves))
 	var tool = SurfaceTool.new()
 	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
-	# legs, then arms, robe, head and scarf; COLOR.r says which part, .g which side
+	# legs, then arms, robe, head and scarf; UV.x says which part, .y which side
 	for side in [0.0, 1.0]:
 		var x = -0.022 if side == 0.0 else 0.022
-		_add_box(tool, Vector3(x, 0.075, 0.0), Vector3(0.028, 0.15, 0.03), Color(0.0, side, 0, 1))
+		_add_box(tool, Vector3(x, 0.075, 0.0), Vector3(0.028, 0.15, 0.03), Vector2(0.0, side))
 		var arm_x = -0.058 if side == 0.0 else 0.058
-		_add_box(
-			tool, Vector3(arm_x, 0.2, 0.0), Vector3(0.024, 0.11, 0.026), Color(0.25, side, 0, 1)
-		)
-	_add_frustum(tool, 0.09, 0.055, 0.035, 0.27, 6, Color(0.5, 0.5, 0, 1))
-	_add_frustum(tool, 0.268, 0.032, 0.03, 0.335, 6, Color(0.75, 0.5, 0, 1))
-	_add_frustum(tool, 0.312, 0.037, 0.02, 0.362, 6, Color(1.0, 0.5, 0, 1))
+		_add_box(tool, Vector3(arm_x, 0.2, 0.0), Vector3(0.024, 0.11, 0.026), Vector2(0.25, side))
+	_add_frustum(tool, 0.09, 0.055, 0.035, 0.27, 6, Vector2(0.5, 0.5))
+	_add_frustum(tool, 0.268, 0.032, 0.03, 0.335, 6, Vector2(0.75, 0.5))
+	_add_frustum(tool, 0.312, 0.037, 0.02, 0.362, 6, Vector2(1.0, 0.5))
 	tool.generate_normals()
 	var mesh = tool.commit()
 	mesh.surface_set_material(0, material)
@@ -559,7 +557,7 @@ func _to_vec3s(colors: PackedColorArray) -> PackedVector3Array:
 	return vectors
 
 
-func _add_box(tool: SurfaceTool, center: Vector3, size: Vector3, color: Color):
+func _add_box(tool: SurfaceTool, center: Vector3, size: Vector3, part: Vector2):
 	var h = size * 0.5
 	var corners = []
 	for i in range(8):
@@ -571,7 +569,7 @@ func _add_box(tool: SurfaceTool, center: Vector3, size: Vector3, color: Color):
 		[0, 2, 3, 1], [4, 5, 7, 6], [0, 1, 5, 4], [2, 6, 7, 3], [0, 4, 6, 2], [1, 3, 7, 5]
 	]:
 		_add_quad(
-			tool, corners[face[0]], corners[face[1]], corners[face[2]], corners[face[3]], color
+			tool, corners[face[0]], corners[face[1]], corners[face[2]], corners[face[3]], part
 		)
 
 
@@ -582,7 +580,7 @@ func _add_frustum(
 	r_top: float,
 	top: float,
 	sides: int,
-	color: Color
+	part: Vector2
 ):
 	"""a closed n-sided frustum standing on the y axis"""
 	for i in range(sides):
@@ -592,19 +590,19 @@ func _add_frustum(
 		var b1 = Vector3(cos(a1) * r_bottom, bottom, sin(a1) * r_bottom * 0.8)
 		var t0 = Vector3(cos(a0) * r_top, top, sin(a0) * r_top * 0.8)
 		var t1 = Vector3(cos(a1) * r_top, top, sin(a1) * r_top * 0.8)
-		_add_quad(tool, b0, t0, t1, b1, color)
-		_add_triangle(tool, Vector3(0, top, 0), t1, t0, color)
-		_add_triangle(tool, Vector3(0, bottom, 0), b0, b1, color)
+		_add_quad(tool, b0, t0, t1, b1, part)
+		_add_triangle(tool, Vector3(0, top, 0), t1, t0, part)
+		_add_triangle(tool, Vector3(0, bottom, 0), b0, b1, part)
 
 
-func _add_quad(tool: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3, color: Color):
-	_add_triangle(tool, a, b, c, color)
-	_add_triangle(tool, a, c, d, color)
+func _add_quad(tool: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3, part: Vector2):
+	_add_triangle(tool, a, b, c, part)
+	_add_triangle(tool, a, c, d, part)
 
 
-func _add_triangle(tool: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, color: Color):
+func _add_triangle(tool: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, part: Vector2):
 	for vertex in [a, b, c]:
-		tool.set_color(color)
+		tool.set_uv(part)
 		tool.add_vertex(vertex)
 
 
