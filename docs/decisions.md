@@ -186,3 +186,18 @@ of 9. Not fixed, because it is pathing: once, a truck carrying materials for a d
 from where it is usually placed never arrived (MovingToUnit retries the same spot forever).
 Copper staying at 5 on Oil and Iron is by design: that map gives this side oil, and copper
 comes from trade or the contested deposits.
+
+## 2026-10-17: matches have a clock: dawn, day, dusk and night
+data/time_of_day.json drives one light through 24 hours (TimeOfDay.gd, owned by
+Atmosphere). The look still sets the noon sun; the clock scales its height, swings its
+azimuth, and multiplies energy, colour, ambient, exposure and haze tint on top of weather and
+look. The moon is the same DirectionalLight: it swaps in during twilight while the light is
+dim, so there is no second shadow-casting light and no extra frame cost. A day is 16 minutes
+and night hours pass 2.5 times faster, so a match starts at 10:00, gets dusk at about minute 8
+and has about 3 minutes of night per day. Why: one fixed noon light made every minute of
+every match look the same. Night lowers sight to 0.85 through the same WeatherEffects
+multiplier weather already uses (sandstorms go to 0.55), so it is felt but mild. Night must
+stay readable: exposure drops to about half and the light turns blue rather than going dark.
+The sun turns in 0.25 degree steps so shadow edges do not crawl. The hour is not saved
+(the save format is untouched), so a loaded game restarts at 10:00, as weather already
+restarts. tests/screenshots/WeatherShots renders any weather at any hour.
