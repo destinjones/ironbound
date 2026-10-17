@@ -211,6 +211,11 @@ static func wind():
 	return get_data()["wind"]
 
 
+static func city_life():
+	"""chimney smoke and townsfolk of the cities, see data/city_life.json and CityLife.gd"""
+	return get_data()["city_life"]
+
+
 static func voices():
 	"""data/sounds/voices.json: which voice set each unit uses and what actions need lines"""
 	return get_data()["voices"]
@@ -440,6 +445,7 @@ static func _load_all():
 		"wildlife": _parse_dict_file(BASE_DATA_DIR + "/wildlife.json"),
 		"wind": _parse_dict_file(BASE_DATA_DIR + "/wind.json"),
 		"veterancy": _parse_dict_file(BASE_DATA_DIR + "/veterancy.json"),
+		"city_life": _parse_dict_file(BASE_DATA_DIR + "/city_life.json"),
 		"voices": _parse_dict_file(BASE_DATA_DIR + "/sounds/voices.json"),
 		"voice_sets": _load_dir(BASE_DATA_DIR + "/sounds/voice_sets"),
 		"sounds": _load_sound_configs(BASE_DATA_DIR),
@@ -469,6 +475,7 @@ static func _load_all():
 		_deep_merge(data["wildlife"], _parse_dict_file(mod_dir + "/wildlife.json"))
 		_deep_merge(data["wind"], _parse_dict_file(mod_dir + "/wind.json"))
 		data["veterancy"].merge(_parse_dict_file(mod_dir + "/veterancy.json"), true)
+		_deep_merge(data["city_life"], _parse_dict_file(mod_dir + "/city_life.json"))
 		_merge_voices(data["voices"], _parse_dict_file(mod_dir + "/sounds/voices.json"))
 		_merge_voice_sets(data["voice_sets"], _load_dir(mod_dir + "/sounds/voice_sets"))
 		_deep_merge(data["sounds"], _load_sound_configs(mod_dir))

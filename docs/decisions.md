@@ -315,3 +315,25 @@ spins up every half minute or so and drifts off. Choices:
   sets the wind on the plant materials four times a second and moves only the tumbleweeds
   (one MultiMesh). Headless on the cloud CPU that is about 0.05 ms a frame for 7 tumbleweeds.
 - Dust devils stay away in rain and sandstorms (the sandstorm is its own dust).
+
+## 2026-10-17: cities smoke and their people walk the streets
+Cities were the dullest thing on the map: rings of houses that never change. CityLife.gd
+(data/city_life.json) gives them two signs of life, both visual only and invisible until the
+player has seen the building:
+- Chimney smoke: workshops pour dark smoke most of the time, houses send up thin pale smoke
+  now and then, leaning with Atmosphere's wind and damped by rain. The models have no chimney
+  nodes, so the chimney tops are points per model in the data file (workshop stack, roof vents
+  of the houses); a model with no entry does not smoke. Each chimney is one instance of a
+  32-puff column in one MultiMesh, moved in chimney_smoke.gdshader, so smoke costs no script
+  time beyond writing one strength per chimney four times a second.
+- Townsfolk: people step out of a building, walk to a neighbour, the city centre or down the
+  street, chat on the doorstep and go in. They come out of and go into the buildings (they
+  start and end inside the walls), so no one pops into view. Paths are straight lines checked
+  against the city's buildings and nearby units, with one detour point if blocked; they do
+  not use the navigation map, because they are decoration and should never touch pathing.
+  When a unit is hit or something explodes within 10 m they run for the nearest door and
+  nobody comes out there for 15 to 30 s, so a fight in town empties the streets.
+- Limbs swing in townsfolk.gdshader; the script only moves and turns each person. Up to 22
+  per city and 70 in all, hidden when zoomed out past camera size 40. Headless on the cloud
+  CPU: about 0.05 ms a frame for a 21-person city, 0.17 ms with 69 people.
+- No traffic: the supply trucks on the roads (Logistics) already are the traffic.

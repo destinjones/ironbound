@@ -1,0 +1,89 @@
+{
+  "name": "city-life",
+  "description": "A city that grows for nine minutes on a clear day, with screenshots of it every so often: for before/after shots of chimney smoke and townsfolk (CityLife.gd), and a check that nothing errors.",
+  "map": "oil_and_iron",
+  "seed": 2,
+  "minutes": 9,
+  "speed": 4,
+  "view": "window",
+  "players": [
+    {
+      "type": "human"
+    },
+    {
+      "type": "ai",
+      "personality": "balanced"
+    }
+  ],
+  "setup": [
+    {
+      "do": "weather",
+      "set": "clear"
+    },
+    {
+      "do": "give",
+      "resources": {
+        "iron": 400,
+        "timber": 400,
+        "oil": 200,
+        "copper": 100
+      }
+    },
+    {
+      "do": "extract",
+      "resource": "iron"
+    },
+    {
+      "do": "extract",
+      "resource": "timber"
+    },
+    {
+      "do": "build",
+      "structure": "power_plant",
+      "spot": "base",
+      "offset": [
+        9,
+        4
+      ],
+      "search": true
+    }
+  ],
+  "events": [
+    {
+      "at": 5,
+      "do": "produce",
+      "unit": "worker"
+    },
+    {
+      "at": 40,
+      "do": "extract",
+      "resource": "copper"
+    },
+    {
+      "at": 100,
+      "do": "camera",
+      "follow": "own:command_center"
+    },
+    {
+      "at": 400,
+      "do": "screenshot",
+      "name": "city-1"
+    },
+    {
+      "at": 460,
+      "do": "screenshot",
+      "name": "city-2"
+    },
+    {
+      "at": 520,
+      "do": "screenshot",
+      "name": "city-3"
+    }
+  ],
+  "checks": [
+    {
+      "end": true,
+      "expect": "no_errors"
+    }
+  ]
+}

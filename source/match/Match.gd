@@ -29,6 +29,7 @@ const MotionManager = preload("res://source/match/motion/MotionManager.gd")
 const Wildlife = preload("res://source/match/environment/Wildlife.gd")
 const Wind = preload("res://source/match/environment/Wind.gd")
 const Veterancy = preload("res://source/match/veterancy/Veterancy.gd")
+const CityLife = preload("res://source/match/environment/CityLife.gd")
 
 const CommandCenter = preload("res://source/match/units/CommandCenter.tscn")
 const Factions = preload("res://source/data-model/Factions.gd")
@@ -114,6 +115,10 @@ func _ready():
 		var wind = Wind.new()
 		wind.name = "Wind"
 		add_child(wind)
+	if get_node_or_null("CityLife") == null:  # chimney smoke, townsfolk in the streets
+		var city_life = CityLife.new()
+		city_life.name = "CityLife"
+		add_child(city_life)
 	if get_node_or_null("MotionManager") == null:  # procedural animation of the units
 		var motion_manager = MotionManager.new()
 		motion_manager.name = "MotionManager"
