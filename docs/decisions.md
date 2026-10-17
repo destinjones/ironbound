@@ -178,3 +178,5 @@ Expanse. Plain & Simple is the template's 50 m test plane: flat beige ground wit
 is generated (cracked ground, scrub, palms, a lake) with even resources on every side, unlike
 Oil and Iron, which gives one side no copper. Plain & Simple stays in the map list and stays
 the harness's default map, so no test fixture moved. The tutorial ran to its end on the new map.
+The tutorial's last step now sends one rival scout instead of two: with fights lasting longer
+(see above), the second scout escaped across the bigger map and the step never ended.
