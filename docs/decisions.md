@@ -212,3 +212,15 @@ field (WorldLabel.gd), so they stay sharp at any zoom instead of the tiny pixel 
 the shouting capitals ("NO AIRPORT - WILL CRASH") became sentence case. Why: the playtest
 of 17 Oct found debug-looking text all over the base; the tests that check a waiting site
 and a full mine still see their labels.
+
+## 2026-10-17: rain soaks the ground, and lightning is a bolt you can see
+Rain used to be thin streaks over a sunny, dry desert. Now the terrain shader has a
+`wetness` uniform that Atmosphere raises over about 30 s of rain and lets fall over about
+2 minutes after it (faster in sandstorm wind): soaked sand darkens and turns glossy, and
+small puddles collect in low noise spots on flat ground. Rings splash on the ground under
+the rain (one more GPUParticles3D, 900 flat quads, following the camera like the rain and
+thinned when zoomed out). Heavy rain's lightning now draws a branching bolt somewhere in
+view, built once per strike as an ImmediateMesh, with a short unshadowed OmniLight3D where
+it lands, so nothing runs between strikes. Atmosphere emits `lightning_struck(position)` so
+the sound side can add thunder with a delay; this PR adds no audio because the sound thread
+owns the mix. Wetness is visual only: ground speed and sight still come from the weather.
