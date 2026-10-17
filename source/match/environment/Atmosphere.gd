@@ -15,13 +15,23 @@ extends Node3D
 #   atmosphere.get_cloud_density_at(pos) -> float    # 0..1 cloud above a world position
 #   atmosphere.get_wind() -> Vector2                 # m/s on the XZ plane
 #   atmosphere.set_weather(weather, transition_s)    # force a weather (scripts, missions)
+#   atmosphere.get_time_of_day()                     # the match clock, see TimeOfDay.gd
+#   atmosphere.get_wetness() -> float                # 0..1 how soaked the ground is
+#   atmosphere.lightning_struck                      # signal(world_position: Vector3)
+#   atmosphere.strike_lightning()                    # a bolt in view now
 # Multipliers blend smoothly during weather transitions.
 
 signal weather_changed(weather)
+signal lightning_struck(world_position)  # for thunder: the bolt lands here
 
 const CloudShader = preload("res://source/shaders/3d/clouds.gdshader")
 const CloudTexture = preload("res://assets/textures/clouds_tile.png")
 const CloudShadowShader = preload("res://source/shaders/3d/cloud_shadows.gdshader")
+const TimeOfDay = preload("res://source/match/environment/TimeOfDay.gd")
+const Lightning = preload("res://source/match/environment/Lightning.gd")
+const TerrainMaterial = preload(
+	"res://source/match/resources/materials/desert_terrain.material.tres"
+)
 
 const CLOUD_HEIGHT = 32.0
 const CLOUD_ZONE_SPACING = 12.0
@@ -29,6 +39,13 @@ const CLOUD_ZONE_REFRESH_S = 2.0
 const THICK_CLOUD_DENSITY = 0.6
 const CLOUD_PERIOD = 360.0
 const CLOUDS_FADE_IN_CAMERA_SIZES = Vector2(42.0, 85.0)
+# the sun turns in steps this big, so shadow edges don't crawl every frame
+const SUN_ANGLE_STEP_DEG = 0.25
+const MIN_SUN_ELEVATION_DEG = 6.0
+# the ground soaks in about half a minute of rain and takes a couple of minutes to dry
+const SOAK_PER_S = 1.0 / 30.0
+const DRY_PER_S = 1.0 / 120.0
+const WETNESS_STEP = 0.01  # the terrain material is only touched when wetness moves this much
 const WEATHERS = {
 	&"clear":
 	{
@@ -152,17 +169,28 @@ var _flash = 0.0
 var _cloud_shadows = MeshInstance3D.new()
 var _cloud_zone_timer = 0.0
 var _particle_areas = {}  # particles -> emission half-size last applied
+var _time_of_day = TimeOfDay.new()
+var _lightning = Lightning.new()
+var _wetness = 0.0
+var _applied_wetness = -1.0
+var _ambient_base = {"environment": null, "color": Color.WHITE, "exposure": 1.0}
 
 @onready var _match = find_parent("Match")
 @onready var _clouds = $Clouds
 @onready var _rain = $Rain
 @onready var _dust = $Dust
 @onready var _dust_haze = $DustHaze
+@onready var _splashes = $Splashes
 
 
 func _ready():
 	add_to_group("atmosphere")
 	_rng.randomize()
+	_time_of_day.name = "TimeOfDay"
+	add_child(_time_of_day)
+	_lightning.name = "Lightning"
+	_lightning.struck.connect(func(world_position): lightning_struck.emit(world_position))
+	add_child(_lightning)
 	_cloud_image = CloudTexture.get_image()
 	if _cloud_image.is_compressed():
 		_cloud_image.decompress()
@@ -180,6 +208,7 @@ func _process(delta):
 	_apply()
 	_follow_camera()
 	_update_lightning(delta)
+	_update_wetness(delta)
 	_update_weather_effects(delta)
 
 
@@ -188,7 +217,15 @@ func get_weather():
 
 
 func get_vision_multiplier():
-	return _current.vision
+	return _current.vision * _time_of_day.get_light().vision
+
+
+func get_time_of_day():
+	return _time_of_day
+
+
+func get_wetness():
+	return _wetness
 
 
 func get_ground_speed_multiplier():
@@ -335,16 +372,31 @@ func _apply():
 	shadow_material.set_shader_parameter("opacity", _current.shadow_opacity)
 	shadow_material.set_shader_parameter("coverage", _current.coverage)
 	shadow_material.set_shader_parameter("offset", _cloud_offset)
+	var hour_light = _time_of_day.get_light()
 	var sun = _get_sun()
 	if sun != null:
+		if _time_of_day.enabled:
+			_turn_sun(sun, look, hour_light)
 		shadow_material.set_shader_parameter("sun_direction", -sun.global_transform.basis.z)
-		sun.light_energy = _current.sun_energy * look_sun_energy + _flash * 3.0
-		sun.light_color = _current.sun_color * look_sun_tint
+		sun.light_energy = (
+			_current.sun_energy * look_sun_energy * hour_light.energy + _flash * 3.0
+		)
+		sun.light_color = _current.sun_color * look_sun_tint * hour_light.color
 	var environment = _get_environment()
 	if environment != null:
-		environment.ambient_light_energy = _current.ambient_energy * look_ambient
+		if _ambient_base.environment != environment:
+			_ambient_base = {
+				"environment": environment,
+				"color": environment.ambient_light_color,
+				"exposure": environment.tonemap_exposure,
+			}
+		environment.ambient_light_energy = (
+			_current.ambient_energy * look_ambient * hour_light.ambient
+		)
+		environment.ambient_light_color = _ambient_base.color * hour_light.ambient_tint
+		environment.tonemap_exposure = _ambient_base.exposure * hour_light.exposure
 		environment.fog_enabled = haze > 0.01
-		environment.fog_light_color = _current.haze_color
+		environment.fog_light_color = _current.haze_color * hour_light.haze_tint
 		# the camera looks down at 30 degrees, so the ground is about twice its height away
 		var camera_distance = 80.0 if camera == null else max(camera.global_position.y, 1.0) * 2.0
 		environment.fog_density = haze * 0.55 / camera_distance
@@ -352,6 +404,7 @@ func _apply():
 	# zoomed out, single drops and dust grains are too small to see: emit fewer of them
 	var particle_share = lerp(1.0, 0.4, zoom_visibility)
 	_set_particles(_rain, _current.rain, particle_share)
+	_set_particles(_splashes, _current.rain, particle_share)
 	_set_particles(_dust, _current.dust, particle_share)
 	_set_particles(_dust_haze, _current.dust, 1.0)
 	if not _dust.emitting:
@@ -362,6 +415,20 @@ func _apply():
 		process_material.direction = Vector3(wind.x, 0.0, wind.y).normalized()
 		process_material.initial_velocity_min = _current.wind_speed * 1.2
 		process_material.initial_velocity_max = _current.wind_speed * 2.0
+
+
+func _turn_sun(sun, look, hour_light):
+	"""the look sets the noon sun; the hour lowers it and swings it round, the moon included"""
+	var look_angles = look.get_sun_angles() if look != null else Vector2(40.0, 0.0)
+	var elevation = clamp(look_angles.x * hour_light.height, MIN_SUN_ELEVATION_DEG, 85.0)
+	var azimuth = look_angles.y + hour_light.azimuth
+	var rotation_target = Vector3(
+		-deg_to_rad(snappedf(elevation, SUN_ANGLE_STEP_DEG)),
+		deg_to_rad(snappedf(azimuth, SUN_ANGLE_STEP_DEG)),
+		0.0
+	)
+	if not sun.rotation.is_equal_approx(rotation_target):
+		sun.rotation = rotation_target
 
 
 func _set_particles(particles, intensity, share):
@@ -383,7 +450,7 @@ func _follow_camera():
 		return
 	_clouds.global_position = Vector3(pivot.x, CLOUD_HEIGHT, pivot.z)
 	var area = clamp(camera.size * 1.4, 12.0, 90.0)
-	for particles in [_rain, _dust, _dust_haze]:
+	for particles in [_rain, _splashes, _dust, _dust_haze]:
 		if not particles.emitting:
 			continue
 		particles.global_position = Vector3(pivot.x, 0.0, pivot.z)
@@ -406,6 +473,46 @@ func _update_lightning(delta):
 	if _lightning_cooldown <= 0.0:
 		_lightning_cooldown = _rng.randf_range(5.0, 18.0)
 		_flash = 1.0
+		_strike_in_view()
+
+
+func strike_lightning():
+	"""a bolt somewhere in view now, whatever the weather (screenshots, missions)"""
+	_flash = 1.0
+	_strike_in_view()
+
+
+func _strike_in_view():
+	var camera = get_viewport().get_camera_3d()
+	if camera == null or not camera.has_method("get_ray_intersection"):
+		return
+	var size = get_viewport().get_visible_rect().size
+	var screen_point = Vector2(_rng.randf_range(0.15, 0.85), _rng.randf_range(0.2, 0.8)) * size
+	var ground = camera.get_ray_intersection(screen_point)
+	if ground != null:
+		_lightning.strike(ground)
+
+
+func set_wetness(wetness):
+	"""soak or dry the ground at once (screenshots, missions)"""
+	_wetness = clamp(wetness, 0.0, 1.0)
+	_update_wetness(0.0)
+
+
+func _update_wetness(delta):
+	# rain soaks the ground; it dries afterwards, faster in a hot dry wind
+	var target = _current.rain
+	if _wetness < target:
+		_wetness = min(_wetness + delta * SOAK_PER_S * (0.4 + target), target)
+	else:
+		var drying = DRY_PER_S * (1.0 + _current.dust * 3.0 + _current.wind_speed / 10.0)
+		_wetness = max(_wetness - delta * drying, target)
+	if (
+		abs(_wetness - _applied_wetness) >= WETNESS_STEP
+		or (_wetness == 0.0 and _applied_wetness > 0.0)
+	):
+		_applied_wetness = _wetness
+		TerrainMaterial.set_shader_parameter("wetness", _wetness)
 
 
 func _update_weather_effects(delta):
@@ -413,7 +520,7 @@ func _update_weather_effects(delta):
 	if weather_effects == null:
 		return
 	weather_effects.speed_multiplier = _current.ground_speed
-	weather_effects.vision_multiplier = _current.vision
+	weather_effects.vision_multiplier = get_vision_multiplier()
 	weather_effects.air_vision_multiplier = lerp(1.0, 0.6, _current.dust)
 	_cloud_zone_timer -= delta
 	if _cloud_zone_timer > 0.0 or _match.map == null:
