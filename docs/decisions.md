@@ -374,6 +374,15 @@ heads for the target itself only once before handing back to its caller. In the 
 bench, more units end next to their target building (squeezed mine 3 -> 6) and settle sooner;
 in a 10-minute Oil and Iron match that had a truck stuck 1 cm out, none get stuck.
 
+## 2026-10-17: v0.10.0 desktop builds, and docs screenshots kept out of the game
+The release workflow already exported Windows, Linux and macOS zips; v0.9.0 was published
+on 6 October but was 190 commits behind main, and the README never linked to it. Bumped
+the version to 0.10.0 (project.godot and the export presets, which still said Open RTS's
+0.9.0) and added a Download section that links releases/latest/download/<zip>, so the
+links follow every new release. Added docs/.gdignore: the export filter is all_resources,
+so Godot was importing the 40 README screenshots in docs/images and packing them into
+every build. Nothing in the game loads them; the Linux zip drops from 140 MB to 94 MB.
+
 ## 2026-10-17: a browser build at <site>/web/
 Step 2 of Destin's path to players: a link that opens the game with no download. The
 "Web" export preset is single-threaded (no SharedArrayBuffer), so it runs on GitHub Pages,

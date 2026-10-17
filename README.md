@@ -20,6 +20,18 @@ Also by Destin: [Open Overwatch](https://destinjones.github.io/open-overwatch/),
  - replays, a map editor and moddable data files in `data/`
  - a tutorial and an in-game manual (F1)
 
+## Download
+
+Get the newest build from the [Releases page](https://github.com/destinjones/ironbound/releases/latest):
+
+ - Windows: [Ironbound-windows-x86_64.zip](https://github.com/destinjones/ironbound/releases/latest/download/Ironbound-windows-x86_64.zip)
+ - Linux: [Ironbound-linux-x86_64.zip](https://github.com/destinjones/ironbound/releases/latest/download/Ironbound-linux-x86_64.zip)
+ - macOS: [Ironbound-macos-universal.zip](https://github.com/destinjones/ironbound/releases/latest/download/Ironbound-macos-universal.zip)
+
+Unzip and run it, no install needed. The builds are not code-signed, so the first start
+warns you: on Windows click More info, then Run anyway; on macOS right-click the app and
+choose Open.
+
 ## Playing from source
 
 Open the folder in Godot 4.7 and press Play, or run `godot --path .`.
