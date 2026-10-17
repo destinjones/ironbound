@@ -1,10 +1,10 @@
 {
   "name": "city-life",
-  "description": "A city that grows for four minutes on a clear day, with screenshots of it every so often: for before/after shots of chimney smoke and townsfolk (CityLife.gd), and a check that nothing errors.",
+  "description": "A city that grows for nine minutes on a clear day, with screenshots of it every so often: for before/after shots of chimney smoke and townsfolk (CityLife.gd), and a check that nothing errors.",
   "map": "oil_and_iron",
   "seed": 2,
-  "minutes": 4,
-  "speed": 2,
+  "minutes": 9,
+  "speed": 4,
   "view": "window",
   "players": [
     {
@@ -65,17 +65,17 @@
       "follow": "own:command_center"
     },
     {
-      "at": 150,
+      "at": 400,
       "do": "screenshot",
       "name": "city-1"
     },
     {
-      "at": 190,
+      "at": 460,
       "do": "screenshot",
       "name": "city-2"
     },
     {
-      "at": 230,
+      "at": 520,
       "do": "screenshot",
       "name": "city-3"
     }

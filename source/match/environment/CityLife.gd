@@ -25,14 +25,14 @@ const DOOR_OUT_M = 1.2  # where a path leaves a building
 const DOOR_IN_M = 0.45  # where a person is out of sight inside it
 const STEP_LENGTH_M = 0.16  # one leg cycle covers two steps
 const ROBES = [
-	Color(0.86, 0.82, 0.72),
-	Color(0.93, 0.92, 0.88),
-	Color(0.27, 0.33, 0.5),
-	Color(0.68, 0.48, 0.26),
-	Color(0.62, 0.3, 0.2),
-	Color(0.45, 0.47, 0.3),
-	Color(0.5, 0.42, 0.36),
-	Color(0.78, 0.62, 0.36),
+	Color(0.9, 0.88, 0.82),
+	Color(0.2, 0.27, 0.48),
+	Color(0.62, 0.36, 0.16),
+	Color(0.58, 0.2, 0.15),
+	Color(0.32, 0.4, 0.24),
+	Color(0.24, 0.22, 0.22),
+	Color(0.15, 0.4, 0.42),
+	Color(0.5, 0.26, 0.36),
 ]
 const SCARVES = [
 	Color(0.93, 0.9, 0.84),

@@ -10,7 +10,7 @@ render_mode blend_mix, depth_draw_never, cull_disabled, unshaded, shadows_disabl
 // INSTANCE_CUSTOM.r a random seed, .g strength (0 = no smoke), .b soot (0 = pale wood
 // smoke, 1 = dark workshop smoke).
 
-uniform vec3 pale_color : source_color = vec3(0.8, 0.79, 0.77);
+uniform vec3 pale_color : source_color = vec3(0.6, 0.6, 0.63);
 uniform vec3 soot_color : source_color = vec3(0.34, 0.32, 0.3);
 uniform vec2 wind = vec2(2.0, 0.5); // m/s, from Atmosphere.get_wind
 uniform float column_height = 3.0; // m at full strength
@@ -44,5 +44,5 @@ void fragment()
 {
   float d = length(UV * 2.0 - 1.0);
   ALBEDO = mix(pale_color, soot_color, v_soot);
-  ALPHA = (1.0 - smoothstep(0.1, 1.0, d)) * v_alpha * mix(0.4, 0.55, v_soot);
+  ALPHA = (1.0 - smoothstep(0.1, 1.0, d)) * v_alpha * mix(0.55, 0.6, v_soot);
 }
