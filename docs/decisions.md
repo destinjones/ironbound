@@ -363,3 +363,12 @@ stretches with nothing to do outside the base; a crate is a small, visible reaso
 and skirmish, and it rewards fast scouts. All numbers live in data/supply_drops.json; crates
 are not saved (a loaded match just drops new ones), so the save format is untouched.
 
+
+## 2026-10-17: v0.10.0 desktop builds, and docs screenshots kept out of the game
+The release workflow already exported Windows, Linux and macOS zips; v0.9.0 was published
+on 6 October but was 190 commits behind main, and the README never linked to it. Bumped
+the version to 0.10.0 (project.godot and the export presets, which still said Open RTS's
+0.9.0) and added a Download section that links releases/latest/download/<zip>, so the
+links follow every new release. Added docs/.gdignore: the export filter is all_resources,
+so Godot was importing the 40 README screenshots in docs/images and packing them into
+every build. Nothing in the game loads them; the Linux zip drops from 140 MB to 94 MB.
