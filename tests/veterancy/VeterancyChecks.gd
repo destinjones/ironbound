@@ -149,7 +149,10 @@ func _check_self_repair():
 	await _wait_ms(1500)
 	_expect(is_equal_approx(tank.hp, hurt), "no repair while it is still being shot at")
 	tank.set_meta("last_hit_at_ms", Time.get_ticks_msec() - 60000)
-	await _wait_ms(2500)
+	# heals tick once a second of game time, which a slow renderer can stretch a lot
+	var start = Time.get_ticks_msec()
+	while tank.hp <= hurt and Time.get_ticks_msec() - start < 12000:
+		await get_tree().process_frame
 	_expect(
 		tank.hp > hurt,
 		"a Heroic unit out of the fight repairs itself (%.2f > %.2f)" % [tank.hp, hurt]
