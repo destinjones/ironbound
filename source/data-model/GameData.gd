@@ -270,6 +270,12 @@ static func city_centres():
 	return merged
 
 
+static func veterancy():
+	"""ranks units earn from kills and what each rank adds, see data/veterancy.json and
+	source/match/veterancy/Veterancy.gd"""
+	return get_data().get("veterancy", {})
+
+
 static func is_generated_scene(scene_path):
 	return scene_path.begins_with(GENERATED_SCENES_ROOT)
 
@@ -433,6 +439,7 @@ static func _load_all():
 		"city_centres": _parse_dict_file(BASE_DATA_DIR + "/city_centres.json"),
 		"wildlife": _parse_dict_file(BASE_DATA_DIR + "/wildlife.json"),
 		"wind": _parse_dict_file(BASE_DATA_DIR + "/wind.json"),
+		"veterancy": _parse_dict_file(BASE_DATA_DIR + "/veterancy.json"),
 		"voices": _parse_dict_file(BASE_DATA_DIR + "/sounds/voices.json"),
 		"voice_sets": _load_dir(BASE_DATA_DIR + "/sounds/voice_sets"),
 		"sounds": _load_sound_configs(BASE_DATA_DIR),
@@ -461,6 +468,7 @@ static func _load_all():
 		data["city_centres"].merge(_parse_dict_file(mod_dir + "/city_centres.json"), true)
 		_deep_merge(data["wildlife"], _parse_dict_file(mod_dir + "/wildlife.json"))
 		_deep_merge(data["wind"], _parse_dict_file(mod_dir + "/wind.json"))
+		data["veterancy"].merge(_parse_dict_file(mod_dir + "/veterancy.json"), true)
 		_merge_voices(data["voices"], _parse_dict_file(mod_dir + "/sounds/voices.json"))
 		_merge_voice_sets(data["voice_sets"], _load_dir(mod_dir + "/sounds/voice_sets"))
 		_deep_merge(data["sounds"], _load_sound_configs(mod_dir))
