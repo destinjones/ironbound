@@ -202,6 +202,17 @@ The sun turns in 0.25 degree steps so shadow edges do not crawl. The hour is not
 (the save format is untouched), so a loaded game restarts at 10:00, as weather already
 restarts. tests/screenshots/WeatherShots renders any weather at any hour.
 
+## 2026-10-17: text over units shows only when it needs you
+Labels floating over buildings and units ("Iron 6/16", "Constructor on the way", "Hauler 2")
+now show only while that thing is hovered or selected, or while a constructor is selected
+for site labels. Three states stay visible all the time because nothing happens until the
+player acts: a site nobody is building, a full extractor that has stopped, and an aircraft
+with no airport to return to. All of them use the HUD's Barlow font as a signed distance
+field (WorldLabel.gd), so they stay sharp at any zoom instead of the tiny pixel font, and
+the shouting capitals ("NO AIRPORT - WILL CRASH") became sentence case. Why: the playtest
+of 17 Oct found debug-looking text all over the base; the tests that check a waiting site
+and a full mine still see their labels.
+
 ## 2026-10-17: rain soaks the ground, and lightning is a bolt you can see
 Rain used to be thin streaks over a sunny, dry desert. Now the terrain shader has a
 `wetness` uniform that Atmosphere raises over about 30 s of rain and lets fall over about
