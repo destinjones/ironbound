@@ -299,3 +299,19 @@ so no unit or combat code changed. Turrets and militia posts do not rank, becaus
 CivilDefense drives their fire rate. Known gap: ranks are not in save files yet (save format
 needs Destin's OK), so a loaded match starts everyone green. MatchSignals.unit_promoted is
 there for the sound and UI threads to bind a promotion sting and a card line.
+
+## 2026-10-17: the wind moves the land
+Second piece of the living world (source/match/environment/Wind.gd, data/wind.json): trees,
+palms, reeds, bushes and grass of the desert scatter bend with Atmosphere's wind, gusts
+rolling across the map as a slow wave; a few tumbleweeds roll over open ground, around rocks
+and tree clumps, and fade out at water or after a while; on clear or hazy days a dust devil
+spins up every half minute or so and drifts off. Choices:
+- Purely visual, its own random numbers, nothing saved.
+- The plants keep their flat colours: Wind.gd copies each swaying prop's mesh and swaps its
+  StandardMaterial3D for foliage_sway.gdshader with the same albedo, roughness and specular,
+  so they look as before when the air is still. Only the props named in data/wind.json sway;
+  rocks, cacti and dead trees stay put.
+- The plants and dust devils move in vertex shaders, so they cost no script time; the script
+  sets the wind on the plant materials four times a second and moves only the tumbleweeds
+  (one MultiMesh). Headless on the cloud CPU that is about 0.05 ms a frame for 7 tumbleweeds.
+- Dust devils stay away in rain and sandstorms (the sandstorm is its own dust).
