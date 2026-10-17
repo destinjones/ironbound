@@ -167,6 +167,10 @@ buildings too keeps a raid on a factory or a supply line at the same pace relati
 fight. Known effect: a save made before this loads its units at a third of their health,
 since saved hp is kept and hp_max triples.
 
+## 2026-10-17: the resource bar shows whole numbers
+Stock is fractional because upkeep drains it bit by bit, so the bar read "46.0". It now
+shows whole units, rounded down so it never shows more than you can spend.
+
 ## 2026-10-17: building sites no longer stall
 Two stalls in a 10-minute match on Oil and Iron, traced with a probe that logged every site,
 truck and constructor every 15 s. First, a site whose constructor was given another order
