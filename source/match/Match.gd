@@ -17,6 +17,7 @@ const SandboxPanel = preload("res://source/match/hud/SandboxPanel.gd")
 const Guide = preload("res://source/match/hud/Guide.gd")
 const BuildingInfo = preload("res://source/match/hud/BuildingInfo.gd")
 const HealthBarsControl = preload("res://source/match/hud/HealthBarsControl.gd")
+const AlertBanner = preload("res://source/match/hud/AlertBanner.gd")
 const UnitCommandHandler = preload("res://source/match/handlers/UnitCommandHandler.gd")
 const Keybinds = preload("res://source/match/Keybinds.gd")
 const MatchLimits = preload("res://source/match/MatchLimits.gd")
@@ -135,6 +136,8 @@ func _ready():
 		$HUD.add_child(Guide.new())  # tutorial, hints, auto-expand overview and manual
 	if $HUD.get_node_or_null("BuildingInfo") == null:
 		$HUD.add_child(BuildingInfo.new())  # hover names, the selection card, truck routes
+	if $HUD.get_node_or_null("AlertBanner") == null:
+		$HUD.add_child(AlertBanner.new())  # "Base under attack" above the minimap, Space goes there
 	if $HUD.get_node_or_null("HealthBarsControl") == null:
 		var health_bars_control = HealthBarsControl.new()  # the option and the Alt hold
 		health_bars_control.name = "HealthBarsControl"

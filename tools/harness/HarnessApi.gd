@@ -155,6 +155,8 @@ func state(with_units = true):
 	)
 	data["threats"] = threats()
 	data["health_bars"] = _health_bars_state(units)
+	data["camera"] = _camera_state()
+	data["alert"] = _alert_state()
 	var guide = match_node.find_child("Guide", true, false) if match_node != null else null
 	if guide != null and "steps" in guide:  # where the tutorial is: step index and its id
 		data["tutorial"] = {
@@ -283,6 +285,30 @@ func _health_bars_state(units):
 			if not (bar.get("_selected") or bar.get("_hovered") or hit):
 				out["forced_only"] += 1
 	return out
+
+
+func _camera_state():
+	"""[x, z] of the ground under the middle of the view, where a camera jump puts its target"""
+	var camera = get_viewport().get_camera_3d()
+	if camera == null or not camera.has_method("get_ray_intersection"):
+		return null
+	var point = camera.get_ray_intersection(get_viewport().size / 2.0)
+	return [snapped(point.x, 0.01), snapped(point.z, 0.01)] if point != null else null
+
+
+func _alert_state():
+	"""the under-attack banner (source/match/hud/AlertBanner.gd); null without one"""
+	var banner = get_tree().get_first_node_in_group("alert_banner")
+	if banner == null:
+		return null
+	var at = banner.alert_position
+	return {
+		"visible": banner.visible,
+		"text": banner.get("_label").text,
+		"position": [snapped(at.x, 0.01), snapped(at.z, 0.01)] if at != null else null,
+		"shows": banner.shows,  # appearances so far, for the alert fatigue count
+		"visible_s": snapped(banner.visible_s, 0.1),  # how long it has been up, the same count
+	}
 
 
 func _action_name(action):

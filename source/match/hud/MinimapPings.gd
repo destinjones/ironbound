@@ -4,6 +4,8 @@ extends Node2D
 # - red where one of the player's units or buildings is hit by an enemy, at most one per
 #   spot every few seconds, so a fight reads as one ping, not a storm,
 # - yellow where the player Alt + clicks the minimap, to mark a spot.
+# An accepted red ping is also MatchSignals.attack_pinged, which the under-attack banner
+# (AlertBanner.gd) shows, so the ring, the blip and the words share this one filter.
 # Lives in the minimap's viewport (hud/Minimap.gd), in minimap pixels. Each ping blips
 # (audio/InterfaceSounds.gd).
 
@@ -70,4 +72,5 @@ func _on_unit_damaged(unit):
 		return
 	_last_attack_ping_ms[cell] = now_ms
 	ping(position, ATTACK_COLOR)
+	MatchSignals.attack_pinged.emit(position, unit)  # the banner's words (AlertBanner.gd)
 	InterfaceSounds.play("ping_attack")
