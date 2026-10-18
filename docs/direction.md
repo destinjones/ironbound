@@ -82,7 +82,9 @@ One concern per PR, main stays releasable, every PR carries its evidence.
 3. The idle army defends the base: units within reach answer a hit on our structures or
    units, instead of standing at the rally point.
 4. Economy pace: copper reachable from the start, home extractors inside the grid, helper
-   reserves that build an army. Target: a tank every 20 to 30 s by minute 5.
+   reserves that build an army. Target: a tank every 20 to 30 s by minute 5. Found while
+   proving 3: in three of four helper-run matches the helper never got a vehicle factory
+   up and had no army when the raider came; the helper must build one early, every time.
 5. Armour and weapon classes (one multiply in Unit.take_damage plus data), structures
    that hold a few tanks, artillery that sees what it shoots. Units get roles.
 6. Difficulty retune in data once 3 to 5 are in: Easy for the first match, Normal for the

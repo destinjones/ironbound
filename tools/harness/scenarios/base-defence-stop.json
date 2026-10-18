@@ -1,0 +1,27 @@
+{
+  "name": "base-defence-stop",
+  "description": "The player's orders beat the home guard. Like base-defence: four idle tanks 26 m from the bunker are called up when an enemy bunker shoots a pylon, but the player stops them on the way, about 10 m out (tanks drive 3 m/s), before either side can see the other. Stopped tanks must stay where they are, neither finishing the trip nor being walked back to their post, and the bunker lives.",
+  "map": "big_arena",
+  "minutes": 0.5,
+  "speed": 4,
+  "fog": false,
+  "players": [{"type": "human"}, {"type": "ai", "personality": "turtle", "difficulty": "very_easy"}],
+  "shots_every": 10,
+  "setup": [
+    {"do": "spawn", "player": "p0", "unit": "tank", "count": 4, "spot": [26, 50], "spacing": 3.0},
+    {"do": "spawn", "player": "p0", "unit": "pylon", "spot": [55, 50]},
+    {"do": "spawn", "player": "p1", "unit": "bunker", "spot": [52, 50]},
+    {"do": "declare_war", "player": "p1", "on": "p0"}
+  ],
+  "events": [
+    {"at": 4.5, "do": "stop", "units": "own:tank"},
+    {"at": 3, "do": "camera", "spot": [40, 50]}
+  ],
+  "checks": [
+    {"at": 4.4, "name": "the tanks had left their post", "expect": "units", "units": "own:tank", "near": [26, 50], "radius": 4, "max": 0},
+    {"at": 20, "name": "the stopped tanks did not go on to the bunker", "expect": "units", "units": "own:tank", "near": [52, 50], "radius": 9, "max": 0},
+    {"at": 20, "name": "the stopped tanks were not walked back to their post", "expect": "units", "units": "own:tank", "near": [26, 50], "radius": 5, "max": 0},
+    {"at": 20, "name": "the bunker still stands", "expect": "units", "units": "p1:structures", "near": [52, 50], "radius": 6, "min": 1},
+    {"end": true, "expect": "no_errors"}
+  ]
+}
