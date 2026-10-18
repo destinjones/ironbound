@@ -814,3 +814,11 @@ centre loads at 90/180), shipyard hp (42 while the land factories are 72), helic
 cells (aircraft are 1.0 against everything), a unit "role" key with a one-word label on the
 card, ShotEffects for x0.5 hits, the missile truck's ground rockets or its description, and
 the Normal retune, which must be re-measured now that the arc has moved.
+
+## 2026-10-18: the constructor uses a generated engineer vehicle
+
+The worker's built bulldozer was flat-colour programmer art next to the remade tank. It is
+now a generated combat engineer vehicle (dozer blade, yellow crane arm) at the tank's 3,600
+triangles; the old bulldozer stays as the classic model. The yellow crane keeps it easy to
+tell apart from combat vehicles. It costs less to draw than the tank in the software-renderer
+bench (107 ms vs 132 ms for 30). Details in tools/blender/generated_models.md.

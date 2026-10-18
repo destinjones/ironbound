@@ -115,3 +115,27 @@ in the team-colour panels (`--team-smooth`), and the dusty paint sank into the d
 The raw Tripo download is kept outside the repository, in the project's shared files
 (`game/modern/tank/tank_raw_concept_b.glb`).
 
+
+## The constructor (2026-10-18)
+
+The worker's built bulldozer (`units/constructor.glb`, 9 flat-colour materials) was replaced
+with a generated combat engineer vehicle. 10.5 credits: 1.5 for the concept image, 9 for the
+3D model. The old bulldozer stays as `classic_model`.
+
+- **Prompt core:** compact tracked combat engineer vehicle, armoured box hull, wide dozer
+  blade with black and yellow hazard stripes, folded hydraulic crane arm in faded safety
+  yellow, small armoured cab, amber beacon, toolboxes and a cable reel. Olive drab with
+  desert dust; only the cab roof and the engine deck cobalt blue.
+- **Tripo:** `face_limit` 5000; it returned 4,710 triangles, decimated to 3,600 (the tank's).
+- **Clean-up:**
+
+```sh
+python3 tools/blender/clean_generated.py -- --in raw/constructor.glb \
+    --out assets/models/ironbound/units/generated/constructor.glb --yaw 90 --length 1.45 \
+    --max-tris 3600 --team-up 0.3 --team-smooth 2 --saturation 1.6
+```
+
+A first pass at `--length 1.3` read smaller than the old bulldozer at play zoom; 1.45 matches
+it. In `tests/perf/UnitModelBench.tscn` (llvmpipe) 30 copies cost 107 ms against 64 ms for
+the old one and 132 ms for the tank, with draw calls down from 542 to 122. Raw download and
+concept: project shared files, `game/art/constructor/`.
