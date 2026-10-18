@@ -1,0 +1,25 @@
+{
+  "name": "hud-alert",
+  "description": "The under-attack banner and the Space jump. Three enemy tanks stand 14 m east of the player's command centre on Plain & Simple, next to a storage the player has 8 m east of it, while the camera looks at the far corner of the map, so the base is off screen and the hit pings the minimap red and puts \"Base under attack: Storage 1\" above the minimap. The tanks shoot the closest thing they see; without the storage that is a constructor or a truck at a corner of the command centre, and the banner would say Units under attack. The war starts at 2 s, not in the setup, so the camera has moved away before the first hit (a hit the camera sees gets no banner and keeps that 12 m spot quiet for 6 s) and the 6 s check falls well inside the banner's 9 s hold. The camera spot is [32, 36], not [90, 90]: the map is 50 m square, and [90, 90] clamps to its corner, where two thirds of the shot is the black void past the edge; [32, 36] keeps the base out of view and the frame on the map. At 7 s the jump_to_alert action (Space) puts the camera on the alert, and the banner fades a second later because the player is now looking at the fight. Look at banner (the strip above the minimap: red edge, burst icon, the words, the key chip saying Space) and after-space (the fight in the middle of the screen, the banner not on it).",
+  "map": "plain_and_simple",
+  "seconds": 10,
+  "fog": false,
+  "players": [{"type": "human"}, {"type": "ai", "personality": "turtle", "difficulty": "very_easy"}],
+  "sample_every": 1,
+  "setup": [
+    {"do": "camera", "spot": [32, 36]},
+    {"do": "spawn", "player": "p0", "unit": "storage", "spot": {"of": "base", "offset": [8, 0]}},
+    {"do": "spawn", "player": "p1", "unit": "tank", "count": 3, "spot": {"of": "base", "offset": [14, 0]}}
+  ],
+  "events": [
+    {"at": 2, "do": "declare_war", "player": "p1", "on": "p0"},
+    {"at": 6, "do": "screenshot", "name": "banner"},
+    {"at": 7, "do": "key", "action": "jump_to_alert"},
+    {"at": 8, "do": "screenshot", "name": "after-space"}
+  ],
+  "checks": [
+    {"at": 6, "name": "the banner says the base is under attack", "expect": "expr", "code": "state.alert != null and state.alert.visible and state.alert.text.begins_with(\"Base\")"},
+    {"at": 8, "name": "Space put the camera on the alert", "expect": "expr", "code": "abs(state.camera[0] - state.alert.position[0]) < 8 and abs(state.camera[1] - state.alert.position[1]) < 8"},
+    {"end": true, "expect": "no_errors"}
+  ]
+}

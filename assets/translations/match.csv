@@ -345,3 +345,7 @@ MATCH_END_KEEP_WATCHING,Keep watching,Oglądaj dalej
 MATCH_END_RESULTS,Results,Wyniki
 MATCH_END_KILLS,Kills,Zniszczone
 MATCH_END_SKIP_HINT,Press any key or click to continue,"Dowolny klawisz lub kliknięcie, aby kontynuować"
+ALERT_BASE_UNDER_ATTACK,Base under attack: {0},Baza atakowana: {0}
+ALERT_UNITS_UNDER_ATTACK,Units under attack: {0},Jednostki atakowane: {0}
+ALERT_JUMP_HINT,go there,przejdź tam
+ALERT_JUMP_TOOLTIP,Go to the alert ({0}),Przejdź do miejsca alarmu ({0})

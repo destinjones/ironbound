@@ -32,6 +32,7 @@ const GameData = preload("res://source/data-model/GameData.gd")
 const TutorialScript = preload("res://source/data-model/TutorialScript.gd")
 const HarnessApi = preload("res://tools/harness/HarnessApi.gd")
 const Fleet = preload("res://source/match/economy/Fleet.gd")
+const AlertBanner = preload("res://source/match/hud/AlertBanner.gd")
 
 const SETTINGS_PATH = "user://guide.cfg"
 const REFRESH_INTERVAL_S = 0.5
@@ -313,12 +314,13 @@ func _layout():
 		if helper_panel.visible:
 			below_helper = helper_panel.position.y + helper_panel.size.y + GAP
 	var minimap_top = screen.y - 225
+	# the row above the minimap stays free for the under-attack banner
+	var lowest = minimap_top - AlertBanner.ROW_PX - GAP
 	if auto_expand_panel != null:
 		if auto_expand_panel.size.y > auto_expand_panel.get_combined_minimum_size().y + 1.0:
 			auto_expand_panel.reset_size()
 		auto_expand_panel.position = Vector2(
-			GAP,
-			clamp(below_helper, top_left, max(top_left, minimap_top - auto_expand_panel.size.y))
+			GAP, clamp(below_helper, top_left, max(top_left, lowest - auto_expand_panel.size.y))
 		)
 	# the tutorial and hints continue the left column, so the middle of the screen stays on
 	# the battlefield; the diplomacy bar keeps the top centre for itself
