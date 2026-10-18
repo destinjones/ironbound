@@ -381,7 +381,7 @@ func _build_controls_tab(rows):
 	_hint(
 		rows,
 		(
-			"Unit command keys can be changed in user://controls.cfg"
+			"Command keys and the health bar key can be changed in user://controls.cfg"
 			+ ' (one line per command under [keys], e.g. command_patrol="O").'
 		)
 	)

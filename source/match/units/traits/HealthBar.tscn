@@ -21,21 +21,25 @@ colors = PackedColorArray(0, 0, 0, 1)
 [sub_resource type="GradientTexture2D" id="GradientTexture2D_backing"]
 resource_local_to_scene = true
 gradient = SubResource("Gradient_backing")
-width = 204
-height = 24
+width = 206
+height = 26
 
 [node name="HealthBar" type="Node3D"]
 script = ExtResource("1_md17c")
 
 [node name="Backing" type="Sprite3D" parent="."]
-modulate = Color(0, 0, 0, 0.55)
+sorting_use_aabb_center = false
+modulate = Color(0, 0, 0, 0.85)
 pixel_size = 0.0125
 billboard = 1
 no_depth_test = true
 texture_filter = 0
+render_priority = 1
 texture = SubResource("GradientTexture2D_backing")
 
 [node name="ActualBar" type="Sprite3D" parent="."]
+sorting_offset = 0.01
+sorting_use_aabb_center = false
 pixel_size = 0.0125
 billboard = 1
 transparent = false

@@ -3,7 +3,9 @@ extends Node3D
 
 # The bar over a unit: coloured by thirds (HudStyle.health_color) on a dark backing, shown
 # while the unit is selected or hovered, for 2 s after a hit, or for everyone while the
-# show_health_bars key is held or the option is on (HealthBarsControl).
+# show_health_bars key is held or the option is on (HealthBarsControl). The backing sorts
+# just behind its own bar (same render_priority, ActualBar's sorting_offset, both sorted by
+# the node's origin), so a nearer unit's dark edge separates its bar from a farther one's.
 
 const HudStyle = preload("res://source/match/hud/HudStyle.gd")
 const HealthBarsControl = preload("res://source/match/hud/HealthBarsControl.gd")
@@ -13,7 +15,9 @@ const BAR_AUTO_VISIBILITY_DURATION = 2.0
 const DAMAGE_CHUNK_COLOR = Color(1.0, 0.95, 0.7)
 const DAMAGE_CHUNK_HOLD_S = 0.25
 const DAMAGE_CHUNK_DRAIN_PER_S = 0.9  # of the full bar
-const BACKING_MARGIN_PX = 2  # the dark edge around the bar, each side
+const BACKING_MARGIN_PX = 3  # the dark edge around the bar, each side
+# a site's hp is its build progress, not damage: neutral until built, never the red of dying
+const SITE_COLOR = HudStyle.MUTED
 
 @export var size = Vector2(200, 20):
 	set(value):
@@ -47,6 +51,8 @@ func _ready():
 	_unit.selected.connect(_on_unit_selected)
 	_unit.deselected.connect(_on_unit_deselected)
 	_unit.hp_changed.connect(_on_hp_changed)
+	if _unit.has_signal("constructed"):  # a finished site takes its thirds colour
+		_unit.constructed.connect(_recalulate_bar_value)
 	if _unit.has_signal("mouse_entered"):  # Unit is an Area3D, enemies included
 		_unit.mouse_entered.connect(_on_unit_mouse_entered)
 		_unit.mouse_exited.connect(_on_unit_mouse_exited)
@@ -74,7 +80,8 @@ func _recalulate_bar_value():
 	var new_value = float(_unit.hp) / _unit.hp_max
 	new_value = new_value if not is_equal_approx(new_value, 1.0) else 1.1  # fixing 1px gap
 	_value = new_value
-	_health_color = HudStyle.health_color(_value)
+	var site = _unit.has_method("is_under_construction") and _unit.is_under_construction()
+	_health_color = SITE_COLOR if site else HudStyle.health_color(_value)
 	if _bar_value_initialized and new_value < old_value and _unit.visible:
 		_chunk_end = max(_chunk_end, old_value)
 		_chunk_hold = DAMAGE_CHUNK_HOLD_S

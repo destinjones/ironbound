@@ -17,6 +17,7 @@ static func of(tree):
 
 
 func _ready():
+	process_mode = Node.PROCESS_MODE_ALWAYS  # Alt and the option work while the game is paused
 	add_to_group("health_bars_control")
 	_bound = InputMap.has_action(ACTION)
 
