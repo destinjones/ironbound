@@ -59,8 +59,9 @@ const KNOWN_AI_FIELDS = [
 	"expected_number_of_units_in_battlegroup", "raid_party_size", "raid_interval_s",
 	"trade_hoarding_factor", "trade_profit_margin", "trade_offer_interval_s",
 	"proposes_agreements", "upgrades_roads", "peacefulness", "accepts_alliances",
-	"attacks_neutrals", "defence"
+	"attacks_neutrals", "defence", "waves"
 ]
+const KNOWN_WAVE_FIELDS = ["grow_every_s", "grow_by", "max_units"]
 const KNOWN_DEFENCE_FIELDS = [
 	"shape", "front_m", "choke_search_m", "staging_share", "front", "flanks", "reserve",
 	"guards", "guard_routes", "max_guard_posts", "spacing_m", "ring_m", "react_m", "leash_m"
@@ -85,6 +86,7 @@ const DIFFICULTY_FIELDS = {
 	"tech_upgrades": "bool",
 	"retreat_below_hp": [0.0, 0.9],
 	"focus_fire": "bool",
+	"wave_growth_scale": [0.0, 4.0],
 }
 # bonuses that only a difficulty marked "cheats": true may give
 const CHEAT_FIELDS = ["gather_rate", "production_speed"]
@@ -479,6 +481,17 @@ func _check_ai(entries, resources):
 				_warn(where, "unknown defence field '{0}' is ignored".format([field]))
 		if defence.get("shape", "groups") not in ["groups", "ring"]:
 			_error(where, "defence shape must be \"groups\" or \"ring\"")
+		var waves = entry.get("waves", {})
+		if not waves is Dictionary:
+			_error(where, "waves must be an object like {\"grow_every_s\": 180, \"grow_by\": 1}")
+			waves = {}
+		for field in waves:
+			if not field in KNOWN_WAVE_FIELDS:
+				_warn(where, "unknown waves field '{0}' is ignored".format([field]))
+			elif not (waves[field] is float or waves[field] is int) or waves[field] < 0:
+				_error(where, "waves.{0} must be a number, 0 or more".format([field]))
+		if waves.get("max_units", 0) > 0 and waves.get("grow_every_s", 0) <= 0:
+			_error(where, "waves.max_units needs a grow_every_s above 0")
 		for kind in entry.get("extractor_targets", {}):
 			if not kind in resources:
 				_error(where, "extractor_targets names unknown commodity '{0}'".format([kind]))

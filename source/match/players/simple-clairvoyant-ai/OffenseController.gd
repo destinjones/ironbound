@@ -25,6 +25,10 @@ const MAIN_ROLES = ["main_t1", "main_t2", "main_t3"]
 const AIR_ROLES = ["air_t2", "air_t3"]
 const SUPPORT_ROLE = "support_t2"
 const SUPPORT_EVERY = 4  # every this many vehicles one is the support unit, when there is one
+# how a personality's waves grow ("waves" in data/ai/*.json, scaled by the difficulty's
+# wave_growth_scale): every grow_every_s the next battlegroup is grow_by units bigger, up to
+# max_units; a battlegroup is sized when it starts forming
+const WAVE_DEFAULTS = {"grow_every_s": 0.0, "grow_by": 0, "max_units": 0}
 # on maps where the enemy is only reachable over water, the amphibious vehicle is built
 # instead of the main battle unit (see _crossing_needed)
 const AMPHIBIOUS_VEHICLE_ID = "amphibious_apc"
@@ -168,10 +172,24 @@ func committed_units():
 	return units
 
 
+func wave_size():
+	"""how many units the next battlegroup gets: the personality's size (scaled by the
+	difficulty), plus the growth earned by match time, see WAVE_DEFAULTS"""
+	var base = int(_ai.expected_number_of_battlegroup_units())
+	var waves = _ai.waves if _ai.waves is Dictionary else {}
+	var every = float(waves.get("grow_every_s", WAVE_DEFAULTS["grow_every_s"]))
+	var by = int(waves.get("grow_by", WAVE_DEFAULTS["grow_by"]))
+	var max_units = int(waves.get("max_units", WAVE_DEFAULTS["max_units"]))
+	if every <= 0.0 or by <= 0 or max_units <= base:
+		return base
+	var steps = floor(_ai.match_time_s / every) * _ai.wave_growth_scale
+	return clampi(base + int(floor(steps * by)), base, max_units)
+
+
 func _try_creating_new_battlegroup():
 	if not _battlegroups.is_empty():
 		_enforce_secondary_structure_existence()
-	if _battlegroups.size() == _ai.expected_number_of_battlegroups:
+	if _battlegroups.size() >= _ai.expected_number_of_battlegroups:
 		var primary_structure = _primary_structure()
 		if primary_structure != null:
 			primary_structure.production_queue.cancel_all()
@@ -185,9 +203,7 @@ func _try_creating_new_battlegroup():
 	adversary_players.sort_custom(
 		func(a, b): return _ai.Diplomacy.at_war(_player, a) and not _ai.Diplomacy.at_war(_player, b)
 	)
-	var battlegroup = AutoAttackingBattlegroup.new(
-		_ai.expected_number_of_units_in_battlegroup, adversary_players, _ai
-	)
+	var battlegroup = AutoAttackingBattlegroup.new(wave_size(), adversary_players, _ai)
 	_battlegroups.append(battlegroup)
 	battlegroup.tree_exited.connect(_on_battlegroup_died.bind(battlegroup))
 	battlegroup.unit_retreated.connect(_on_unit_retreated)
@@ -423,12 +439,15 @@ func _is_units_production_allowed():
 
 
 func _number_of_additional_units_required():
+	"""what the forming group still lacks, plus a wave for every group slot not yet taken,
+	so the factory keeps working between waves"""
 	if _battlegroup_under_forming == null:
 		return 0
+	var slots_free = max(_ai.expected_number_of_battlegroups - _battlegroups.size(), 0)
 	return (
-		_ai.expected_number_of_battlegroups * _ai.expected_number_of_units_in_battlegroup
-		- (_battlegroups.size() - 1) * _ai.expected_number_of_units_in_battlegroup
+		_battlegroup_under_forming.expected_size()
 		- _battlegroup_under_forming.size()
+		+ slots_free * wave_size()
 	)
 
 
@@ -441,7 +460,7 @@ func _on_unit_spawned(unit):
 		if _battlegroup_under_forming == null:
 			return
 		_battlegroup_under_forming.attach_unit(unit)
-		if _battlegroup_under_forming.size() == _ai.expected_number_of_units_in_battlegroup:
+		if _battlegroup_under_forming.is_full():
 			_try_creating_new_battlegroup()
 		_enforce_primary_units_production()
 		_enforce_secondary_units_production()
@@ -459,7 +478,7 @@ func _attach_retreated_units():
 	while not _retreated.is_empty() and _battlegroup_under_forming != null:
 		var unit = _retreated.pop_front()
 		_battlegroup_under_forming.attach_unit(unit)
-		if _battlegroup_under_forming.size() == _ai.expected_number_of_units_in_battlegroup:
+		if _battlegroup_under_forming.is_full():
 			_try_creating_new_battlegroup()
 
 
@@ -467,6 +486,20 @@ func _on_battlegroup_died(battlegroup):
 	if not is_inside_tree():
 		return
 	_battlegroups.erase(battlegroup)
+	if battlegroup == _battlegroup_under_forming:
+		_battlegroup_under_forming = null
+	# the next wave starts forming at once (deferred: this runs from tree_exited, and the
+	# new group is added to the tree); before, a lost group left its place empty for good
+	_form_next_wave.call_deferred()
+
+
+func _form_next_wave():
+	if not is_inside_tree():
+		return
+	if _battlegroup_under_forming == null:
+		_try_creating_new_battlegroup()
+	_enforce_primary_units_production()
+	_enforce_secondary_units_production()
 
 
 func _on_refresh_timer_timeout():
