@@ -4,6 +4,10 @@ extends Node
 # The owner AI's difficulty decides how well the group fights: when it may first attack,
 # how long it takes to pick a new target, whether its units focus one target or spread out,
 # and whether badly damaged units pull back home (see data/difficulties/).
+# A group that has lost most of its units on the attack (REGROUP_BELOW of its planned size)
+# pulls the rest back home and dissolves: the survivors join the next wave, which forms at
+# once. Before this, a group with one survivor kept its place for the rest of the match and
+# the AI stopped building an army after its first attack.
 
 signal unit_retreated(unit)
 
@@ -14,6 +18,7 @@ const NOBODY_TO_ATTACK_DELAY_S = 5.0
 const CommandCenter = preload("res://source/match/units/CommandCenter.gd")
 const RETREAT_CHECK_INTERVAL_S = 1.0
 const MAX_TARGETS_TRIED = 12  # path queries per retarget on maps with water
+const REGROUP_BELOW = 1.0 / 3.0  # share of the planned size left when the group goes home
 
 
 class Actions:
@@ -55,6 +60,14 @@ func size():
 	return _attached_units.size()
 
 
+func expected_size():
+	return _expected_number_of_units
+
+
+func is_full():
+	return size() >= _expected_number_of_units
+
+
 func units():
 	return _attached_units.duplicate()
 
@@ -84,7 +97,7 @@ func attach_unit(unit):
 	assert(_state == State.FORMING, "unexpected state")
 	_attached_units.append(unit)
 	unit.tree_exited.connect(_on_unit_died.bind(unit))
-	if size() == _expected_number_of_units:
+	if is_full():
 		_start_attacking()
 
 
@@ -256,8 +269,32 @@ func _on_unit_died(unit):
 	if not is_inside_tree():
 		return
 	_attached_units.erase(unit)
-	if _state == State.ATTACKING and _attached_units.is_empty():
+	if _state != State.ATTACKING:
+		return
+	if _attached_units.is_empty():
 		queue_free()
+	elif _attached_units.size() <= _regroup_size():
+		_regroup()
+
+
+func _regroup_size():
+	"""with this many units or fewer left, an attacking group goes home for the next wave"""
+	return int(floor(_expected_number_of_units * REGROUP_BELOW))
+
+
+func _regroup():
+	"""sends the survivors home; the owner picks them up for the next wave"""
+	var home = _home_position()
+	for unit in _attached_units.duplicate():
+		if not is_instance_valid(unit):
+			continue
+		_attached_units.erase(unit)
+		unit.tree_exited.disconnect(_on_unit_died)
+		if home != null:
+			unit.action = Actions.Moving.new(home)
+		unit_retreated.emit(unit)
+	_attached_units.clear()
+	queue_free()
 
 
 func _on_target_unit_died():

@@ -37,6 +37,8 @@ const GameData = preload("res://source/data-model/GameData.gd")
 @export var secondary_offensive_structure = OffensiveStructure.AIRCRAFT_FACTORY
 @export var expected_number_of_battlegroups = 2
 @export var expected_number_of_units_in_battlegroup = 4
+# later waves are bigger: {"grow_every_s", "grow_by", "max_units"}, see OffenseController
+@export var waves = {}
 @export var raid_party_size = 2
 @export var raid_interval_s = 240.0
 @export var trade_offer_interval_s = 30.0
@@ -56,6 +58,7 @@ var scouting = true
 var tech_upgrades = true
 var retreat_below_hp = 0.0
 var focus_fire = true
+var wave_growth_scale = 1.0  # how fast the waves grow, 0 keeps every wave the same size
 var match_time_s = 0.0
 
 var _provisioning_ongoing = false
@@ -173,6 +176,11 @@ func may_launch_attacks():
 	return match_time_s >= first_attack_after_s
 
 
+func expected_number_of_battlegroup_units():
+	"""the size of a first-wave battlegroup, after the difficulty's army_size_scale"""
+	return expected_number_of_units_in_battlegroup
+
+
 func _apply_difficulty():
 	var difficulty = GameData.ai_difficulty(difficulty_id)
 	if difficulty == null:
@@ -187,6 +195,7 @@ func _apply_difficulty():
 	tech_upgrades = difficulty.get("tech_upgrades", true)
 	retreat_below_hp = float(difficulty.get("retreat_below_hp", 0.0))
 	focus_fire = difficulty.get("focus_fire", true)
+	wave_growth_scale = float(difficulty.get("wave_growth_scale", 1.0))
 	var economy = float(difficulty.get("economy_scale", 1.0))
 	expected_number_of_workers = _scaled_at_least_one(expected_number_of_workers, economy)
 	expected_number_of_haulers = _scaled_at_least_one(expected_number_of_haulers, economy)

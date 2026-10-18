@@ -12,6 +12,11 @@
   "expected_number_of_aa_turrets": 0,
   "expected_number_of_battlegroups": 1,
   "expected_number_of_units_in_battlegroup": 3,
+  "waves": {
+    "grow_every_s": 150,
+    "grow_by": 1,
+    "max_units": 8
+  },
   "raid_party_size": 3,
   "raid_interval_s": 75,
   "trade_hoarding_factor": 1.0,

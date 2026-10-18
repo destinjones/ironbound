@@ -424,3 +424,22 @@ came out orange and went back to 1.0. Before/after shots in the project folder u
 game/art/readability/. Tri counts unchanged (militia 3,366); UnitModelBench militia 30
 copies 72 ms on llvmpipe, the same model as before. The textured pipeline for the other
 units (bake, don't decimate) is the next step and is owned by the direction thread.
+
+## 2026-10-18: the AI refills and grows its attack waves, so matches end
+Five probe matches on main (project folder game/direction/probes/) showed why a match never
+ends: the balanced Normal AI formed its two battlegroups once, lost most of each on the first
+attack around minute 6, and then never built another battle unit, because a group with one
+survivor kept its slot for the rest of the match and the production count subtracted whole
+groups. The AI then sat on 1,700 iron while a helper-run player's 15 idle tanks stood at the
+rally point; nobody won in 30 minutes. Now a group that has lost two thirds of its planned
+size sends the survivors home and dissolves, the next group forms at once, the factory keeps
+producing a wave for every empty slot, and each wave is bigger: "waves" in data/ai/*.json
+(balanced +1 unit every 180 s up to 12; raider +1 per 150 s up to 8; turtle +1 per 300 s up
+to 12; trader +1 per 300 s up to 6), scaled by the difficulty's wave_growth_scale (very easy
+0, easy 0.5, normal 1, hard 1.5, brutal 2). The same probes on this branch: the passive
+player's command centre falls at 5:41 and the match ends at 7:35 (was: never); the helper-run
+player with a 24-unit army falls at 10:08 and the match is over at 11:44 (was: never, the AI
+stuck at 15 units). Normal is now too strong for a player whose army does not defend its base
+and whose iron never passes 10; the next two changes (the idle army defends the base, then
+the economy pace) are where the difficulty gets re-tuned, not here. The first wave keeps the
+personality's size, so the setup check's battlegroup assertion still holds.
