@@ -8,8 +8,8 @@ extends Node
 # attack-move to the attacker, so they engage whatever they meet on the way, and once the
 # fight is over they attack-move back to where they stood, so the army stays together
 # between raids instead of being drawn out piece by piece. A spot that was answered a moment
-# ago does not pull more units. A responder the player stops, redirects or tells to hold
-# is theirs again and stays where it is.
+# ago does not pull more units. A responder the player gives any order to (a stop, a
+# stance, a move) is theirs again and stays where it is.
 
 const Structure = preload("res://source/match/units/Structure.gd")
 const WaitingForTargets = preload("res://source/match/units/actions/WaitingForTargets.gd")
@@ -41,6 +41,7 @@ var _since_post_check_s = 0.0
 
 func _ready():
 	MatchSignals.unit_damaged.connect(_on_unit_damaged)
+	MatchSignals.unit_command_issued.connect(_on_player_command)
 
 
 func _process(delta):
@@ -79,6 +80,13 @@ func _on_unit_damaged(unit):
 		_posts[id]["sent_to"] = spot
 		_posts[id]["returning"] = false
 		responder.action = _call_up(spot)
+
+
+func _on_player_command(_command):
+	"""any order the player gives to a responder (a stop, a stance, a move) makes it theirs
+	again, whatever state it is in; the orders go to the selected units"""
+	for unit in get_tree().get_nodes_in_group("selected_units"):
+		_posts.erase(unit.get_instance_id())
 
 
 func _call_up(spot):

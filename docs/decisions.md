@@ -528,3 +528,13 @@ command centre falls at 11:49; that match is still lost by the helper-run player
 run-to-run spread of the AI's economy is wider than any of these changes, so the probe is
 a shape check, not a number to tune on. Normal is re-tuned once counters exist (item 6 of
 the order of work), not here.
+
+## 2026-10-18: any player order releases a home guard responder
+The review of #103 ran the harness by hand and found one case the "stopped far from where
+it was sent" rule misses: a Stop pressed on responders standing idle at the fight itself,
+inside the one second before they are walked back, left them in the same state as "fight
+over" and they walked off anyway. HomeGuard now also listens to
+MatchSignals.unit_command_issued, which UnitCommandHandler emits for every player command,
+instant ones (Stop, Hold Position, fire stance) included, and drops the selected units from
+its list of responders. The distance rule stays as a second net for orders that bypass the
+handler. base-defence and base-defence-stop pass unchanged.
