@@ -167,3 +167,29 @@ A first pass at `--length 1.3` read smaller than the old bulldozer at play zoom;
 it. In `tests/perf/UnitModelBench.tscn` (llvmpipe) 30 copies cost 107 ms against 64 ms for
 the old one and 132 ms for the tank, with draw calls down from 542 to 122. Raw download and
 concept: project shared files, `game/art/constructor/`.
+
+## The hauler (2026-10-18)
+
+The hauler's built truck (`units/hauler.glb`, 13 flat-colour materials) was replaced with a
+generated six-wheel cargo truck. 10.5 credits: 1.5 for the concept image, 9 for the 3D model.
+The old truck stays as `classic_model`.
+
+- **Prompt core:** modern 6x6 military logistics truck (MAN HX / Oshkosh MTVR style),
+  cab-forward cabin, three axles of off-road tyres, open cargo bed with drop sides, strapped
+  crates and a jerrycan rack, spare wheel behind the cab, exhaust stack. Olive drab with
+  desert dust; only the cab roof and the top edges of the cargo bed sides cobalt blue.
+- **Tripo:** `face_limit` 5000; it returned 4,549 triangles, decimated to 3,600 (the tank's).
+- **Clean-up:**
+
+```sh
+python3 tools/blender/clean_generated.py -- --in raw/hauler.glb \
+    --out assets/models/ironbound/units/generated/hauler.glb --yaw 90 --length 1.6 \
+    --max-tris 3600 --team-up 0.3 --team-smooth 2 --saturation 1.6
+```
+
+`--length 1.6` makes it as bulky on screen as the old truck (a first pass at the old 1.4 m
+looked a size class smaller). `--team-up 0.3` adds the bed rims to the cab roof so the
+player colour reads from the game camera. In `tests/perf/UnitModelBench.tscn` (llvmpipe)
+30 trucks cost 128 ms against 100 ms for the old one, the same as the tank (129 ms), with
+draw calls down from 782 to 122. Raw download and concept: project shared files,
+`game/art/hauler/`.

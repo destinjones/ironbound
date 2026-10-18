@@ -925,3 +925,11 @@ now a generated combat engineer vehicle (dozer blade, yellow crane arm) at the t
 triangles; the old bulldozer stays as the classic model. The yellow crane keeps it easy to
 tell apart from combat vehicles. It costs less to draw than the tank in the software-renderer
 bench (107 ms vs 132 ms for 30). Details in tools/blender/generated_models.md.
+
+## 2026-10-18: the hauler uses a generated truck
+
+Haulers are always on screen, and the built truck was flat-colour
+programmer art next to the remade tank. It is now a generated 6x6 cargo truck at the tank's
+3,600 triangles; the old truck stays as the classic model. It costs about as much to draw as
+the tank in the software-renderer bench (128 ms vs 129 ms for 30) and a sixth of the draw
+calls of the old one. Details in tools/blender/generated_models.md.
