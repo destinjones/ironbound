@@ -29,7 +29,14 @@
     "attack_domains": [
       "terrain",
       "air"
-    ]
+    ],
+    "armour": "light",
+    "damage_vs": {
+      "truck": 2.0,
+      "heavy": 0.5,
+      "structure": 0.5,
+      "air": 1.5
+    }
   },
   "projectile": "cannon_shell"
 }

@@ -53,6 +53,10 @@ work separate) and change `id` to match the file name.
 - `speed` (m/s), `fuel_per_s` (oil per second while moving).
 - `properties`: `hp`, `hp_max`, `sight_range`, and for armed units `attack_damage`,
   `attack_interval` (seconds between shots), `attack_range`, `attack_domains`.
+  Every unit needs `armour`, one of `light`, `heavy`, `truck`, `structure`, `air`
+  (structures must be `structure`), and every armed unit `damage_vs`: armour id ->
+  multiplier 0.25..2.0, applied at the receiving unit, 1.0 when a key is absent, `{}`
+  for an even weapon. A derived unit's `damage_vs` replaces its base's whole map.
   When you list `properties`, list every one you want to change; the rest come from
   the base.
 - `tier`: city tier needed (1 Frontier, 2 Industrial, 3 Electric).

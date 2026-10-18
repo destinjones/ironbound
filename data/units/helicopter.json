@@ -31,7 +31,9 @@
     "attack_domains": [
       "terrain",
       "air"
-    ]
+    ],
+    "armour": "air",
+    "damage_vs": {}
   },
   "projectile": "rocket",
   "fuel_per_s": 0.03

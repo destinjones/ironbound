@@ -25,6 +25,10 @@ const KNOWN_UNIT_FIELDS = [
 const BUILDING_ROLES = [
 	"headquarters", "resource", "logistics", "factory", "power", "defence", "support"
 ]
+# armour classes of units and the cells of a weapon's damage_vs map (Unit.take_damage)
+const ARMOUR_CLASSES = ["light", "heavy", "truck", "structure", "air"]
+const GROUND_ARMOUR = ["light", "heavy", "truck", "structure"]
+const DAMAGE_VS_RANGE = [0.25, 2.0]
 const KNOWN_FACTION_FIELDS = [
 	"id", "order", "name", "description", "color_hint", "start_units", "hidden_units", "roles",
 	"city", "armed_caravans", "ai_personalities"
@@ -50,7 +54,7 @@ const CAPS_NUMBERS = [
 const CAPS_SCORE_WEIGHTS = ["per_citizen", "per_unit_slot", "per_structure", "per_science"]
 const KNOWN_PROPERTIES = [
 	"sight_range", "hp", "hp_max", "attack_damage", "attack_interval", "attack_range",
-	"attack_domains", "cargo_capacity", "radius"
+	"attack_domains", "cargo_capacity", "radius", "armour", "damage_vs"
 ]
 const KNOWN_AI_FIELDS = [
 	"id", "name", "description", "expected_number_of_workers", "expected_number_of_haulers",
@@ -256,7 +260,7 @@ func _check_units(entries, resources, tiers_count):
 		for kind in entry.get("extracts", []):
 			if not kind in resources:
 				_error(where, "extracts unknown commodity '{0}'".format([kind]))
-		_check_properties(where, entry.get("properties", {}))
+		_check_properties(where, entry.get("properties", {}), entry.get("category"))
 		if "production_bonus" in entry and (
 			entry.get("category") != "structure"
 			or not float(entry.get("power", {}).get("demand_mw", 0.0)) > 0.0
@@ -384,7 +388,7 @@ func _check_number_fields(where, values, ranges):
 			))
 
 
-func _check_properties(where, properties):
+func _check_properties(where, properties, category):
 	for key in properties:
 		if not key in KNOWN_PROPERTIES:
 			_warn(where, "unknown property '{0}'".format([key]))
@@ -397,6 +401,57 @@ func _check_properties(where, properties):
 	for domain in properties.get("attack_domains", []):
 		if not domain in GameData.DOMAINS:
 			_error(where, "attack_domains must be \"terrain\" and/or \"air\"")
+	var armour = properties.get("armour")
+	if not armour in ARMOUR_CLASSES:
+		_error(
+			where,
+			"every unit needs properties.armour, one of {0}".format([", ".join(ARMOUR_CLASSES)])
+		)
+	elif category == "structure" and armour != "structure":
+		_error(where, "a structure's armour must be \"structure\"")
+	elif category != "structure" and armour == "structure":
+		_error(where, "armour \"structure\" is for structures only, units take another class")
+	var armed = "attack_damage" in properties
+	if armed and not "damage_vs" in properties:
+		_error(where, "an armed unit needs damage_vs (write {} for an even weapon)")
+	elif "damage_vs" in properties and not armed:
+		_error(where, "damage_vs is for armed units only (no attack_damage here)")
+	if "damage_vs" in properties:
+		_check_damage_vs(where, properties)
+
+
+func _check_damage_vs(where, properties):
+	"""the weapon's multipliers against each armour class: known keys, values in the range
+	the cards call strong or weak, and a cell for every domain the weapon can shoot at"""
+	var table = properties["damage_vs"]
+	if not table is Dictionary:
+		_error(where, "damage_vs must be an object like {\"light\": 2.0}")
+		return
+	for key in table:
+		if not key in ARMOUR_CLASSES:
+			_error(
+				where,
+				"damage_vs key '{0}' is not one of {1}".format([key, ", ".join(ARMOUR_CLASSES)])
+			)
+		var value = table[key]
+		if (
+			not (value is float or value is int)
+			or value < DAMAGE_VS_RANGE[0]
+			or value > DAMAGE_VS_RANGE[1]
+		):
+			_error(
+				where,
+				"damage_vs '{0}' must be a number from {1} to {2}".format(
+					[key, DAMAGE_VS_RANGE[0], DAMAGE_VS_RANGE[1]]
+				)
+			)
+	if table.is_empty():
+		return  # an even weapon, like the aircraft rockets
+	var domains = properties.get("attack_domains", [])
+	if "air" in domains and not "air" in table:
+		_warn(where, "damage_vs has no \"air\" cell although the weapon shoots at air (a typo?)")
+	if "terrain" in domains and GROUND_ARMOUR.filter(func(id): return id in table).is_empty():
+		_warn(where, "damage_vs has no ground cell although the weapon shoots at ground (a typo?)")
 
 
 func _check_scene(where, entry):

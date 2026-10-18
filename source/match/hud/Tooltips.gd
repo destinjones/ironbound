@@ -35,6 +35,9 @@ static func build_item(entry, player = null, hotkey = KEY_NONE):
 		stats.append(_tr("CARGO_CAPACITY").format([int(properties["cargo_capacity"])]))
 	if not stats.is_empty():
 		lines.append(" · ".join(stats))
+	var classes = Text.classes_for(entry)
+	if classes != "":
+		lines.append(classes)
 	lines.append(_cost_line(entry.get("cost", {}), player))
 	var locked = _locked_reason(entry, player)
 	if locked != "":
