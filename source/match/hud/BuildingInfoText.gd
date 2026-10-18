@@ -15,6 +15,7 @@ const Storage = preload("res://source/match/units/Storage.gd")
 const CommandCenter = preload("res://source/match/units/CommandCenter.gd")
 
 const MAX_TRUCK_ROWS = 6
+const ARMOUR_ORDER = ["light", "heavy", "truck", "structure", "air"]  # the same order on every card
 const KIND_COLORS = {
 	"COLLECT": HudStyle.ACCENT,
 	"BRINGING_GOODS": HudStyle.ACCENT,
@@ -142,6 +143,37 @@ static func makes_for(entry, faction):
 			)
 		)
 	return " · ".join(parts) if not parts.is_empty() else _tr("INFO_NOTHING")
+
+
+static func classes_for(entry):
+	"""the unit's own armour class, then what its weapon is strong and weak against, from the
+	same two data keys Unit.take_damage multiplies by (properties.armour / damage_vs)"""
+	var properties = entry.get("properties", {})
+	var parts = []
+	if properties.get("armour") != null:
+		parts.append(_tr("INFO_ARMOUR_" + str(properties["armour"]).to_upper()))
+	var table = properties.get("damage_vs", {})
+	var strong = []
+	var weak = []
+	for id in ARMOUR_ORDER:
+		var value = float(table.get(id, 1.0))
+		if value > 1.0:
+			strong.append(_tr("ARMOUR_" + id.to_upper()))
+		elif value < 1.0:
+			weak.append(_tr("ARMOUR_" + id.to_upper()))
+	if not strong.is_empty():
+		parts.append(_tr("INFO_STRONG_AGAINST").format([_and_list(strong)]))
+	if not weak.is_empty():
+		parts.append(_tr("INFO_WEAK_AGAINST").format([_and_list(weak)]))
+	return " · ".join(parts)
+
+
+static func _and_list(words):
+	"""'tanks and structures': the last two joined by INFO_LIST_AND, any before them by commas"""
+	if words.size() < 2:
+		return "".join(words)
+	var head = ", ".join(words.slice(0, words.size() - 1))
+	return _tr("INFO_LIST_AND").format([head, words[words.size() - 1]])
 
 
 static func status_lines(unit, own):

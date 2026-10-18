@@ -172,6 +172,9 @@ func _refresh_card():
 	_card_title.text = HaulerLinks.display_name(shown) if own else tr(entry["name"])
 	_card_role.text = Text.role_text(shown) + ("" if own else "  ·  " + _owner_text(shown))
 	var details = [Text.info_text(shown)]
+	var classes = Text.classes_for(entry)
+	if classes != "":
+		details.append(classes)
 	var needs = Text.needs_line(shown)
 	if needs != "":
 		details.append(_section("INFO_NEEDS") + needs)

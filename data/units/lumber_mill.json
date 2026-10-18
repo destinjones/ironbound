@@ -24,7 +24,8 @@
   "properties": {
     "sight_range": 6.0,
     "hp": 30,
-    "hp_max": 30
+    "hp_max": 30,
+    "armour": "structure"
   },
   "extracts": [
     "timber"

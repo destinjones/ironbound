@@ -24,7 +24,8 @@
   "properties": {
     "sight_range": 5.0,
     "hp": 15,
-    "hp_max": 15
+    "hp_max": 15,
+    "armour": "structure"
   },
   "power": {
     "grid_radius_m": 8.0

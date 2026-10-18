@@ -21,14 +21,18 @@
   ],
   "properties": {
     "sight_range": 8.0,
-    "hp": 30,
-    "hp_max": 30,
+    "hp": 36,
+    "hp_max": 36,
     "attack_damage": 2,
     "attack_interval": 1.0,
     "attack_range": 8.0,
     "attack_domains": [
       "terrain"
-    ]
+    ],
+    "armour": "structure",
+    "damage_vs": {
+      "light": 2.0
+    }
   },
   "projectile": "cannon_shell"
 }

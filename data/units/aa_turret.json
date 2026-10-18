@@ -27,7 +27,11 @@
     "attack_range": 8.0,
     "attack_domains": [
       "air"
-    ]
+    ],
+    "armour": "structure",
+    "damage_vs": {
+      "air": 2.0
+    }
   },
   "projectile": "rocket",
   "power": {

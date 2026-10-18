@@ -19,6 +19,8 @@ var attack_damage = null
 var attack_interval = null
 var attack_range = null
 var attack_domains = []
+var armour = null  # light, heavy, truck, structure or air (data/units/*.json properties.armour)
+var damage_vs = {}  # armour class -> damage multiplier of this unit's weapon, 1.0 when absent
 var radius:
 	get = _get_radius
 var movement_domain:  # AIR or TERRAIN: boats and amphibious units count as TERRAIN
@@ -78,10 +80,21 @@ func take_damage(damage, attacker):
 			set_meta("last_hit_by", attacker)
 			set_meta("last_hit_at_ms", Time.get_ticks_msec())
 	var hp_before = hp
-	hp -= damage
+	hp -= damage * _damage_factor_from(attacker)
 	if hp < hp_before:
 		# only real hits count; construction sites also lower hp when they are laid out
 		MatchSignals.unit_damaged.emit(self)
+
+
+func _damage_factor_from(attacker):
+	"""the attacker's weapon against this unit's armour (data/units/*.json damage_vs); 1.0 when
+	either side has no class: tests pass null, armed caravans pass the caravan (CaravanGuns.gd)"""
+	if armour == null or attacker == null or not is_instance_valid(attacker):
+		return 1.0
+	var table = attacker.get("damage_vs")  # null on a node without the property
+	if not table is Dictionary:
+		return 1.0
+	return maxf(0.05, float(table.get(armour, 1.0)))  # the floor only guards bad mod data
 
 
 func is_revealing():

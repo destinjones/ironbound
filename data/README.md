@@ -216,7 +216,7 @@ xvfb-run -a -s "-screen 0 1280x720x24" godot --path . --resolution 1280x720 \
 | `placement` | Structures: `"shore"` must stand on land next to deep water (the shipyard) |
 | `fuel_per_s` | Oil burnt per second while moving |
 | `flight_endurance_s` | Air units only: seconds it can stay airborne before it has to land at an airport to refuel (it crashes when it runs dry). Leave it out for helicopters, which hover freely |
-| `properties` | `hp`, `hp_max`, `sight_range`, `attack_damage`, `attack_interval`, `attack_range`, `attack_domains` (`"terrain"`, `"air"`), `cargo_capacity` |
+| `properties` | `hp`, `hp_max`, `sight_range`, `attack_damage`, `attack_interval`, `attack_range`, `attack_domains` (`"terrain"`, `"air"`), `cargo_capacity`, `armour` (every unit: one of `light`, `heavy`, `truck`, `structure`, `air`; structures must be `structure`), `damage_vs` (every armed unit: armour id -> multiplier 0.25..2.0, applied at the receiving unit, 1.0 when a key is absent, `{}` for an even weapon; a derived unit's map replaces its base's whole map) |
 | `projectile` | `"cannon_shell"` or `"rocket"` |
 | `extracts` | Structures only: commodities it extracts from a deposit next to it |
 | `role` | Structures: what the building card calls it, one of `headquarters`, `resource`, `logistics`, `factory`, `power`, `defence`, `support` |

@@ -33,7 +33,12 @@
     "attack_range": 7.0,
     "attack_domains": [
       "terrain"
-    ]
+    ],
+    "armour": "heavy",
+    "damage_vs": {
+      "light": 2.0,
+      "structure": 0.5
+    }
   },
   "projectile": "cannon_shell",
   "fuel_per_s": 0.015

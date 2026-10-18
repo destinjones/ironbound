@@ -21,6 +21,7 @@
   "properties": {
     "sight_range": 5.0,
     "hp": 18,
-    "hp_max": 18
+    "hp_max": 18,
+    "armour": "truck"
   }
 }

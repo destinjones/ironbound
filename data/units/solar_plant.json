@@ -24,7 +24,8 @@
   "properties": {
     "sight_range": 6.0,
     "hp": 24,
-    "hp_max": 24
+    "hp_max": 24,
+    "armour": "structure"
   },
   "power": {
     "output_mw": 7.0,
