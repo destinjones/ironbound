@@ -28,6 +28,6 @@
   },
   "power": {
     "output_mw": 6.0,
-    "grid_radius_m": 10.0
+    "grid_radius_m": 16.0
   }
 }
