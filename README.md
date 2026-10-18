@@ -2,8 +2,7 @@
 
 **You never place a house. The city builds itself.**
 
-<!-- hero-gif: replace this screenshot with the hero GIF from the trailer work -->
-![Ironbound gameplay](./site/assets/img/battle.webp "Ironbound")
+![Cranes raise the command centre, then the city grows around it on its own](./media/hero.gif "Ironbound")
 
 Ironbound is a real-time strategy game where your city grows from what you deliver to it.
 You don't lay out streets or drop houses one by one: you run the mines, the trucks and
