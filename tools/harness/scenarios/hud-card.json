@@ -1,0 +1,47 @@
+{
+  "name": "hud-card",
+  "description": "The command card: icons on a 4 x 3 grid with the hotkey in the top left corner and a caption under each icon. Three tanks, a constructor and two trucks stand together in Big Arena. card-orders: the tanks selected, row 1 Fight F, Patrol P, Guard V, Stop X, row 2 Patrol base B, Retreat Z, Fire stance L, Hold position K, row 3 empty. card-return-fire: the same tanks on return fire, the fire stance slot shows the incoming arrow over the outgoing shell and says Return fire. card-hold-fire: the tanks on hold fire and holding position, the fire stance slot shows the shell in a no-entry ring and says Hold fire, the hold position slot is lit and says Holding. card-build: the constructor selected, 18 of its 20 structures (the harness player has no faction) in 6 columns from the top left, nothing paged. card-fleet: the trucks selected (they drive off to work, so every own truck is selected, not the ones near the spawn), the order rows on rows 1 and 2 and the recycle button and the fleet status on row 3. card-cancel-build: the constructor puts down a pylon through the build menu's placement and the site is selected; its card has only the stop slot, showing the crate with an X and Cancel build, with no key (the stop key skips structures). The checks read the card itself: captions, the lit toggle, the columns, the fleet row and the Cancel build slot. Run it at a true 1920x1080 (80 px slots) and a true 1280x720 (64 px slots).",
+  "map": "big_arena",
+  "seconds": 12,
+  "fog": false,
+  "players": [{"type": "human"}, {"type": "ai", "personality": "turtle", "difficulty": "very_easy"}],
+  "sample_every": 1,
+  "setup": [
+    {"do": "spawn", "player": "p0", "unit": "tank", "count": 3, "spot": [40, 40]},
+    {"do": "spawn", "player": "p0", "unit": "worker", "count": 1, "spot": [35, 40]},
+    {"do": "spawn", "player": "p0", "unit": "hauler", "count": 2, "spot": [45, 40]},
+    {"do": "camera", "spot": [40, 40]}
+  ],
+  "events": [
+    {"at": 1, "do": "select", "units": "own:combat", "near": [40, 40], "radius": 6, "expect_ok": true},
+    {"at": 2, "do": "screenshot", "name": "card-orders"},
+    {"at": 2.5, "do": "stance", "units": "own:combat", "near": [40, 40], "radius": 6, "stance": "return", "expect_ok": true},
+    {"at": 3, "do": "screenshot", "name": "card-return-fire"},
+    {"at": 3.5, "do": "stance", "units": "own:combat", "near": [40, 40], "radius": 6, "stance": "hold", "expect_ok": true},
+    {"at": 3.7, "do": "hold_position", "units": "own:combat", "near": [40, 40], "radius": 6, "on": true, "expect_ok": true},
+    {"at": 4.2, "do": "screenshot", "name": "card-hold-fire"},
+    {"at": 5, "do": "select", "units": "own:worker", "near": [35, 40], "radius": 6, "limit": 1, "expect_ok": true},
+    {"at": 6, "do": "screenshot", "name": "card-build"},
+    {"at": 7, "do": "select", "units": "own:hauler", "expect_ok": true},
+    {"at": 8, "do": "screenshot", "name": "card-fleet"},
+    {"at": 9, "do": "build", "structure": "pylon", "spot": [36, 46], "search": true, "expect_ok": true},
+    {"at": 10, "do": "select", "units": "own:pylon", "near": [36, 46], "radius": 12, "expect_ok": true},
+    {"at": 11, "do": "screenshot", "name": "card-cancel-build"}
+  ],
+  "checks": [
+    {"at": 1.5, "name": "the three tanks are selected", "expect": "expr", "code": "state.selected.size() == 3"},
+    {"at": 1.8, "name": "Patrol base is row 2, column 1 (the fifth slot)", "expect": "expr", "code": "api.match_node.find_child('Command_patrol_base', true, false).get_index() == 4 and api.match_node.find_child('Command_patrol_base', true, false).get_node('Hotkey').text == 'B'"},
+    {"at": 1.8, "name": "the stances read Fire at will and Hold position, not lit", "expect": "expr", "code": "api.match_node.find_child('Command_fire_stance', true, false).get_node('Caption').text == 'Fire at will' and api.match_node.find_child('Command_hold_position', true, false).get_node('Caption').text == 'Hold position' and not api.match_node.find_child('Command_hold_position', true, false).button_pressed"},
+    {"at": 1.8, "name": "Hold position fits its slot", "expect": "expr", "code": "api.match_node.find_child('Command_hold_position', true, false).get_node('Caption').get_theme_font('font').get_string_size(api.match_node.find_child('Command_hold_position', true, false).get_node('Caption').text, 0, -1, api.match_node.find_child('Command_hold_position', true, false).get_node('Caption').get_theme_font_size('font_size')).x <= api.match_node.find_child('Command_hold_position', true, false).get_node('Caption').size.x"},
+    {"at": 2.8, "name": "the fire stance slot says Return fire", "expect": "expr", "code": "api.match_node.find_child('Command_fire_stance', true, false).get_node('Caption').text == 'Return fire'"},
+    {"at": 4.0, "name": "Hold fire, and hold position lit and saying Holding", "expect": "expr", "code": "api.match_node.find_child('Command_fire_stance', true, false).get_node('Caption').text == 'Hold fire' and api.match_node.find_child('Command_hold_position', true, false).button_pressed and api.match_node.find_child('Command_hold_position', true, false).get_node('Caption').text == 'Holding'"},
+    {"at": 5.5, "name": "one constructor is selected", "expect": "expr", "code": "state.selected.size() == 1"},
+    {"at": 5.5, "name": "the build menu is 6 columns with 18 slots", "expect": "expr", "code": "api.match_node.find_child('WorkerMenu', true, false).is_visible_in_tree() and api.match_node.find_child('WorkerMenu', true, false).columns == 6 and api.match_node.find_child('WorkerMenu', true, false).get_child_count() == 18"},
+    {"at": 7.5, "name": "the trucks are selected", "expect": "expr", "code": "state.selected.size() >= 2"},
+    {"at": 7.5, "name": "the fleet buttons sit on row 3, under the order rows", "expect": "expr", "code": "api.match_node.find_child('FleetMenu', true, false).is_visible_in_tree() and api.match_node.find_child('FleetMenu', true, false)._recycle_button.get_global_rect().position.y >= api.match_node.find_child('Command_patrol_base', true, false).get_global_rect().end.y"},
+    {"at": 10.7, "name": "one unit is selected: the pylon site", "expect": "expr", "code": "state.selected.size() == 1"},
+    {"at": 10.7, "name": "the pylon is still a construction site", "expect": "built", "units": "own:pylon", "max": 0},
+    {"at": 10.7, "name": "the stop slot says Cancel build and shows no key", "expect": "expr", "code": "api.match_node.find_child('CancelActionButton', true, false).get_node('Caption').text == 'Cancel build' and api.match_node.find_child('CancelActionButton', true, false).get_node('Hotkey').text == '' and api.match_node.find_child('CancelActionButton', true, false).tooltip_text == 'Cancel build'"},
+    {"end": true, "expect": "no_errors"}
+  ]
+}

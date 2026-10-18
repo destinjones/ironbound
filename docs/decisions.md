@@ -1050,3 +1050,104 @@ data/factions/foundry.json) and keep some main_t1 light units in the later waves
 item stays open: ShotEffects.rocket_impact shakes the camera for rockets of 3 damage or
 more, so a truck stack in a ground fight now shakes the camera on its hits, as the technical
 and artillery do; nobody has watched six trucks in a window yet.
+
+## 2026-10-18: the command card is 4 x 3 with icons and captions, the constructor's menu 6 columns and never paged
+The command card is 4 x 3 with icons and captions; the worker's menu is 6 columns, never paged.
+Why: PlaytestChecks.gd:64 and TooltipsCheck.gd:80-89 pin the width and the visible vehicle
+factory, and page 2 would hide the defences at 6:00. Row 1 is Fight F, Patrol P, Guard V and
+Stop X, row 2 Patrol base B, Retreat Z, Fire stance L and Hold position K, and row 3 is free:
+the truck buttons (recycle, line and the fleet status) sit there, where on main the status ran
+over the top row next to the X. Every slot is an icon with its caption under it and its key in
+the top left corner, read from Keybinds so a controls.cfg rebind shows. The fire stance slot
+changes icon and caption with the stance. Hold position is a toggle: its caption names the order
+("Hold position") and the slot lights up and says "Holding" while the units hold, as SC2 and
+Generals name a toggle's action and let the lit frame show that it is on; "Free to chase" under
+a pin said the opposite of the icon, so COMMAND_HOLD_SHORT_OFF is gone. With one construction
+site selected the stop slot becomes Cancel build, with no key: the stop key goes through
+UnitCommands.stop, which skips structures, so an X tag promised a key that did nothing (making X
+cancel a site would change UnitCommandHandler, which this PR leaves alone). HudStyle.slot_px
+gives 80 px slots on a HUD 900 px tall or more and 64 below, read once at _ready; the command
+card is 332 x 248 or 268 x 200 and the constructor's 500 x 248 or 404 x 200 (346 x 262, 282 x
+214, 514 x 262 and 418 x 214 with the panel). A faction's constructor has 15 structures, which
+fill rows of 6, 6 and 3 from the top left, where main had four rows of four in the bottom right
+corner (a 342 x 342 panel, 47 % of a 720 px screen). With no faction there are 20: main's 16
+slots cut Trading post, Flak tower, Foundry and SAM site, and the 18 slots now cut Foundry and
+SAM site, the last two in the menu's order. No faction means the harness, the tests and the
+first-match tutorial (data/tutorial/first_match.json names none, and TutorialScript.gd:88 passes
+""). The slot builders (hotkey tag, caption, unit icon) moved to HudStyle, so the build menus
+and the card share them; the hotkey tag has a 3 px black outline, because the amber letter faded
+into a lit (amber) slot. UnitMenus' BackgroundGrid and the card's four dead placeholders are
+gone; the fleet and extractor menus take their slot size from HudStyle.
+
+Where it differs from the spec, and why. The icons were redrawn after shots at 32 px. Fire at
+will is three upright cartridges fanned from below (fanning from one corner read as crumbs);
+the cartridges are two-tone (the casing in MUTED, the head in FG), the spec's fallback. Return
+fire is an incoming arrow over the stances' own cartridge going back out, not a shield with a
+shell: the shield read as a spade, was mostly MUTED so the slot looked half disabled, and
+repeated Guard's shield two slots away. Hold fire is the cartridge in a MUTED no-entry ring and
+slash: in FG it was the same cream ring with a mark as Stop, diagonally next to it. Fight is a
+whole ring with three ticks outside it and the arrow coming in level from the left to its
+centre: ticks across the ring cut it into dashes, and an arrow at 45 degrees at the lower left
+made a magnifier ("search"). Patrol's arrowheads sit at the ends of its two arcs, next to the
+posts: in the middle of the loop they broke it into beads that looked like Patrol base's ring.
+Retreat's pennant is FG and half again as big, because at 32 px the flag vanished and left an
+undo arrow. Cancel build is a crate (frame, planks, brace) with the X in its corner: an X over
+hatching did not say crate. The 13 SVGs import at svg/scale 2.0 (64 px textures): at 1.0 the 32
+px raster was stretched to 40 px in a full slot and went soft next to the text. In a 64 px slot
+the captions are 10 px, not 11: "Hold position" is wider than the 62 px a caption has at 11 px,
+and the build menu's cost row uses 9 px icons and numbers, because three amounts ran out of the
+slot and the command centre's copper price was cut off. The 6-column card is 500 px wide, not
+492 (6 x 80 + 5 x 4). COMMAND_STOP and COMMAND_CANCEL_BUILD are in guide.csv in English only:
+guide.csv has no Polish column, like every other COMMAND_ string. The key on each slot and in
+its tooltip is read every frame and set when it changes: Match applies controls.cfg after the
+HUD's _ready, so a tag set at _ready showed the default key (the tooltips on main had that bug).
+With nothing movable selected, a structure, the card is the stop slot alone; showing the third
+row's spacers there would put Stop in the top left of a two-row card. A train is not movable to
+the card either (it runs on rails), so with only trains selected the fleet menu hides its second
+row of spacers and its buttons sit on row 2 under Stop, not on row 3 under two empty rows. The
+fleet status is one slot wide in the grid and its text runs over the next slot (a 160 px cell
+would have made its column 160 px), and it grows upwards from its slot: a train's line of four
+lines or more ran below the card and off a 720 px screen. unit_generic and structure_generic
+draw nothing in today's data: a unit with a "base" inherits the base's icon, so every entry has
+a PNG, and they are the fallback for a unit with none.
+
+One change outside the menus. At 1280 x 720 the constructor's wider menu left the auto-expand
+switch (Guide.gd) no room beside the unit card, and it was laid over the card's text. When the
+switch would reach into the BuildingInfo card it now sits above the menu at the right edge
+instead; at 1920 x 1080 it stays left of the menu as before.
+
+Evidence: tools/harness/scenarios/hud-card.json passes 22/22 (8 orders, 14 checks) at a true
+1920 x 1080 (12.1 game seconds in 53.5 real seconds) and at a true 1280 x 720 (27.4 real
+seconds), with six shots: card-orders, card-return-fire, card-hold-fire (Hold fire, Holding
+lit), card-build (18 slots in three rows of 6, nothing over the unit card), card-fleet (orders
+on rows 1 and 2, Recycle and "4 vehicles selected" on row 3) and card-cancel-build (one slot,
+crate and X, Cancel build, no key). Its checks read the card, not only the selection: Patrol
+base is the fifth slot with B, the captions say Fire at will, Hold position, Return fire, Hold
+fire and Holding in turn, Hold position is lit only while held and its caption fits its slot,
+the build menu has 6 columns and 18 slots, the fleet buttons sit below the order rows, and the
+site's slot says Cancel build with no key. The same json run on main from /home/claude/ironbound
+passes 13/22: the 8 card checks fail there (main's slots have no caption or key nodes, its
+build menu is 4 wide), and so does no_errors, with 69 errors from that checkout's import cache
+(alert_attack.svg and the new hauler, constructor and militia models missing from
+.godot/imported), not from code. Main's shots show the text card with an empty top row and the
+X alone in its corner, the 4 x 4 build menu without Trading post and Flak tower, and for the
+site a wide empty card with an X squeezed to a sliver at its right edge. A probe at 1280 x 720
+with a train selected: the fleet card is 268 x 132, Stop on row 1 and Recycle, Auto line and
+the status on row 2; a five-line status grows up to 621..708 inside the card (ends at 715).
+CommandChecks at 1280 x 720: 38 PASS and "command checks: 0 failure(s)", including "the Patrol
+base button is in the unit menu", "clicking it sends the units on the base loop" and "X stops
+them". PlaytestChecks: 20 PASS, 0 failure(s), "worker menu is 4 x 80 px wide or more (is
+500)". TooltipsCheck: 76 PASS, all checks passed, "every visible HUD button has a tooltip" in
+both shots and 21 menu cards complete. BuildingInfoCheck: 23 PASS, 0 failure(s), the site card
+beside the Cancel build slot. smoke 10/10 and hud-alert 3/3 still pass, the data validator
+reports 0 errors and 0 warnings, and gdformat and gdlint are clean.
+
+Known and left for later. In a 64 px slot the long structure names end in an ellipsis
+(Anti-ground..., Command c..., Vehicle fact..., Aircraft fac...) and the 9 px commodity marks
+are mostly told apart by the colour of their numbers; the hover card has the full name and
+cost. The first-match tutorial's constructor does not list Foundry or SAM site; giving
+first_match.json a faction is a data change for its own PR. With orders only, the card's third
+row is an empty dark strip, as the first row was on main; PR 4's bar gives the card its frame.
+The icons are 40 / 32 px as section 1 of the spec sets, which leaves about 16 px between icon
+and caption in a full slot; 44 / 35 would fill it if play says the icons are small. The fleet
+menu's Recycle and line buttons are still words, not icons.
