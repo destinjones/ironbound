@@ -408,3 +408,19 @@ to it, it cannot open its folder, and its hang watchdog needs threads). The pres
 out docs/, tests/, media/ and site/. Download is 73 MB of game data plus a 38 MB engine;
 on a 50 Mbps line the menu is up in about 23 s, locally in 3 s. Shrinking the textures for
 the web is the next lever if that proves too slow.
+
+## 2026-10-18: units stand off the sand (look, team colours, infantry size)
+Destin linked a Generals-style RTS demo whose models "read better than ours". The demo
+could not be fetched, but our own frames showed the cause was not model detail: tan units on
+pale sand under exposure 1.4, pastel team colours (#66b1ff blue, #ff5c73 red) and infantry
+about 35 px tall at play zoom. Data only: the Grounded look drops exposure 1.4 -> 1.15, the
+sand and hardpan colours about 10% darker, shadow blur 0.8 -> 0.45, lift 0 and contrast
+1.16; the twelve player colours are now saturated mid-value (blue #2d7ff0, red #e3313f,
+green #39b54a, ...); militia model_scale 0.7 -> 1.0, so a rifleman stands 1.8 m (about
+55 px at camera size 15, close to the 60 px rule). Why: the eye reads value contrast and
+saturation first, and the pastel colours were brightened again by the exposure; the tank
+pipeline work is wasted if the ground outshines the unit. A first pass with saturation 1.08
+came out orange and went back to 1.0. Before/after shots in the project folder under
+game/art/readability/. Tri counts unchanged (militia 3,366); UnitModelBench militia 30
+copies 72 ms on llvmpipe, the same model as before. The textured pipeline for the other
+units (bake, don't decimate) is the next step and is owned by the direction thread.

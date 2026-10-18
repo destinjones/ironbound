@@ -3,42 +3,42 @@
     {
       "id": "blue",
       "name": "COLOR_BLUE",
-      "color": "#66b1ff"
+      "color": "#2d7ff0"
     },
     {
       "id": "red",
       "name": "COLOR_RED",
-      "color": "#ff5c73"
+      "color": "#e3313f"
     },
     {
       "id": "green",
       "name": "COLOR_GREEN",
-      "color": "#a5ff99"
+      "color": "#39b54a"
     },
     {
       "id": "purple",
       "name": "COLOR_PURPLE",
-      "color": "#ed85ff"
+      "color": "#a54ae6"
     },
     {
       "id": "orange",
       "name": "COLOR_ORANGE",
-      "color": "#ff9a2e"
+      "color": "#f28a1e"
     },
     {
       "id": "yellow",
       "name": "COLOR_YELLOW",
-      "color": "#ffe14d"
+      "color": "#f5c518"
     },
     {
       "id": "teal",
       "name": "COLOR_TEAL",
-      "color": "#2ec4b6"
+      "color": "#1aa89b"
     },
     {
       "id": "white",
       "name": "COLOR_WHITE",
-      "color": "#f2f2f2"
+      "color": "#e8e8e8"
     },
     {
       "id": "black",
@@ -48,7 +48,7 @@
     {
       "id": "pink",
       "name": "COLOR_PINK",
-      "color": "#ff7ad9"
+      "color": "#e84aa8"
     },
     {
       "id": "dark_green",
