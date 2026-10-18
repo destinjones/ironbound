@@ -918,6 +918,14 @@ and shoulder patches, including their sides (`--team-up -0.2`), against the "top
 only" rule: on a 15-pixel soldier the tops alone did not tell blue from red. The classic
 model option is unchanged. Details in tools/blender/generated_models.md.
 
+## 2026-10-18: the constructor uses a generated engineer vehicle
+
+The worker's built bulldozer was flat-colour programmer art next to the remade tank. It is
+now a generated combat engineer vehicle (dozer blade, yellow crane arm) at the tank's 3,600
+triangles; the old bulldozer stays as the classic model. The yellow crane keeps it easy to
+tell apart from combat vehicles. It costs less to draw than the tank in the software-renderer
+bench (107 ms vs 132 ms for 30). Details in tools/blender/generated_models.md.
+
 ## 2026-10-18: the hauler uses a generated truck
 
 Haulers are always on screen, and the built truck was flat-colour
