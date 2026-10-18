@@ -19,11 +19,11 @@ custom_minimum_size = Vector2(80, 80)
 layout_mode = 2
 
 [node name="CancelActionButton" type="Button" parent="."]
+custom_minimum_size = Vector2(80, 80)
 layout_mode = 2
 tooltip_text = "CANCEL_CURRENT_ACTION"
 focus_mode = 0
-theme_override_font_sizes/font_size = 28
-text = "X"
+theme_type_variation = &"SlotButton"
 
 [node name="Padding5" type="Control" parent="."]
 custom_minimum_size = Vector2(80, 80)
@@ -44,33 +44,21 @@ layout_mode = 2
 [node name="Padding9" type="Control" parent="."]
 custom_minimum_size = Vector2(80, 80)
 layout_mode = 2
+mouse_filter = 2
 
 [node name="Padding10" type="Control" parent="."]
 custom_minimum_size = Vector2(80, 80)
 layout_mode = 2
+mouse_filter = 2
 
 [node name="Padding11" type="Control" parent="."]
 custom_minimum_size = Vector2(80, 80)
 layout_mode = 2
+mouse_filter = 2
 
 [node name="Padding12" type="Control" parent="."]
 custom_minimum_size = Vector2(80, 80)
 layout_mode = 2
-
-[node name="Padding13" type="Control" parent="."]
-custom_minimum_size = Vector2(80, 80)
-layout_mode = 2
-
-[node name="Padding14" type="Control" parent="."]
-custom_minimum_size = Vector2(80, 80)
-layout_mode = 2
-
-[node name="Padding15" type="Control" parent="."]
-custom_minimum_size = Vector2(80, 80)
-layout_mode = 2
-
-[node name="Padding16" type="Control" parent="."]
-custom_minimum_size = Vector2(80, 80)
-layout_mode = 2
+mouse_filter = 2
 
 [connection signal="pressed" from="CancelActionButton" to="." method="_on_cancel_action_button_pressed"]

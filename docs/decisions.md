@@ -934,6 +934,224 @@ programmer art next to the remade tank. It is now a generated 6x6 cargo truck at
 the tank in the software-renderer bench (128 ms vs 129 ms for 30) and a sixth of the draw
 calls of the old one. Details in tools/blender/generated_models.md.
 
+## 2026-10-18: CI prints the smoke report when the smoke match fails
+
+The "Play the smoke match" step ran `./play.sh smoke` and then `cat report.md`, but the step
+runs under `bash -e`, so a failing match ended the step before the report was printed. Two
+failures today (#114's run 239 and #116's run 248, both on changes that cannot touch the
+match) said only `HARNESS FAIL smoke: 9/10 checks ok`: the failed item was one of the six
+`expect_ok` orders, which the log does not print, and the uploaded report cannot be read from
+the cloud session. The step now keeps play.sh's exit status, prints the report either way and
+exits with that status, so the next failure names the order and its error in the log.
+
+## 2026-10-18: the missile truck fires at the ground: the Foundry's rocket corner
+
+The armour entry above left the missile truck on its fallback (attack_domains ["air"],
+damage_vs {"air": 2.0}), so the Foundry, the default human faction, had no unit strong
+against tanks while the truck's own card said "long-range rockets against ground and air".
+The lead took the role change: data/units/missile_truck.json now has attack_domains
+["terrain", "air"] and damage_vs {"heavy": 2.0, "light": 0.5, "air": 2.0}, the map the
+armour design gave it, and MISSILE_TRUCK_DESCRIPTION stays as it is because the data now
+matches it. Review changed two more numbers in the same file, attack_range 9.5 -> 8.5 and
+attack_interval 1.0 -> 1.2, so that against the ground the truck equals the rocket technical
+instead of beating it. No code changed. The card's class line reads "Unarmoured truck ·
+strong against tanks and aircraft · weak against light vehicles and infantry"
+(BuildingInfoText.classes_for with the buildings.csv words) and its attack line "ground/air:
+3 damage every 1.2 s, 8.5 m range". "Long-range" still holds against what it is strong
+against: the tank shoots from 7.0 m, the heavy tank and the gunship from 7.5 and the
+helicopter from 6.5 (the battle tank's 8.5 is equal).
+
+Why 8.5 m: at 9.5 m the truck outranged every structure that shoots at the ground (gun nest
+8.5 m, turret 8.0, bunker 7.0; the flak tower, SAM site and AA turret shoot only at
+aircraft). On a fight order it stopped 9.0 m from a gun nest and killed it in 15 s without
+taking a hit, although the gun nest is the Syndicate's answer to rocket trucks: its card
+says "strong against trucks", and in the armour design it beats the technical at an equal
+8.5 m. At 8.5 m the truck stops 8.05 m from the nest, as the technical does (8.06 m), and
+the nest wins: the truck was dead by 10 s with the nest on 21 of its 36 hp, and a technical
+sent the same way at another nest was dead by 10 s with that nest on 18. The bunker's 7.0 m
+is still outranged, as it is by the technical (matchup 60 of the armour design, accepted
+there).
+
+Why 1.2 s: the missile truck is a shared unit. It has no "factions" key and the Syndicate
+hides only ag_turret and aa_turret, so a Syndicate player and the Syndicate helper build it
+too (VoiceCheck already gives it a Syndicate crew voice). At 9.5 m and 1.0 s it out-ranged
+and out-damaged the Syndicate's own main_t2 and main_t3 unit, the rocket technical, against
+tanks (6.0 against 5.0 damage per second, at the same cost of 11) and shot aircraft as well.
+At 8.5 m and 1.2 s their ground weapons are the same; the truck keeps its anti-air, the
+technical keeps its speed (3.8 against 2.8 m/s), its hp (30 against 27) and a build 1 s
+shorter, and in the fight model six technicals beat six trucks. Hiding the truck from the
+Syndicate was the other option and was not taken: the Syndicate would lose its only
+ground-based mobile anti-air (militia is city-only). The technical's niche can be looked at
+again in the item 6 retune.
+
+The scene was read before the data was trusted: MissileTruck.gd extends Tank.gd (waiting for
+targets by default), and WaitingForTargets, AutoAttacking, AttackingWhileInRange and Stances
+pick targets only by attack_domains. Its rocket (Rocket.gd, "projectile": "rocket") moves
+its end point to the target every physics frame and damages the unit it was fired at, lobbed
+at ground targets 5 m away or more and flat at aircraft, so a rocket at a tank cannot climb
+to an aircraft's height and miss.
+
+Evidence: counters-triangle gains fight G, one missile truck holding position 9.5 m from one
+tank that is told to fight through it, and fight H, a raider told to attack a missile truck.
+In a half-second probe of the scenario on the branch, the tank came within the holding
+truck's 8.5 m between 0.5 and 1.0 s, the first rocket landed by 1.5 s, and the tank went 33,
+27, 21, 15, 9, 3 hp and died between 7.5 and 8.0 s with the truck on 11 hp. The check names
+carry the prediction counted from simultaneous first shots, 6.5 s and 9 hp, and G's checks
+run at 11 s. In H the raider killed the truck between 8.0 and 8.5 s and kept 9 of its 18 hp
+(predicted 9). On main the truck never fired at the tank, and the tank killed it between
+11.5 and 12.0 s on full hp; in H the raider killed the truck between 11.0 and 11.5 s
+untouched. G's check "a missile truck beats a tank" fails on main (one tank left at 11 s)
+and passes on the branch, where all 16 named checks pass and A to F are unchanged; "and the
+truck stands" and both H checks pass on main too and only guard the branch result. The first
+branch run showed why G's truck holds position and H's raider is on return fire with an
+attack order: once their own fight was over, the human's home guard (HomeGuard.gd, idle
+fighters within 30 m of an attacker) sent the idle truck at D's turret 20 m away, which then
+fell and failed D, and the idle raider at E's bunker 29.5 m away, where it died.
+
+Other engine probes on the final numbers: two holding trucks killed a gunship between 7.0
+and 7.5 s (the first hit landed by 2.5 s) and lost neither truck; one truck killed a
+helicopter between 6.5 and 7.0 s and lost 5 hp; two trucks killed a heavy tank between 7.5
+and 8.0 s and lost neither, though one was down to 3 hp; one truck lost to a heavy tank (the
+truck dead by 9 s, the heavy tank on 24 of 60); a hover skimmer killed a truck and kept 4.5
+of its 15 hp. The skimmer is the Foundry's own light unit and wins this fight more narrowly
+than the raider (at 9.5 m and 1.0 s it kept 1.5 hp). smoke, base-defence, die-once,
+factions-foundry, ai-waves-stagger and tutorial-first-match pass; TooltipsCheck and
+BuildingInfoCheck pass unchanged; validate_data: 0 error(s), 0 warning(s); gdformat and
+gdlint are clean.
+
+The AI builds no missile trucks: no role in data/factions or Factions.DEFAULT_ROLES names
+it, and its anti-air roles are the flak tower and the SAM site, both structures, so its
+compositions and its air defence do not change. A truck the AI owns (a spawned one) now
+fires at ground units in its sight. The human's home guard now also sends idle missile
+trucks at ground attackers within 30 m, where before it sent them only at aircraft. That
+includes raider raids, where the truck deals x0.5 and at 2.8 m/s cannot catch a 4.4 m/s
+raider; a follow-up could skip responders whose damage_vs against the attacker's armour is
+below 1.0. Targeting stays nearest-first and class blind
+(WaitingForTargets._pick_closest_unit), so in a mixed fight a truck spends its rockets at
+x0.5 on the light units in front before the tanks behind, and "strong against tanks" needs
+the player's attack orders until the deferred target preference lands. The helper's
+cost-first pick (Helper._best_unit_for) already bought missile trucks at T2 when the bank
+covered them but not the heavy tank (17), the artillery (14) or, on the tie at 11, the
+amphibious APC that comes first in file order; those trucks now fight tanks instead of
+standing idle in front of a ground army. The Syndicate helper's tie at 11 goes, in file
+order, to the APC, then the truck, then the technical. A role-aware pick stays deferred, as
+in the armour entry.
+
+Input to item 6: past T1 neither AI's main waves hold a light unit. The Foundry AI fields
+the tank, the heavy tank and the battle tank with artillery and helicopters, and its raider
+role is the tank; the Syndicate's main_t2 and main_t3 are the rocket technical. A pure
+missile-truck stack therefore beats the Foundry AI's tank and heavy-tank waves cost for
+cost, and the light units that punish it hard (raiders, skimmers, city militia) are missing
+from those waves. In the fight model at about 66 cost, six trucks beat seven tanks keeping
+two and four heavy tanks keeping three, and take no damage from two bunkers; they lose to
+three battle tanks, six technicals, eleven raiders, eleven skimmers or thirteen militia. A
+follow-up data PR can give the Foundry AI a light unit (roles.raider "hover_skimmer" in
+data/factions/foundry.json) and keep some main_t1 light units in the later waves. One feel
+item stays open: ShotEffects.rocket_impact shakes the camera for rockets of 3 damage or
+more, so a truck stack in a ground fight now shakes the camera on its hits, as the technical
+and artillery do; nobody has watched six trucks in a window yet.
+
+## 2026-10-18: the command card is 4 x 3 with icons and captions, the constructor's menu 6 columns and never paged
+The command card is 4 x 3 with icons and captions; the worker's menu is 6 columns, never paged.
+Why: PlaytestChecks.gd:64 and TooltipsCheck.gd:80-89 pin the width and the visible vehicle
+factory, and page 2 would hide the defences at 6:00. Row 1 is Fight F, Patrol P, Guard V and
+Stop X, row 2 Patrol base B, Retreat Z, Fire stance L and Hold position K, and row 3 is free:
+the truck buttons (recycle, line and the fleet status) sit there, where on main the status ran
+over the top row next to the X. Every slot is an icon with its caption under it and its key in
+the top left corner, read from Keybinds so a controls.cfg rebind shows. The fire stance slot
+changes icon and caption with the stance. Hold position is a toggle: its caption names the order
+("Hold position") and the slot lights up and says "Holding" while the units hold, as SC2 and
+Generals name a toggle's action and let the lit frame show that it is on; "Free to chase" under
+a pin said the opposite of the icon, so COMMAND_HOLD_SHORT_OFF is gone. With one construction
+site selected the stop slot becomes Cancel build, with no key: the stop key goes through
+UnitCommands.stop, which skips structures, so an X tag promised a key that did nothing (making X
+cancel a site would change UnitCommandHandler, which this PR leaves alone). HudStyle.slot_px
+gives 80 px slots on a HUD 900 px tall or more and 64 below, read once at _ready; the command
+card is 332 x 248 or 268 x 200 and the constructor's 500 x 248 or 404 x 200 (346 x 262, 282 x
+214, 514 x 262 and 418 x 214 with the panel). A faction's constructor has 15 structures, which
+fill rows of 6, 6 and 3 from the top left, where main had four rows of four in the bottom right
+corner (a 342 x 342 panel, 47 % of a 720 px screen). With no faction there are 20: main's 16
+slots cut Trading post, Flak tower, Foundry and SAM site, and the 18 slots now cut Foundry and
+SAM site, the last two in the menu's order. No faction means the harness, the tests and the
+first-match tutorial (data/tutorial/first_match.json names none, and TutorialScript.gd:88 passes
+""). The slot builders (hotkey tag, caption, unit icon) moved to HudStyle, so the build menus
+and the card share them; the hotkey tag has a 3 px black outline, because the amber letter faded
+into a lit (amber) slot. UnitMenus' BackgroundGrid and the card's four dead placeholders are
+gone; the fleet and extractor menus take their slot size from HudStyle.
+
+Where it differs from the spec, and why. The icons were redrawn after shots at 32 px. Fire at
+will is three upright cartridges fanned from below (fanning from one corner read as crumbs);
+the cartridges are two-tone (the casing in MUTED, the head in FG), the spec's fallback. Return
+fire is an incoming arrow over the stances' own cartridge going back out, not a shield with a
+shell: the shield read as a spade, was mostly MUTED so the slot looked half disabled, and
+repeated Guard's shield two slots away. Hold fire is the cartridge in a MUTED no-entry ring and
+slash: in FG it was the same cream ring with a mark as Stop, diagonally next to it. Fight is a
+whole ring with three ticks outside it and the arrow coming in level from the left to its
+centre: ticks across the ring cut it into dashes, and an arrow at 45 degrees at the lower left
+made a magnifier ("search"). Patrol's arrowheads sit at the ends of its two arcs, next to the
+posts: in the middle of the loop they broke it into beads that looked like Patrol base's ring.
+Retreat's pennant is FG and half again as big, because at 32 px the flag vanished and left an
+undo arrow. Cancel build is a crate (frame, planks, brace) with the X in its corner: an X over
+hatching did not say crate. The 13 SVGs import at svg/scale 2.0 (64 px textures): at 1.0 the 32
+px raster was stretched to 40 px in a full slot and went soft next to the text. In a 64 px slot
+the captions are 10 px, not 11: "Hold position" is wider than the 62 px a caption has at 11 px,
+and the build menu's cost row uses 9 px icons and numbers, because three amounts ran out of the
+slot and the command centre's copper price was cut off. The 6-column card is 500 px wide, not
+492 (6 x 80 + 5 x 4). COMMAND_STOP and COMMAND_CANCEL_BUILD are in guide.csv in English only:
+guide.csv has no Polish column, like every other COMMAND_ string. The key on each slot and in
+its tooltip is read every frame and set when it changes: Match applies controls.cfg after the
+HUD's _ready, so a tag set at _ready showed the default key (the tooltips on main had that bug).
+With nothing movable selected, a structure, the card is the stop slot alone; showing the third
+row's spacers there would put Stop in the top left of a two-row card. A train is not movable to
+the card either (it runs on rails), so with only trains selected the fleet menu hides its second
+row of spacers and its buttons sit on row 2 under Stop, not on row 3 under two empty rows. The
+fleet status is one slot wide in the grid and its text runs over the next slot (a 160 px cell
+would have made its column 160 px), and it grows upwards from its slot: a train's line of four
+lines or more ran below the card and off a 720 px screen. unit_generic and structure_generic
+draw nothing in today's data: a unit with a "base" inherits the base's icon, so every entry has
+a PNG, and they are the fallback for a unit with none.
+
+One change outside the menus. At 1280 x 720 the constructor's wider menu left the auto-expand
+switch (Guide.gd) no room beside the unit card, and it was laid over the card's text. When the
+switch would reach into the BuildingInfo card it now sits above the menu at the right edge
+instead; at 1920 x 1080 it stays left of the menu as before.
+
+Evidence: tools/harness/scenarios/hud-card.json passes 22/22 (8 orders, 14 checks) at a true
+1920 x 1080 (12.1 game seconds in 53.5 real seconds) and at a true 1280 x 720 (27.4 real
+seconds), with six shots: card-orders, card-return-fire, card-hold-fire (Hold fire, Holding
+lit), card-build (18 slots in three rows of 6, nothing over the unit card), card-fleet (orders
+on rows 1 and 2, Recycle and "4 vehicles selected" on row 3) and card-cancel-build (one slot,
+crate and X, Cancel build, no key). Its checks read the card, not only the selection: Patrol
+base is the fifth slot with B, the captions say Fire at will, Hold position, Return fire, Hold
+fire and Holding in turn, Hold position is lit only while held and its caption fits its slot,
+the build menu has 6 columns and 18 slots, the fleet buttons sit below the order rows, and the
+site's slot says Cancel build with no key. The same json run on main from /home/claude/ironbound
+passes 13/22: the 8 card checks fail there (main's slots have no caption or key nodes, its
+build menu is 4 wide), and so does no_errors, with 69 errors from that checkout's import cache
+(alert_attack.svg and the new hauler, constructor and militia models missing from
+.godot/imported), not from code. Main's shots show the text card with an empty top row and the
+X alone in its corner, the 4 x 4 build menu without Trading post and Flak tower, and for the
+site a wide empty card with an X squeezed to a sliver at its right edge. A probe at 1280 x 720
+with a train selected: the fleet card is 268 x 132, Stop on row 1 and Recycle, Auto line and
+the status on row 2; a five-line status grows up to 621..708 inside the card (ends at 715).
+CommandChecks at 1280 x 720: 38 PASS and "command checks: 0 failure(s)", including "the Patrol
+base button is in the unit menu", "clicking it sends the units on the base loop" and "X stops
+them". PlaytestChecks: 20 PASS, 0 failure(s), "worker menu is 4 x 80 px wide or more (is
+500)". TooltipsCheck: 76 PASS, all checks passed, "every visible HUD button has a tooltip" in
+both shots and 21 menu cards complete. BuildingInfoCheck: 23 PASS, 0 failure(s), the site card
+beside the Cancel build slot. smoke 10/10 and hud-alert 3/3 still pass, the data validator
+reports 0 errors and 0 warnings, and gdformat and gdlint are clean.
+
+Known and left for later. In a 64 px slot the long structure names end in an ellipsis
+(Anti-ground..., Command c..., Vehicle fact..., Aircraft fac...) and the 9 px commodity marks
+are mostly told apart by the colour of their numbers; the hover card has the full name and
+cost. The first-match tutorial's constructor does not list Foundry or SAM site; giving
+first_match.json a faction is a data change for its own PR. With orders only, the card's third
+row is an empty dark strip, as the first row was on main; PR 4's bar gives the card its frame.
+The icons are 40 / 32 px as section 1 of the spec sets, which leaves about 16 px between icon
+and caption in a full slot; 44 / 35 would fill it if play says the icons are small. The fleet
+menu's Recycle and line buttons are still words, not icons.
+
 ## 2026-10-18: god mode stays out of release builds
 
 Debug god mode shipped switched on: FeatureFlags.tscn sets god_mode = true, so in every

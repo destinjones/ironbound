@@ -334,11 +334,20 @@ func _layout():
 		return
 	var unit_menus = get_parent().find_child("UnitMenus", true, false)
 	var right = screen.x - 5
-	if unit_menus != null and unit_menus.is_visible_in_tree():
+	var shown = unit_menus != null and unit_menus.is_visible_in_tree()
+	if shown:
 		right = unit_menus.global_position.x - GAP
-	auto_expand_bar.position = Vector2(
-		right - auto_expand_bar.size.x, screen.y - 5 - auto_expand_bar.size.y
-	)
+	var spot = Vector2(right - auto_expand_bar.size.x, screen.y - 5 - auto_expand_bar.size.y)
+	# at 1280 wide the constructor's 6-column menu leaves no room beside the unit card, so
+	# the switch goes on top of the menu instead of over the card
+	var card = get_parent().get_node_or_null("BuildingInfo/BuildingCard")
+	if shown and card != null and card.is_visible_in_tree():
+		if spot.x < card.get_global_rect().end.x + GAP:
+			spot = Vector2(
+				screen.x - 5 - auto_expand_bar.size.x,
+				unit_menus.global_position.y - GAP - auto_expand_bar.size.y
+			)
+	auto_expand_bar.position = spot
 
 
 func toggle_help(topic = null, force_show = false):

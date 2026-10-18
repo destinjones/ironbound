@@ -27,13 +27,16 @@
     "hp": 27,
     "hp_max": 27,
     "attack_damage": 3,
-    "attack_interval": 1.0,
-    "attack_range": 9.5,
+    "attack_interval": 1.2,
+    "attack_range": 8.5,
     "attack_domains": [
+      "terrain",
       "air"
     ],
     "armour": "truck",
     "damage_vs": {
+      "heavy": 2.0,
+      "light": 0.5,
       "air": 2.0
     }
   },

@@ -87,15 +87,17 @@ One concern per PR, main stays releasable, every PR carries its evidence.
    helper never got a vehicle factory up and had no army when the raider came; the helper
    must build one early, every time.
 5. Done, #111: armour and weapon classes (one multiply in Unit.take_damage plus data),
-   structures that hold a few tanks, artillery that sees what it shoots. Units get roles:
-   the class line on every card is the first half; the one-word role label on the card is
-   the follow-up.
+   structures that hold a few tanks, artillery that sees what it shoots. #116 made the
+   missile truck the Foundry's rocket corner: its rockets hit ground targets, as its card
+   says. Units get roles: the class line on every card is the first half; the
+   one-word role label on the card is the follow-up.
 6. Difficulty retune in data once 3 to 5 are in: Easy for the first match, Normal for the
    20-minute skirmish above, Hard and Brutal that hit harder, not just fatter.
 7. Done, #109: the ending: a hold with the camera on the last structure, kills and losses,
    Continue.
-8. In progress, slices 1 and 2 of 5 done (#110, health bars by thirds with Alt and an
-   option; #112, the under-attack banner with Space to go there). The HUD: one bottom bar
+8. In progress, slices 1 to 3 of 5 done (#110, health bars by thirds with Alt and an
+   option; #112, the under-attack banner with Space to go there; #118, the command card as
+   a 4 x 3 grid of icons with captions and keys). The HUD: one bottom bar
    (minimap, selection with counts and health, icon command card), an under-attack banner
    with a jump key, health bars that can stay on.
 9. Done (PR #108): CI runs the smoke harness and the validator, not only the formatter.
