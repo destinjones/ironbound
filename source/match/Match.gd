@@ -16,6 +16,7 @@ const ReplayRecorder = preload("res://source/match/ReplayRecorder.gd")
 const SandboxPanel = preload("res://source/match/hud/SandboxPanel.gd")
 const Guide = preload("res://source/match/hud/Guide.gd")
 const BuildingInfo = preload("res://source/match/hud/BuildingInfo.gd")
+const HealthBarsControl = preload("res://source/match/hud/HealthBarsControl.gd")
 const UnitCommandHandler = preload("res://source/match/handlers/UnitCommandHandler.gd")
 const Keybinds = preload("res://source/match/Keybinds.gd")
 const MatchLimits = preload("res://source/match/MatchLimits.gd")
@@ -134,6 +135,10 @@ func _ready():
 		$HUD.add_child(Guide.new())  # tutorial, hints, auto-expand overview and manual
 	if $HUD.get_node_or_null("BuildingInfo") == null:
 		$HUD.add_child(BuildingInfo.new())  # hover names, the selection card, truck routes
+	if $HUD.get_node_or_null("HealthBarsControl") == null:
+		var health_bars_control = HealthBarsControl.new()  # the option and the Alt hold
+		health_bars_control.name = "HealthBarsControl"
+		$HUD.add_child(health_bars_control)
 	if get_node_or_null("MatchLimits") == null:  # unit, population and match-length caps
 		var limits = MatchLimits.new()
 		limits.name = "MatchLimits"

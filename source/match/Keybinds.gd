@@ -19,6 +19,7 @@ const ACTIONS = [
 	"command_retreat",
 	"command_fire_stance",
 	"command_hold_position",
+	"show_health_bars",
 ]
 
 

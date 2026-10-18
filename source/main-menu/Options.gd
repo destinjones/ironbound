@@ -71,6 +71,7 @@ const KEY_SECTIONS = [
 		"Game",
 		[
 			["toggle_match_menu", "Menu / pause"],
+			["show_health_bars", "Show all health bars (hold)"],
 		],
 	],
 ]
@@ -324,6 +325,7 @@ func _build_interface_tab(rows):
 	var ui_scale = _slider_row(rows, "ui_scale", "Interface scale", 75, 150, 5, "%")
 	ui_scale.tooltip_text = "Applied when you let go of the slider"
 	_check_row(rows, "show_fps", "Show frame rate (FPS) counter")
+	_check_row(rows, "show_health_bars", "Always show health bars")
 	_build_tips_rows(rows)
 
 
@@ -379,7 +381,7 @@ func _build_controls_tab(rows):
 	_hint(
 		rows,
 		(
-			"Unit command keys can be changed in user://controls.cfg"
+			"Command keys and the health bar key can be changed in user://controls.cfg"
 			+ ' (one line per command under [keys], e.g. command_patrol="O").'
 		)
 	)
@@ -555,6 +557,7 @@ func _load_values():
 		"mute_when_unfocused",
 		"vsync",
 		"show_fps",
+		"show_health_bars",
 		"show_tips",
 		"edge_scrolling",
 		"invert_zoom",

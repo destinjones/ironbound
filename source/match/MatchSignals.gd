@@ -53,6 +53,7 @@ signal route_raided(player, position)  # a truck or train of the player was dest
 signal aircraft_crashed(unit)
 signal camera_shake(strength, world_position)  # 0..1, e.g. an explosion; IsometricCamera3D
 signal hint_shown(key)  # a first-time hint (HINT_*) appeared on screen, see Guide.gd
+signal health_bars_forced(on)  # every health bar shows (option or key held), HealthBarsControl
 signal diplomacy_changed(a, b, state)
 signal treaty_signed(proposer, partner, kind, offered, requested)
 # city centres, see source/match/city/CityCentres.gd
