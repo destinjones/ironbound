@@ -443,3 +443,18 @@ stuck at 15 units). Normal is now too strong for a player whose army does not de
 and whose iron never passes 10; the next two changes (the idle army defends the base, then
 the economy pace) are where the difficulty gets re-tuned, not here. The first wave keeps the
 personality's size, so the setup check's battlegroup assertion still holds.
+
+## 2026-10-18: the direction, written down (docs/direction.md)
+Destin asked for the game to be taken from "vibe coded slop" to something that looks, feels
+and behaves like a complete game, and handed over the direction. Five probe matches and a
+read of every subsystem (AI, economy, match arc, combat, HUD, presentation) gave the same
+answer: the pieces exist, the arc does not. Nobody won in 30 minutes, the army ignored the
+base, the economy stalled at the start, combat had no roles. The direction is one sentence,
+"a 20 to 25 minute skirmish against an AI that escalates and finishes", with a four-point
+ruler for every change (makes the arc happen, creates a decision, readable without the
+manual, holds at 20 vs 20), a keep list, a cut list, and the order of work. Why this order:
+the AI finishing (done), the army defending and the economy pacing come first because they
+make a match playable at all; counters and difficulty make it interesting; the ending and
+the HUD make it readable; art and sound last because they are worthless on a game that is
+not fun, and the pipeline for them already exists. Measured targets are in the document so
+the next session can tell whether a change worked.
