@@ -1,0 +1,26 @@
+{
+  "name": "base-defence",
+  "description": "Idle tanks answer a hit nearby. Six of the player's tanks stand 22 m from a pylon that an enemy bunker shoots; the idle tanks must come and finish the bunker instead of standing where they were, which is what HomeGuard.gd does. The enemy is a bunker because the AI would march spawned tanks home. The AI player is Very Easy so it does nothing of its own in these ninety seconds.",
+  "map": "big_arena",
+  "minutes": 1.5,
+  "speed": 4,
+  "fog": false,
+  "players": [{"type": "human"}, {"type": "ai", "personality": "turtle", "difficulty": "very_easy"}],
+  "shots_every": 20,
+  "setup": [
+    {"do": "spawn", "player": "p0", "unit": "tank", "count": 6, "spot": [30, 50], "spacing": 2.2},
+    {"do": "spawn", "player": "p0", "unit": "pylon", "spot": [55, 50]},
+    {"do": "spawn", "player": "p1", "unit": "bunker", "spot": [52, 50]},
+    {"do": "declare_war", "player": "p1", "on": "p0"}
+  ],
+  "events": [
+    {"at": 3, "do": "camera", "spot": [45, 50]}
+  ],
+  "checks": [
+    {"at": 8, "name": "the bunker shot the pylon", "expect": "units", "units": "own:pylon", "max": 0},
+    {"at": 10, "name": "the idle tanks came to the fight", "expect": "units", "units": "own:tank", "near": [52, 50], "radius": 14, "min": 4},
+    {"at": 22, "name": "the bunker is gone", "expect": "units", "units": "p1:structures", "near": [52, 50], "radius": 6, "max": 0},
+    {"at": 30, "name": "the tanks went back to their post", "expect": "units", "units": "own:tank", "near": [30, 50], "radius": 8, "min": 4},
+    {"end": true, "expect": "no_errors"}
+  ]
+}
