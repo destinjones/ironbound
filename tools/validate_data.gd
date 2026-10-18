@@ -405,12 +405,14 @@ func _check_properties(where, properties, category):
 	if not armour in ARMOUR_CLASSES:
 		_error(
 			where,
-			"every unit needs properties.armour, one of {0}".format([", ".join(ARMOUR_CLASSES)])
+			"every unit needs properties.armour, one of {0} (got {1})".format(
+				[", ".join(ARMOUR_CLASSES), str(armour)]
+			)
 		)
 	elif category == "structure" and armour != "structure":
-		_error(where, "a structure's armour must be \"structure\"")
+		_error(where, 'the armour of a structure must be "structure" (got {0})'.format([armour]))
 	elif category != "structure" and armour == "structure":
-		_error(where, "armour \"structure\" is for structures only, units take another class")
+		_error(where, 'armour "structure" is for structures only, units take another class')
 	var armed = "attack_damage" in properties
 	if armed and not "damage_vs" in properties:
 		_error(where, "an armed unit needs damage_vs (write {} for an even weapon)")
@@ -425,7 +427,7 @@ func _check_damage_vs(where, properties):
 	the cards call strong or weak, and a cell for every domain the weapon can shoot at"""
 	var table = properties["damage_vs"]
 	if not table is Dictionary:
-		_error(where, "damage_vs must be an object like {\"light\": 2.0}")
+		_error(where, 'damage_vs must be an object like {"light": 2.0}')
 		return
 	for key in table:
 		if not key in ARMOUR_CLASSES:
@@ -441,15 +443,15 @@ func _check_damage_vs(where, properties):
 		):
 			_error(
 				where,
-				"damage_vs '{0}' must be a number from {1} to {2}".format(
-					[key, DAMAGE_VS_RANGE[0], DAMAGE_VS_RANGE[1]]
+				"damage_vs '{0}' must be a number from {1} to {2} (got {3})".format(
+					[key, DAMAGE_VS_RANGE[0], DAMAGE_VS_RANGE[1], JSON.stringify(value)]
 				)
 			)
 	if table.is_empty():
 		return  # an even weapon, like the aircraft rockets
 	var domains = properties.get("attack_domains", [])
 	if "air" in domains and not "air" in table:
-		_warn(where, "damage_vs has no \"air\" cell although the weapon shoots at air (a typo?)")
+		_warn(where, 'damage_vs has no "air" cell although the weapon shoots at air (a typo?)')
 	if "terrain" in domains and GROUND_ARMOUR.filter(func(id): return id in table).is_empty():
 		_warn(where, "damage_vs has no ground cell although the weapon shoots at ground (a typo?)")
 

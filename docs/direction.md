@@ -79,17 +79,17 @@ One concern per PR, main stays releasable, every PR carries its evidence.
 
 1. Done, #99: the Play menu error storm.
 2. Done, #100: the AI refills and grows its waves, so matches end.
-3. Done (branch claude/game-direction-o3plha-6-armour): The idle army defends the base:
-   units within reach answer a hit on our structures or units, instead of standing at the
-   rally point.
-4. Done (branch claude/game-direction-o3plha-6-armour): Economy pace: copper reachable
-   from the start, home extractors inside the grid, helper reserves that build an army.
-   Target: a tank every 20 to 30 s by minute 5. Found while proving 3: in three of four
-   helper-run matches the helper never got a vehicle factory up and had no army when the
-   raider came; the helper must build one early, every time.
+3. Done, #103 and #105: the idle army defends the base: units within reach answer a hit
+   on our structures or units, instead of standing at the rally point.
+4. Partly done, #102: Economy pace: copper reachable from the start and home extractors
+   inside the grid (done), helper reserves that build an army (open). Target: a tank every
+   20 to 30 s by minute 5. Found while proving 3: in three of four helper-run matches the
+   helper never got a vehicle factory up and had no army when the raider came; the helper
+   must build one early, every time.
 5. Done (branch claude/game-direction-o3plha-6-armour): Armour and weapon classes (one
    multiply in Unit.take_damage plus data), structures that hold a few tanks, artillery
-   that sees what it shoots. Units get roles.
+   that sees what it shoots. Units get roles: the class line on every card is the first
+   half; the one-word role label on the card is the follow-up.
 6. Difficulty retune in data once 3 to 5 are in: Easy for the first match, Normal for the
    20-minute skirmish above, Hard and Brutal that hit harder, not just fatter.
 7. Done, #109: the ending: a hold with the camera on the last structure, kills and losses,

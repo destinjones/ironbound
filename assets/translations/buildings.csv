@@ -49,9 +49,9 @@ INFO_STRONG_AGAINST,strong against {0}
 INFO_WEAK_AGAINST,weak against {0}
 INFO_LIST_AND,{0} and {1}
 INFO_ARMOUR_LIGHT,Light armour
-INFO_ARMOUR_HEAVY,Heavy armour
+INFO_ARMOUR_HEAVY,Tank armour
 INFO_ARMOUR_TRUCK,Unarmoured truck
-INFO_ARMOUR_STRUCTURE,Building
+INFO_ARMOUR_STRUCTURE,Structure
 INFO_ARMOUR_AIR,Aircraft
 INFO_FASTER_FACTORIES,factories on its grid {0}% faster
 INFO_NOTHING,nothing

@@ -683,22 +683,38 @@ bunker stays x1 against structures so base-defence's 8 s pylon check keeps its 4
 the two cannon rules were kept on purpose rather than re-timing that check. Each card and
 production button gets one generated line from the same two keys
 (BuildingInfoText.classes_for, buildings.csv rows), so "weak against structures" on the
-tank and "Building" on the bunker give the decision without the manual.
+tank and "Structure" on the bunker give the decision without the manual. The class word on
+a card is the word the other cards use for that class: Tank armour (tanks), Light armour
+(light vehicles and infantry), Unarmoured truck (trucks), Structure (structures), Aircraft
+(aircraft). The design said "Heavy armour" and "Building"; review found that a player could
+not link "strong against tanks" on the technical to the APC or the patrol boat, which read
+"Heavy armour", so those two words changed in buildings.csv and nothing else did.
 
 Hp and sight moved where armour alone was not enough: command_center 90 -> 180 (four T1
-tanks need 33 s instead of 8; an undefended centre still surrenders on the first hit, so the
-passive-player time is set by capture), vehicle_factory and aircraft_factory 48 -> 72 (one
-size for both factories), ag_turret 30 -> 36 (one turret beats one tank with margin, 14 hp
-left, where 30 lost to an Elite tank), bunker 54 -> 66 (holds two tanks with 15 hp left
-instead of 3, so a Veteran tank no longer flips it), gun_nest 24 -> 36 (a tank pays 29 hp
-for it without losing, "thin walls" stays true), flak_tower 42 -> 48 (beats one gunship by
-2.35 s instead of 0.75 s), artillery sight_range 7 -> 15 (idle acquisition and attack-move
-search only sight_range, so at 7 m it never fired its 15 m on its own). The missile truck
-takes the fallback: attack_domains stays ["air"], its map is {"air": 2.0}, armour truck, and
-MISSILE_TRUCK_DESCRIPTION is untouched; making its rockets hit ground would change a shared
-unit's role inside a counters PR and is a separate decision. Its card reads "Unarmoured
-truck, strong against aircraft". rocket_technical overrides the light armour it would
-inherit from raider with truck, or the tank's x2 would break "rockets beat tanks".
+tanks need 33 s instead of 8; an undefended centre still surrenders on the first hit, so
+the passive-player time is set by capture), vehicle_factory and aircraft_factory 48 -> 72
+(one size for both factories), ag_turret 30 -> 36 (one turret beats one tank with margin,
+14 hp left, where 30 lost to an Elite tank), bunker 54 -> 66 (holds two tanks with 15 hp
+left instead of 3, so a Veteran tank no longer flips it), gun_nest 24 -> 36 (a tank pays 29
+hp for it without losing, "thin walls" stays true), flak_tower 42 -> 48 (beats one gunship
+by 2.35 s instead of 0.75 s), artillery sight_range 7 -> 15 (idle acquisition and
+attack-move search only sight_range, so at 7 m it never fired its 15 m on its own). The
+missile truck takes the fallback: attack_domains stays ["air"], its map is {"air": 2.0},
+armour truck, and MISSILE_TRUCK_DESCRIPTION is untouched; making its rockets hit ground
+would change a shared unit's role inside a counters PR and is a separate decision. Its card
+reads "Unarmoured truck, strong against aircraft". The cost of the fallback: until the
+ground-rockets PR the Foundry has no unit strong against tanks, so a Foundry player learns
+"rockets beat tanks" only from an enemy technical, and Foundry against Foundry is a tank
+mirror decided by bunkers and artillery. rocket_technical overrides the light armour it
+would inherit from raider with truck, or the tank's x2 would break "rockets beat tanks".
+The amphibious APC's "strong against trucks" holds for haulers, workers and artillery, but
+it loses to the rocket technical, the truck the sentence names (6.5 s against 7.0 s, and
+8.5 m of range against its 6.0 m), because the technical's x2 on heavy armour outweighs the
+APC's x2 on trucks; its armour (open question 11) was not ruled here. The seconds in this
+entry leave out veterancy: a promotion heals a quarter of hp_max, and kills come twice as
+fast against light units, so a tank ranks up sooner against raiders (in fight A below the
+tank healed from 19.0 to 28.9 hp at its second kill and ended on 26.4 hp, where the design
+predicted 12.5).
 
 Evidence: new scenario counters-triangle, six isolated fights on big_arena against a Very
 Easy turtle pinned to the far corner, its mobile units on fight orders so army positioning
@@ -709,20 +725,34 @@ same scenario, before -> after: three raiders killed the tank at 7.0 s taking on
 the tank kills them by 3.5, 8.0 and 11.0 s and stands (predicted 3.0, 6.75, 10.5); the tank
 killed the rocket technical at 14 s -> the technical kills the tank by 7.5 s (predicted
 6.5); the technical killed the raider at 7.5 s -> the raider kills the technical by 9.0 s
-(predicted 7.4); the tank killed the turret at 11.5 s -> the turret kills the tank by 17.5 s
-(predicted 16); two tanks killed the bunker at 12.0 s -> the bunker kills them by 14.5 and
-28.0 s (predicted 12.0 and 25.2); the gun nest stood all match -> artillery 13 m away kills
-it at 8.4 s without moving (predicted 8). The scenario runs at speed 1: at speed 4 the
-fights drift late under the virtual screen (the second bunker tank died between 35 and 40 s
-instead of 28 s) and the 32 s check misses it. base-defence, base-defence-stop, die-once,
-ai-waves-stagger, tutorial-first-match, smoke and the quick batch pass with no check
-re-timed (the bunker still falls to six tanks inside the 22 s check, die-once's 20 tanks
-still flatten the 72 hp factory in 4 volleys). The validator requires armour on every unit
-(structures must be structure, units must not be), damage_vs on every armed unit and on no
-unarmed one, keys from the five classes, values from 0.25 to 2.0, and warns when a map has
-no cell for a domain the weapon shoots at; validate_data: 0 error(s), 0 warning(s) on main
-and on the branch. VeterancyChecks, CommandChecks, DiplomacyChecks, CityCentreChecks,
-CameraChecks and PlaytestChecks run green without edits.
+(predicted 7.4); the tank killed the turret at 11.5 s -> the turret kills the tank by 17.5
+s (predicted 16); two tanks killed the bunker at 12.0 s -> the bunker kills them by 14.5
+and 28.0 s (predicted 12.0 and 25.2); the gun nest stood all match -> artillery 13 m away
+kills it at 8.4 s without moving (predicted 8). The scenario runs at speed 1: at speed 4
+the fights drift late under the virtual screen (the second bunker tank died between 35 and
+40 s instead of 28 s) and the 32 s check misses it. base-defence, base-defence-stop,
+die-once, ai-waves-stagger, tutorial-first-match and smoke pass with no check re-timed
+(die-once's 20 tanks still flatten the 72 hp factory in 4 volleys). base-defence passes
+with less margin than on main, and its file stays as it is (the lead's ruling: the two
+cannon rules exist so that it is not re-timed): the 66 hp bunker now falls to six tanks at
+17 to 19 s (12 to 13 s on main) against the 22 s check, so the tanks start the walk back
+about 6 s later and "the tanks went back to their post" counted 4, 4, 5, 4, 5, 6 and 5 of 6
+at 30 s in seven branch runs (5 to 6 on main, want 4; all six are back by 32 s). A
+base-defence failure on a loaded box is re-run before anyone reads it as a regression. Of
+the rest of the quick batch, place-extractors, line-orders, factions-foundry,
+factions-syndicate and counters-triangle pass; stress-40v40 misses its frame budget on this
+software renderer (frame_ms_p95 141 and 162 ms on the branch, 161 and 93 on main, want 50),
+and helper-never-attacks and save-load fail some runs on main and on the branch alike: the
+helper built no extractors in one run on each side and passed in a third, on the branch,
+and save-load failed one to four checks in all 4 runs on main and in 5 of 6 on the branch
+(raiders out of the loaded factory, the loaded power plant site, and script errors such as
+"bake() should be called exactly once" that main has too). The validator requires armour on
+every unit (structures must be structure, units must not be), damage_vs on every armed unit
+and on no unarmed one, keys from the five classes, values from 0.25 to 2.0, and warns when
+a map has no cell for a domain the weapon shoots at; validate_data: 0 error(s), 0
+warning(s) on main and on the branch. VeterancyChecks, CommandChecks, DiplomacyChecks,
+CityCentreChecks, CameraChecks, PlaytestChecks, and the two that read the card text,
+TooltipsCheck and BuildingInfoCheck, run green without edits.
 
 Deferred, on purpose, each its own PR: hauler hp 24 -> 30 (the raid now kills a hauler in
 1.5 s with three raiders; economy retune), Easy's unit roster (Easy and Very Easy keep the
