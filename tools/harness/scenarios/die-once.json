@@ -1,0 +1,105 @@
+{
+  "name": "die-once",
+  "description": "A unit dies once. Twenty tanks stand in range of one enemy vehicle factory on all four sides, so every volley lands in one frame and several shells land in the frame that kills it; it must be reported lost exactly once. Before, every hit after the killing one ran the death handling again (loot handed out again, unit_died emitted again), which is why probe reports listed one structure as lost several times. The target is a factory, not a command centre, because a command centre with no defenders near surrenders and is captured instead of destroyed.",
+  "map": "big_arena",
+  "minutes": 1,
+  "speed": 4,
+  "fog": false,
+  "players": [
+    {
+      "type": "human"
+    },
+    {
+      "type": "ai",
+      "personality": "turtle",
+      "difficulty": "very_easy"
+    }
+  ],
+  "shots_every": 10,
+  "setup": [
+    {
+      "do": "spawn",
+      "player": "p1",
+      "unit": "vehicle_factory",
+      "spot": [
+        50,
+        50
+      ]
+    },
+    {
+      "do": "spawn",
+      "player": "p0",
+      "unit": "tank",
+      "count": 5,
+      "spot": [
+        44.5,
+        50
+      ],
+      "spacing": 1.2
+    },
+    {
+      "do": "spawn",
+      "player": "p0",
+      "unit": "tank",
+      "count": 5,
+      "spot": [
+        55.5,
+        50
+      ],
+      "spacing": 1.2
+    },
+    {
+      "do": "spawn",
+      "player": "p0",
+      "unit": "tank",
+      "count": 5,
+      "spot": [
+        50,
+        44.5
+      ],
+      "spacing": 1.2
+    },
+    {
+      "do": "spawn",
+      "player": "p0",
+      "unit": "tank",
+      "count": 5,
+      "spot": [
+        50,
+        55.5
+      ],
+      "spacing": 1.2
+    },
+    {
+      "do": "declare_war",
+      "player": "p1",
+      "on": "p0"
+    }
+  ],
+  "checks": [
+    {
+      "at": 8,
+      "name": "the factory is gone",
+      "expect": "units",
+      "units": "p1:vehicle_factory",
+      "near": [
+        50,
+        50
+      ],
+      "radius": 6,
+      "max": 0
+    },
+    {
+      "end": true,
+      "name": "it was lost exactly once",
+      "expect": "timeline",
+      "kind": "structure_lost",
+      "contains": "lost a vehicle_factory",
+      "equals": 1
+    },
+    {
+      "end": true,
+      "expect": "no_errors"
+    }
+  ]
+}

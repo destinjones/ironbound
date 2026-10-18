@@ -52,6 +52,7 @@ var type:
 var last_attacker_player = null  # used to hand out loot when cargo gets destroyed
 
 var _action_locked = false
+var _dying = false  # death is handled once, however many hits land in the same frame
 var _weather = null
 var _child_cache = {}  # trait name -> node or null; sight range and radius reads are hot
 
@@ -90,7 +91,10 @@ func is_revealing():
 func _set_hp(value):
 	hp = max(0, value)
 	hp_changed.emit()
-	if hp == 0:
+	if hp == 0 and not _dying:
+		# shells that land in the same frame as the killing one would otherwise hand out
+		# the loot and announce the death again, once per hit
+		_dying = true
 		_handle_unit_death()
 
 
