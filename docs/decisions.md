@@ -458,3 +458,19 @@ make a match playable at all; counters and difficulty make it interesting; the e
 the HUD make it readable; art and sound last because they are worthless on a game that is
 not fun, and the pipeline for them already exists. Measured targets are in the document so
 the next session can tell whether a change worked.
+
+## 2026-10-18: the home deposits are inside the base (economy pace)
+The opening crawled: on Desert Expanse the home deposits sit 13 to 15 m from the command
+centre (start zone 6 m plus 7 to 9 m), the command centre's grid reached 10 m and its yard
+9 m, so every opening extractor ran at half rate until a power plant stood next to it and
+each one waited for a truck, and copper was not a home deposit at all, the nearest copper
+24 m out and invisible to a new player. Now the command centre's grid and yard both reach
+16 m (data/units/command_center.json, MatchConstants.Logistics.YARD_RADIUS_M) and Desert
+Expanse's home deposits are iron, oil and copper. Home deposits were always the "safe start
+economy" by design; making them pay from the first minute removes busywork, not a decision,
+because the richer contested and middle deposits still need power, trucks and an escort.
+Measured with the opening probe (tutorial opening, then only tanks, eight minutes, seed 3):
+copper in stock at 5:00 went from 16 to 42, tanks by 8:00 from 14 to 18, units at the end
+from 22 to 26. The AI plays by the same rules and gained a little too (12 to 14 structures).
+The helper's army target and the truck numbers were left alone; they belong with the
+difficulty re-tune once counters exist.

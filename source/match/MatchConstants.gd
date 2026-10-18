@@ -141,7 +141,7 @@ class Extraction:
 
 class Logistics:
 	const TICK_S = 0.5
-	const YARD_RADIUS_M = 9.0  # sites this close to a depot get materials without haulers
+	const YARD_RADIUS_M = 16.0  # sites this close to a depot get materials without haulers
 	const YARD_DELIVERY_PER_S = 4.0
 	const LOOT_SHARE = 0.5  # share of destroyed cargo that goes to the attacker
 	const HAULER_IDLE_RECHECK_S = 1.0
