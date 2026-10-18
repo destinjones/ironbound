@@ -15,7 +15,8 @@
   "waves": {
     "grow_every_s": 180,
     "grow_by": 1,
-    "max_units": 12
+    "max_units": 12,
+    "launch_gap_s": 90
   },
   "raid_party_size": 2,
   "raid_interval_s": 240,

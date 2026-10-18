@@ -103,11 +103,32 @@ func attach_unit(unit):
 
 func _start_attacking():
 	_state = State.ATTACKING
-	if _owner_ai != null and not _owner_ai.may_launch_attacks():
-		var wait_s = _owner_ai.first_attack_after_s - _owner_ai.match_time_s
-		get_tree().create_timer(max(wait_s, 0.1)).timeout.connect(_start_attacking)
+	var wait_s = _wait_before_launch_s()
+	if wait_s > 0.0:
+		get_tree().create_timer(wait_s).timeout.connect(_start_attacking)
 		return
+	var controller = get_parent()
+	if controller != null and controller.has_method("battlegroup_launched"):
+		controller.battlegroup_launched()
+	if not _attached_units.is_empty():
+		MatchSignals.attack_wave_launched.emit(
+			_attached_units[0].player, _attached_units.duplicate()
+		)
 	_attack_next_adversary_unit()
+
+
+func _wait_before_launch_s():
+	"""the difficulty's first attack time, and the offense controller's gap between two
+	groups leaving (0 when the group may go now)"""
+	if _owner_ai == null:
+		return 0.0
+	var wait_s = 0.0
+	if not _owner_ai.may_launch_attacks():
+		wait_s = _owner_ai.first_attack_after_s - _owner_ai.match_time_s
+	var controller = get_parent()
+	if controller != null and controller.has_method("seconds_until_next_launch"):
+		wait_s = max(wait_s, controller.seconds_until_next_launch())
+	return max(wait_s, 0.1) if wait_s > 0.0 else 0.0
 
 
 func _attack_next_adversary_unit():

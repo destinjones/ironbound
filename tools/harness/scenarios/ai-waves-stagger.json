@@ -1,0 +1,21 @@
+{
+  "name": "ai-waves-stagger",
+  "description": "A Normal AI's full battlegroups leave one at a time. Eight tanks spawned for a Normal balanced AI fill both of its battlegroups at once; Normal holds its first attack until 4:00, and the groups must then leave 90 s apart (waves.launch_gap_s in data/ai/balanced.json), not together. Before, every group that filled up during the hold left in the same second.",
+  "map": "big_arena",
+  "minutes": 6,
+  "speed": 4,
+  "fog": false,
+  "players": [{"type": "human"}, {"type": "ai", "personality": "balanced", "difficulty": "normal"}],
+  "shots_every": 60,
+  "setup": [
+    {"do": "spawn", "player": "p1", "unit": "tank", "count": 8, "spot": "p1:command_center", "offset": [7, 0], "spacing": 2.2},
+    {"do": "declare_war", "player": "p1", "on": "p0"}
+  ],
+  "checks": [
+    {"at": 230, "name": "nothing left before the first attack time", "expect": "timeline", "kind": "attack_wave", "max": 0},
+    {"at": 250, "name": "one group left at 4:00", "expect": "timeline", "kind": "attack_wave", "min": 1, "max": 1},
+    {"at": 320, "name": "the second group waited", "expect": "timeline", "kind": "attack_wave", "max": 1},
+    {"at": 345, "name": "the second group left 90 s later", "expect": "timeline", "kind": "attack_wave", "min": 2, "max": 2},
+    {"end": true, "expect": "no_errors"}
+  ]
+}

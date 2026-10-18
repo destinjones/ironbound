@@ -61,7 +61,7 @@ const KNOWN_AI_FIELDS = [
 	"proposes_agreements", "upgrades_roads", "peacefulness", "accepts_alliances",
 	"attacks_neutrals", "defence", "waves"
 ]
-const KNOWN_WAVE_FIELDS = ["grow_every_s", "grow_by", "max_units"]
+const KNOWN_WAVE_FIELDS = ["grow_every_s", "grow_by", "max_units", "launch_gap_s"]
 const KNOWN_DEFENCE_FIELDS = [
 	"shape", "front_m", "choke_search_m", "staging_share", "front", "flanks", "reserve",
 	"guards", "guard_routes", "max_guard_posts", "spacing_m", "ring_m", "react_m", "leash_m"
