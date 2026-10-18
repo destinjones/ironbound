@@ -86,10 +86,10 @@ One concern per PR, main stays releasable, every PR carries its evidence.
    20 to 30 s by minute 5. Found while proving 3: in three of four helper-run matches the
    helper never got a vehicle factory up and had no army when the raider came; the helper
    must build one early, every time.
-5. Done (branch claude/game-direction-o3plha-6-armour): Armour and weapon classes (one
-   multiply in Unit.take_damage plus data), structures that hold a few tanks, artillery
-   that sees what it shoots. Units get roles: the class line on every card is the first
-   half; the one-word role label on the card is the follow-up.
+5. Done, #111: armour and weapon classes (one multiply in Unit.take_damage plus data),
+   structures that hold a few tanks, artillery that sees what it shoots. Units get roles:
+   the class line on every card is the first half; the one-word role label on the card is
+   the follow-up.
 6. Difficulty retune in data once 3 to 5 are in: Easy for the first match, Normal for the
    20-minute skirmish above, Hard and Brutal that hit harder, not just fatter.
 7. Done, #109: the ending: a hold with the camera on the last structure, kills and losses,
