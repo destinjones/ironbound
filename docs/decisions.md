@@ -815,6 +815,100 @@ cells (aircraft are 1.0 against everything), a unit "role" key with a one-word l
 card, ShotEffects for x0.5 hits, the missile truck's ground rockets or its description, and
 the Normal retune, which must be re-measured now that the arc has moved.
 
+## 2026-10-18: the under-attack banner hangs off the accepted ping, and Space goes there
+The under-attack banner hangs off MinimapPings' accepted ping (MatchSignals.attack_pinged); one
+filter and one throttle for the ring, the blip and the words. Why: two throttles drift and
+CLAUDE.md prefers deleting duplicates. HUD/AlertBanner shows "Base under attack: Storage 1" for
+a structure and "Units under attack: Tank" otherwise, above the minimap, with the key that goes
+there. No banner for a fight already on screen; a structure's alert beats a unit's; it holds
+9 s after the last alert it took, restarts at most every 2 s, then fades, and it fades a second
+after the place it names comes on screen. It keeps the last five places of the last minute, one
+per 12 m. Space (jump_to_alert, rebindable in controls.cfg) or a click on the banner moves the
+camera there, and Space again within 2 s goes to the place before. It plays no sound: the ping
+already blips and the advisor already speaks.
+
+Where it differs from the spec, and why. The hold is MinimapPings.ATTACK_QUIET_S + 3 s (9 s),
+not 6 s, and an alert that arrives while the banner fades takes it back without counting a new
+show or flashing the same words. With a 6 s hold and a 6 s cell quiet time that both start at
+the same ping, the next ping of a fight in one cell came just as the hold ran out, so the
+banner blinked off and on every 6 s and state.alert.shows counted each blink. The banner fades
+a second after the place it names comes on screen, by Space, a click or the player scrolling
+there: with the longer hold, "Space go there" otherwise stayed up over a fight the player was
+already watching, and this is the frustum gate's rule applied to a banner that is already up.
+The look is the spec's box in red: a red-tinted fill (#3a1711 at 0.94) with a 1 px red ring
+around the 4 px red left edge, the key on a keycap (LINE face, MUTED border, a 2 px lower edge,
+FG text), and a new text pulses the fill from BAD back to its resting red over 0.35 s instead
+of the modulate flash. The spec's box was Guide's hint box with a red edge where the hint's is
+amber, and at 4 px both read as orange, so the alert looked like a tip; the chip's fill was 5
+levels off the panel's and its 1 px LINE border vanished, so "Space" read as part of the
+sentence; and the modulate flash took the near-black panel from (37, 31, 25) to (52, 37, 25)
+for 0.35 s, which nobody sees. While BuildingInfo's selection card reaches into the banner's
+row, the banner sits 8 px above the card: the card floats right of the minimap and anchors to
+the bottom, so any card taller than about 215 px (the command centre's is 343) ran under the
+banner, which printed "Space go there" over its text and took its clicks. The lift looks up
+HUD/BuildingInfo/BuildingCard, so it stops by itself once PR 4 moves the card into the bar.
+While the banner shows, the first press goes to the place it names, not to the newest place:
+the chip says "Space go there", and a unit hit elsewhere does not change a structure's text, so
+"newest" could be a place the words never mentioned. The hold, the 2 s guard and the minute of
+memory run in game seconds (the 2 s between key presses is real time): this box plays a 1080p
+window at 0.15x to 0.26x, where a real-time hold showed the banner for about one game second,
+and game seconds also keep the banner up while the game is paused. The banner lines up with the
+minimap's left edge (x 5 today, x 8 once the bar lands) instead of a fixed x 8. The burst icon
+has four long and four short points with a wide core: the thin spikes of the first try vanished
+under the outline at 20 px.
+
+Evidence: tools/harness/scenarios/hud-alert.json passes 3/3 at a true 1920x1080 (10 game
+seconds in 39 real seconds) and at a true 1280x720: "Base under attack: Storage 1" at 6 s, and
+after the jump_to_alert action at 7 s the camera is on the alert's place (18, 7) at 8 s. The
+banner sits at y 817..857 at 1080p and 457..497 at 720p, 8 px above the minimap; after Space
+the burning storage and the tanks are in the middle of the screen and the banner is off them in
+the bottom left corner, about to fade. The scenario differs from the spec in three ways, all
+written in its description: the tanks shoot the closest thing, which is a truck or a
+constructor at a corner of the command centre from any side, so a storage stands 8 m east of it
+for them to hit; the war starts at 2 s, after the camera has moved away; the camera looks at
+[32, 36] because [90, 90] clamps to the corner of a 50 m map, where two thirds of the shot is
+black void. With the command centre selected, the banner moves to y 681..721 above the card's
+729 at 1080p and to 321..361 above 369 at 720p. A scratch copy with a second fight at (40, 25)
+showed a structure's alert replacing a unit's at once, a later unit alert not replacing it, a
+click on the banner going to the storage while the tank fight was the newest place, and three
+presses within 2 s going (40, 25), the storage, (40, 25). With the helper and auto-expand
+panels open at 720p the auto-expand panel ends at y 440, above the banner's row.
+
+Alert fatigue (risk 3). state.alert now also has visible_s, the game seconds the banner has
+been up, because shows alone counted blinks and missed how long it stayed. base-defence.json at
+speed 1, with the camera moving onto the fight at 3 s: 1 to 2 shows in 90 s, 0.7 to 1.3 a
+minute. The first is the pylon in the first second, before the camera got there (up 4.5 s);
+the second, in two of three runs, is a real hit on a hauler at the home base about 56 s in,
+off screen, so the banner did its job. A harder review scenario, three
+waves of 4, 4 and 5 tanks hitting the Big Arena base from three sides at 5, 65 and 125 s with
+the camera parked far away for all 200 s: 11 shows before this change, 6 of them blinks of a
+banner that was already up; after it, 5 shows (one per wave plus one after an 8 s lull and one
+after a 20 s lull) and no blinks, with the banner up 95 of the 200 s. That is 1.5 shows a
+minute, about 2.3 a minute over the 130 s of fighting, for a player who never looks at a base
+under siege. Every one of those shows is a new episode the player is not looking at, which is what the
+banner is for, and Generals also says "unit under attack" for units, so the quiet time and the
+unit alerts stay. If play shows the siege case nags, the first lever is structure alerts only
+while a structure alert is up, not a longer quiet time.
+
+CameraChecks reports 0 failures (one ping per spot, Alt + click still marks),
+InterfaceSoundsCheck reports ok (one blip per hit), smoke 10/10, hud-health-bars 4/4
+and base-defence 5/5 still pass, and the data validator reports 0 errors. state() gained
+"camera" and "alert", listed in docs/testing/play-harness.md.
+
+Known and left for later. At 720p, with the helper and auto-expand panels both open, Guide's
+tutorial and hint panels continue the left column into the banner's row and the banner covers
+them while it shows; the auto-expand panel itself stays above the row. Clamping them up would
+lay them over the auto-expand panel the tutorial points at, so the left column has no room at
+720p either way, and PR 4's layout is the place to settle it. The 12 m cell's 6 s quiet time
+does not look at the victim, so a hit on a structure within 6 s of a truck or constructor ping
+in the same cell does not reach the banner, which keeps "Units under attack" until the cell
+reopens; letting a structure through once would change the one filter, which is a spec call.
+Space goes to where the victim was at the accepted ping, not where it is now, which can be a
+few metres behind a moving truck. The frustum gate counts ground under the HUD panels as on
+screen. A production queue button left focused by a press dragged off it took Space as
+ui_accept and cancelled that unit before the jump saw the key, so the queue buttons are now
+FOCUS_NONE like every other HUD button.
+
 ## 2026-10-18: the Militia uses a generated squad
 
 The Militia's procedural squad looked like toys next to the remade tank, so it was replaced
