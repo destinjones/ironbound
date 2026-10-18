@@ -1151,3 +1151,19 @@ row is an empty dark strip, as the first row was on main; PR 4's bar gives the c
 The icons are 40 / 32 px as section 1 of the spec sets, which leaves about 16 px between icon
 and caption in a full slot; 44 / 35 would fill it if play says the icons are small. The fleet
 menu's Recycle and line buttons are still words, not icons.
+
+## 2026-10-18: god mode stays out of release builds
+
+Debug god mode shipped switched on: FeatureFlags.tscn sets god_mode = true, so in every
+build F2 showed the GodModeHUD (fog toggle, visible player, time scale) and Delete set hp
+to 0 on every selected unit. A player can select an enemy unit with a click, so in the
+downloads and the public web build Delete killed enemy units. Globals._toggle_god_mode now
+also needs OS.is_debug_build(), which Godot documents as false on a release export
+template, and the makefile, tools/release/export.sh and the web build all use
+--export-release. Release and web players no longer get the debug panel or
+Delete-to-kill, and F2 and Delete are bound to nothing else by default, so both keys
+simply do nothing there. Running from the editor or the editor binary (the play harness,
+the tests) and a debug export keep F2 as before, which is why the flag stays true.
+Evidence: a scratch harness scenario in a debug run turned god mode on with the
+toggle_god_mode action, showed the HUD, killed a click-selected enemy tank with Delete
+(Delete did nothing before F2), and turned it off again with the real F2 key.
