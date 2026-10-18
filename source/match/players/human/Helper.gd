@@ -7,7 +7,8 @@ extends Node
 #   it orders a freight train when far extractors call for one and recycles trucks
 #   that have had nothing to do for a while (auto-expand builds the storage yards),
 # - army: queues combat units at the player's factories up to the army size the player
-#   set; they wait at the factory's rally point and only fight back like any idle unit,
+#   set; they wait at the factory's rally point and, like every idle unit, answer a hit
+#   nearby (HomeGuard) and fight back, but are never sent to attack,
 # - scouting: keeps one scout buggy driving to the least recently seen parts of the map,
 #   holding fire and turning back from enemies,
 # - constructor guard: remembers enemies any of the player's units has seen, and keeps

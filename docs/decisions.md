@@ -475,6 +475,35 @@ from 22 to 26. The AI plays by the same rules and gained a little too (12 to 14 
 The helper's army target and the truck numbers were left alone; they belong with the
 difficulty re-tune once counters exist.
 
+## 2026-10-18: the idle army answers a hit nearby (HomeGuard)
+In every probe the player's army stood at the rally point while raiders took the mines 20 m
+away, because an idle unit only answers what walks into its own sight (10 m for a tank). The
+human player now has a HomeGuard node next to IdleConstructors: when one of the player's
+units or structures is hit by an enemy, the idle fighting units whose post is within 30 m
+attack-move to the attacker (closest eight first, one call-up per 12 m cell every 8 s, a
+cell nobody was free for is looked at again after 2 s so a battle's hits do not scan every
+unit of the match). Idle means waiting for targets with nothing to shoot, not holding
+position, fire at will. Once a responder has got where it was sent and has nothing left to
+shoot, it attack-moves back to where it stood, so the army stays together between raids
+instead of being drawn out piece by piece; the 30 m is measured from that post, not from
+wherever the last fight ended, so one raid cannot pull the army across the map a hop at a
+time. The player's word wins: a responder that is stopped, redirected or told to hold or
+hold fire is theirs again and stays where it is (a stopped unit is one standing idle away
+from where it was sent). Land units are not sent at boats nor boats at tanks inland.
+Attack-move rather than a direct attack order, so responders fight whatever they meet on
+the way. Only the human gets it: the AI's army positioning already reacts to intruders. It
+runs in every match, rules or not, because it is unit behaviour like firing back, not the
+helper. Evidence: harness scenario base-defence (six idle tanks 22 m from a pylon an enemy
+bunker shoots) fails on main and passes here: the tanks arrive by 10 s, the bunker is gone
+by 22 s, all six are back at their post by 30 s; base-defence-stop stops them on the way
+and they stay put with the bunker alive. The 1v1 probe against Normal balanced, run with
+the first version (no return to post), went from the command centre falling at 10:08 to
+12:31 on the same seed, army peak 29 units. The helper-never-attacks scenario was no judge
+of this change: in four runs across main and this branch the helper built a vehicle
+factory once and was wiped out by the Normal raider three times, with HomeGuard never
+called up in one of the losses; the helper's opening is a problem of its own, noted in
+docs/direction.md.
+
 ## 2026-10-18: Normal's first attack at 4:00, and waves that leave one at a time
 Normal and Hard had first_attack_after_s 0, so the AI attacked whenever its first group
 happened to fill, which depends on its economy: unit production is the AI's lowest resource
