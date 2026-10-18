@@ -1,10 +1,13 @@
-name: Static checks
+name: Checks
 
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+
+env:
+  GODOT_VERSION: "4.7.2"
 
 jobs:
   static-checks:
@@ -15,3 +18,62 @@ jobs:
     - uses: Scony/godot-gdscript-toolkit@master
     - run: gdformat --check source/
     - run: gdlint source/
+
+  smoke:
+    # The data validator and one played match, so a change that breaks the game and not
+    # only its formatting is caught before it lands. Same commands a contributor runs:
+    # tools/validate_data.gd and ./play.sh smoke.
+    name: 'Validator and smoke match'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Cache Godot
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: ~/godot
+        key: godot-${{ env.GODOT_VERSION }}-linux
+
+    - name: Download Godot
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        base="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+        mkdir -p ~/godot
+        curl -sSLf -o /tmp/godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+        unzip -q /tmp/godot.zip -d ~/godot
+        rm -f /tmp/godot.zip
+
+    - name: Install a virtual screen
+      run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends xvfb libgl1-mesa-dri libglx-mesa0
+
+    - name: Import the project
+      shell: bash
+      run: |
+        export GODOT="$HOME/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64"
+        # the first pass can log errors for scenes whose dependencies are not imported yet
+        "$GODOT" --headless --path . --import || true
+        "$GODOT" --headless --path . --import
+
+    - name: Validate the data
+      shell: bash
+      run: |
+        export GODOT="$HOME/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64"
+        "$GODOT" --headless --path . -s res://tools/validate_data.gd
+
+    - name: Play the smoke match
+      shell: bash
+      run: |
+        export GODOT="$HOME/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64"
+        ./play.sh smoke --out=harness-out/smoke
+        cat harness-out/smoke/report.md
+
+    - name: Keep the report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: smoke-report
+        path: harness-out/
+        retention-days: 7
