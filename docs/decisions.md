@@ -943,3 +943,110 @@ match) said only `HARNESS FAIL smoke: 9/10 checks ok`: the failed item was one o
 `expect_ok` orders, which the log does not print, and the uploaded report cannot be read from
 the cloud session. The step now keeps play.sh's exit status, prints the report either way and
 exits with that status, so the next failure names the order and its error in the log.
+
+## 2026-10-18: the missile truck fires at the ground: the Foundry's rocket corner
+
+The armour entry above left the missile truck on its fallback (attack_domains ["air"],
+damage_vs {"air": 2.0}), so the Foundry, the default human faction, had no unit strong
+against tanks while the truck's own card said "long-range rockets against ground and air".
+The lead took the role change: data/units/missile_truck.json now has attack_domains
+["terrain", "air"] and damage_vs {"heavy": 2.0, "light": 0.5, "air": 2.0}, the map the
+armour design gave it, and MISSILE_TRUCK_DESCRIPTION stays as it is because the data now
+matches it. Review changed two more numbers in the same file, attack_range 9.5 -> 8.5 and
+attack_interval 1.0 -> 1.2, so that against the ground the truck equals the rocket technical
+instead of beating it. No code changed. The card's class line reads "Unarmoured truck ·
+strong against tanks and aircraft · weak against light vehicles and infantry"
+(BuildingInfoText.classes_for with the buildings.csv words) and its attack line "ground/air:
+3 damage every 1.2 s, 8.5 m range". "Long-range" still holds against what it is strong
+against: the tank shoots from 7.0 m, the heavy tank and the gunship from 7.5 and the
+helicopter from 6.5 (the battle tank's 8.5 is equal).
+
+Why 8.5 m: at 9.5 m the truck outranged every structure that shoots at the ground (gun nest
+8.5 m, turret 8.0, bunker 7.0; the flak tower, SAM site and AA turret shoot only at
+aircraft). On a fight order it stopped 9.0 m from a gun nest and killed it in 15 s without
+taking a hit, although the gun nest is the Syndicate's answer to rocket trucks: its card
+says "strong against trucks", and in the armour design it beats the technical at an equal
+8.5 m. At 8.5 m the truck stops 8.05 m from the nest, as the technical does (8.06 m), and
+the nest wins: the truck was dead by 10 s with the nest on 21 of its 36 hp, and a technical
+sent the same way at another nest was dead by 10 s with that nest on 18. The bunker's 7.0 m
+is still outranged, as it is by the technical (matchup 60 of the armour design, accepted
+there).
+
+Why 1.2 s: the missile truck is a shared unit. It has no "factions" key and the Syndicate
+hides only ag_turret and aa_turret, so a Syndicate player and the Syndicate helper build it
+too (VoiceCheck already gives it a Syndicate crew voice). At 9.5 m and 1.0 s it out-ranged
+and out-damaged the Syndicate's own main_t2 and main_t3 unit, the rocket technical, against
+tanks (6.0 against 5.0 damage per second, at the same cost of 11) and shot aircraft as well.
+At 8.5 m and 1.2 s their ground weapons are the same; the truck keeps its anti-air, the
+technical keeps its speed (3.8 against 2.8 m/s), its hp (30 against 27) and a build 1 s
+shorter, and in the fight model six technicals beat six trucks. Hiding the truck from the
+Syndicate was the other option and was not taken: the Syndicate would lose its only
+ground-based mobile anti-air (militia is city-only). The technical's niche can be looked at
+again in the item 6 retune.
+
+The scene was read before the data was trusted: MissileTruck.gd extends Tank.gd (waiting for
+targets by default), and WaitingForTargets, AutoAttacking, AttackingWhileInRange and Stances
+pick targets only by attack_domains. Its rocket (Rocket.gd, "projectile": "rocket") moves
+its end point to the target every physics frame and damages the unit it was fired at, lobbed
+at ground targets 5 m away or more and flat at aircraft, so a rocket at a tank cannot climb
+to an aircraft's height and miss.
+
+Evidence: counters-triangle gains fight G, one missile truck holding position 9.5 m from one
+tank that is told to fight through it, and fight H, a raider told to attack a missile truck.
+In a half-second probe of the scenario on the branch, the tank came within the holding
+truck's 8.5 m between 0.5 and 1.0 s, the first rocket landed by 1.5 s, and the tank went 33,
+27, 21, 15, 9, 3 hp and died between 7.5 and 8.0 s with the truck on 11 hp. The check names
+carry the prediction counted from simultaneous first shots, 6.5 s and 9 hp, and G's checks
+run at 11 s. In H the raider killed the truck between 8.0 and 8.5 s and kept 9 of its 18 hp
+(predicted 9). On main the truck never fired at the tank, and the tank killed it between
+11.5 and 12.0 s on full hp; in H the raider killed the truck between 11.0 and 11.5 s
+untouched. G's check "a missile truck beats a tank" fails on main (one tank left at 11 s)
+and passes on the branch, where all 16 named checks pass and A to F are unchanged; "and the
+truck stands" and both H checks pass on main too and only guard the branch result. The first
+branch run showed why G's truck holds position and H's raider is on return fire with an
+attack order: once their own fight was over, the human's home guard (HomeGuard.gd, idle
+fighters within 30 m of an attacker) sent the idle truck at D's turret 20 m away, which then
+fell and failed D, and the idle raider at E's bunker 29.5 m away, where it died.
+
+Other engine probes on the final numbers: two holding trucks killed a gunship between 7.0
+and 7.5 s (the first hit landed by 2.5 s) and lost neither truck; one truck killed a
+helicopter between 6.5 and 7.0 s and lost 5 hp; two trucks killed a heavy tank between 7.5
+and 8.0 s and lost neither, though one was down to 3 hp; one truck lost to a heavy tank (the
+truck dead by 9 s, the heavy tank on 24 of 60); a hover skimmer killed a truck and kept 4.5
+of its 15 hp. The skimmer is the Foundry's own light unit and wins this fight more narrowly
+than the raider (at 9.5 m and 1.0 s it kept 1.5 hp). smoke, base-defence, die-once,
+factions-foundry, ai-waves-stagger and tutorial-first-match pass; TooltipsCheck and
+BuildingInfoCheck pass unchanged; validate_data: 0 error(s), 0 warning(s); gdformat and
+gdlint are clean.
+
+The AI builds no missile trucks: no role in data/factions or Factions.DEFAULT_ROLES names
+it, and its anti-air roles are the flak tower and the SAM site, both structures, so its
+compositions and its air defence do not change. A truck the AI owns (a spawned one) now
+fires at ground units in its sight. The human's home guard now also sends idle missile
+trucks at ground attackers within 30 m, where before it sent them only at aircraft. That
+includes raider raids, where the truck deals x0.5 and at 2.8 m/s cannot catch a 4.4 m/s
+raider; a follow-up could skip responders whose damage_vs against the attacker's armour is
+below 1.0. Targeting stays nearest-first and class blind
+(WaitingForTargets._pick_closest_unit), so in a mixed fight a truck spends its rockets at
+x0.5 on the light units in front before the tanks behind, and "strong against tanks" needs
+the player's attack orders until the deferred target preference lands. The helper's
+cost-first pick (Helper._best_unit_for) already bought missile trucks at T2 when the bank
+covered them but not the heavy tank (17), the artillery (14) or, on the tie at 11, the
+amphibious APC that comes first in file order; those trucks now fight tanks instead of
+standing idle in front of a ground army. The Syndicate helper's tie at 11 goes, in file
+order, to the APC, then the truck, then the technical. A role-aware pick stays deferred, as
+in the armour entry.
+
+Input to item 6: past T1 neither AI's main waves hold a light unit. The Foundry AI fields
+the tank, the heavy tank and the battle tank with artillery and helicopters, and its raider
+role is the tank; the Syndicate's main_t2 and main_t3 are the rocket technical. A pure
+missile-truck stack therefore beats the Foundry AI's tank and heavy-tank waves cost for
+cost, and the light units that punish it hard (raiders, skimmers, city militia) are missing
+from those waves. In the fight model at about 66 cost, six trucks beat seven tanks keeping
+two and four heavy tanks keeping three, and take no damage from two bunkers; they lose to
+three battle tanks, six technicals, eleven raiders, eleven skimmers or thirteen militia. A
+follow-up data PR can give the Foundry AI a light unit (roles.raider "hover_skimmer" in
+data/factions/foundry.json) and keep some main_t1 light units in the later waves. One feel
+item stays open: ShotEffects.rocket_impact shakes the camera for rockets of 3 damage or
+more, so a truck stack in a ground fight now shakes the camera on its hits, as the technical
+and artillery do; nobody has watched six trucks in a window yet.
