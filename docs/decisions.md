@@ -553,3 +553,17 @@ enemy vehicle factory on all four sides): on main the factory is reported lost t
 at 0:01.9, with the fix exactly once, all checks pass, no script errors. The target is a
 factory and not a command centre because a command centre with no defenders near surrenders
 and is captured, not destroyed, so it never dies at all.
+
+## 2026-10-18: CI plays a match (the validator and the smoke scenario in the checks)
+
+The checks caught formatting and nothing else: a data file with a field the game cannot
+read, or a scene that errors on load, landed on main green. The checks workflow now has a
+second job. It downloads Godot 4.7.2 (cached between runs), imports the project (about
+twenty seconds headless, no cache needed), runs tools/validate_data.gd, which exits non-zero
+on any error, and plays the smoke scenario with ./play.sh under a virtual screen, then keeps
+harness-out as a build artifact for a week. These are the same two commands a contributor
+runs before pushing. One scenario and not the quick batch, because the batch takes several
+minutes a run and the smoke match covers the loop that must never break: extractors, a
+second constructor, a factory, three tanks, a fight, the AI building a base, no script
+errors (it passes on main in 72 s here). The job is not a required check yet; that is a
+repository setting for Destin once it has been green for a few days.
