@@ -474,3 +474,28 @@ copper in stock at 5:00 went from 16 to 42, tanks by 8:00 from 14 to 18, units a
 from 22 to 26. The AI plays by the same rules and gained a little too (12 to 14 structures).
 The helper's army target and the truck numbers were left alone; they belong with the
 difficulty re-tune once counters exist.
+
+## 2026-10-18: Normal's first attack at 4:00, and waves that leave one at a time
+Normal and Hard had first_attack_after_s 0, so the AI attacked whenever its first group
+happened to fill, which depends on its economy: unit production is the AI's lowest resource
+priority, and on the same seed the Normal balanced AI's first tank came at 2:00 in one run
+and 4:54 in the next. A new player could be raided at 2:54 without owning a factory. Now
+Normal holds its first attack until 4:00 and Hard until 2:00 (Easy 8:00, Very Easy 12:00
+and Brutal 0:00 are unchanged), and wave growth counts from the first attack time, so a
+difficulty that waits longer does not open with a bigger wave. Holding alone made things
+worse: every group that filled during the hold left in the same second, and on a run where
+the AI had eight tanks and three raiders by 4:00 the helper-run player's command centre
+fell at 5:50 instead of 10:07. So full groups now leave at least waves.launch_gap_s apart
+(balanced 90 s, raider 60 s, turtle and trader 120 s, data/ai/*.json; OffenseController
+keeps the clock, AutoAttackingBattlegroup asks it before setting off). A battlegroup that
+sets off emits MatchSignals.attack_wave_launched and the harness writes "pX sent a wave of
+N" into every timeline, so the AI's waves can be read off any report from now on.
+Evidence: new scenario ai-waves-stagger (eight tanks spawned for a Normal balanced AI fill
+both groups at once): nothing leaves before 3:50, one wave of four leaves at 4:00, the
+second waits and leaves at 5:30, the checks at 3:50, 4:10, 5:20 and 5:45 all pass. The
+helper-never-attacks scenario passes on this branch (31 structures standing at 10:00, the
+raider's first wave at 4:00 sharp). The 1v1 probe against Normal balanced: war at 5:55,
+command centre falls at 11:49; that match is still lost by the helper-run player and the
+run-to-run spread of the AI's economy is wider than any of these changes, so the probe is
+a shape check, not a number to tune on. Normal is re-tuned once counters exist (item 6 of
+the order of work), not here.

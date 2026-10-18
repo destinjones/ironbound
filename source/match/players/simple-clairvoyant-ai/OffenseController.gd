@@ -27,8 +27,10 @@ const SUPPORT_ROLE = "support_t2"
 const SUPPORT_EVERY = 4  # every this many vehicles one is the support unit, when there is one
 # how a personality's waves grow ("waves" in data/ai/*.json, scaled by the difficulty's
 # wave_growth_scale): every grow_every_s the next battlegroup is grow_by units bigger, up to
-# max_units; a battlegroup is sized when it starts forming
-const WAVE_DEFAULTS = {"grow_every_s": 0.0, "grow_by": 0, "max_units": 0}
+# max_units; a battlegroup is sized when it starts forming. Groups leave at least
+# launch_gap_s apart, so the groups that filled up while the difficulty's first attack was
+# still some minutes away leave one after the other, not as one lump.
+const WAVE_DEFAULTS = {"grow_every_s": 0.0, "grow_by": 0, "max_units": 0, "launch_gap_s": 0.0}
 # on maps where the enemy is only reachable over water, the amphibious vehicle is built
 # instead of the main battle unit (see _crossing_needed)
 const AMPHIBIOUS_VEHICLE_ID = "amphibious_apc"
@@ -56,6 +58,7 @@ var _land_vehicle_scenes = []  # main battle units that cannot cross deep water
 var _battle_unit_scenes = []
 var _support_scene = null
 var _vehicles_ordered = 0
+var _last_launch_s = -INF
 
 @onready var _ai = get_parent()
 
@@ -182,8 +185,22 @@ func wave_size():
 	var max_units = int(waves.get("max_units", WAVE_DEFAULTS["max_units"]))
 	if every <= 0.0 or by <= 0 or max_units <= base:
 		return base
-	var steps = floor(_ai.match_time_s / every) * _ai.wave_growth_scale
+	# waves grow from the first attack on, so a difficulty that waits longer before its
+	# first attack does not open with a bigger one
+	var since_first_attack_s = max(_ai.match_time_s - _ai.first_attack_after_s, 0.0)
+	var steps = floor(since_first_attack_s / every) * _ai.wave_growth_scale
 	return clampi(base + int(floor(steps * by)), base, max_units)
+
+
+func seconds_until_next_launch():
+	"""how long a full battlegroup has to wait before it may leave, see WAVE_DEFAULTS"""
+	var waves = _ai.waves if _ai.waves is Dictionary else {}
+	var gap = float(waves.get("launch_gap_s", WAVE_DEFAULTS["launch_gap_s"]))
+	return max(_last_launch_s + gap - _ai.match_time_s, 0.0)
+
+
+func battlegroup_launched():
+	_last_launch_s = _ai.match_time_s
 
 
 func _try_creating_new_battlegroup():

@@ -90,6 +90,10 @@ func start():
 	MatchSignals.tier_reached.connect(
 		func(player, tier): _event("tier", "%s reached tier %d" % [_who(player), tier])
 	)
+	MatchSignals.attack_wave_launched.connect(
+		func(player, units):
+			_event("attack_wave", "%s sent a wave of %d" % [_who(player), units.size()])
+	)
 	MatchSignals.diplomacy_changed.connect(
 		func(a, b, state):
 			_event("diplomacy", "%s and %s: %s" % [_who(a), _who(b), _diplomacy_name(state)])

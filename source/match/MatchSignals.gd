@@ -27,6 +27,7 @@ signal unit_deselected(unit)
 signal unit_damaged(unit)
 signal unit_died(unit)
 signal unit_promoted(unit, rank)  # a kill took it to a new rank, see veterancy/Veterancy.gd
+signal attack_wave_launched(player, units)  # an AI battlegroup set off, AutoAttackingBattlegroup
 signal outpost_captured(outpost, from_player, to_player)  # see outposts/Outposts.gd
 signal supply_drop_landed(crate)  # see supply-drops/SupplyDrops.gd
 signal supply_drop_collected(crate, player, kind)  # kind: "goods", "repair" or "veterans"
