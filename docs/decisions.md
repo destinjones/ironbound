@@ -814,3 +814,11 @@ centre loads at 90/180), shipyard hp (42 while the land factories are 72), helic
 cells (aircraft are 1.0 against everything), a unit "role" key with a one-word label on the
 card, ShotEffects for x0.5 hits, the missile truck's ground rockets or its description, and
 the Normal retune, which must be re-measured now that the arc has moved.
+
+## 2026-10-18: the hauler uses a generated truck
+
+Haulers are always on screen, and the built truck was flat-colour
+programmer art next to the remade tank. It is now a generated 6x6 cargo truck at the tank's
+3,600 triangles; the old truck stays as the classic model. It costs about as much to draw as
+the tank in the software-renderer bench (128 ms vs 129 ms for 30) and a sixth of the draw
+calls of the old one. Details in tools/blender/generated_models.md.
