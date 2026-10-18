@@ -814,3 +814,12 @@ centre loads at 90/180), shipyard hp (42 while the land factories are 72), helic
 cells (aircraft are 1.0 against everything), a unit "role" key with a one-word label on the
 card, ShotEffects for x0.5 hits, the missile truck's ground rockets or its description, and
 the Normal retune, which must be re-measured now that the arc has moved.
+
+## 2026-10-18: the Militia uses a generated squad
+
+The Militia's procedural squad looked like toys next to the remade tank, so it was replaced
+with a Higgsfield rifleman (concept, then Tripo) placed three times by
+`clean_generated.py --squad`, at the tank's 3,600 triangles. Team colour goes on the helmet
+and shoulder patches, including their sides (`--team-up -0.2`), against the "top surfaces
+only" rule: on a 15-pixel soldier the tops alone did not tell blue from red. The classic
+model option is unchanged. Details in tools/blender/generated_models.md.
