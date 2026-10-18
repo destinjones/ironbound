@@ -101,6 +101,10 @@ func sound_for(button):
 func _on_node_added(node):
 	if not node is BaseButton:
 		return
+	# a reparented button enters the tree again (the Play menu moves its content into a
+	# scroll container); connecting twice is an error, and 69 buttons made an error storm
+	if node.mouse_entered.is_connected(_on_button_hovered):
+		return
 	if node.toggle_mode:
 		node.toggled.connect(_on_button_toggled.bind(node))
 	else:
