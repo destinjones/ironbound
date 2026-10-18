@@ -72,6 +72,7 @@ const KEY_SECTIONS = [
 		[
 			["toggle_match_menu", "Menu / pause"],
 			["show_health_bars", "Show all health bars (hold)"],
+			["jump_to_alert", "Go to the last alert"],
 		],
 	],
 ]
@@ -381,7 +382,7 @@ func _build_controls_tab(rows):
 	_hint(
 		rows,
 		(
-			"Command keys and the health bar key can be changed in user://controls.cfg"
+			"Command keys, the health bar key and the alert key can be changed in user://controls.cfg"
 			+ ' (one line per command under [keys], e.g. command_patrol="O").'
 		)
 	)
