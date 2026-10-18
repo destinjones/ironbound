@@ -933,3 +933,19 @@ programmer art next to the remade tank. It is now a generated 6x6 cargo truck at
 3,600 triangles; the old truck stays as the classic model. It costs about as much to draw as
 the tank in the software-renderer bench (128 ms vs 129 ms for 30) and a sixth of the draw
 calls of the old one. Details in tools/blender/generated_models.md.
+
+## 2026-10-18: god mode stays out of release builds
+
+Debug god mode shipped switched on: FeatureFlags.tscn sets god_mode = true, so in every
+build F2 showed the GodModeHUD (fog toggle, visible player, time scale) and Delete set hp
+to 0 on every selected unit. A player can select an enemy unit with a click, so in the
+downloads and the public web build Delete killed enemy units. Globals._toggle_god_mode now
+also needs OS.is_debug_build(), which Godot documents as false on a release export
+template, and the makefile, tools/release/export.sh and the web build all use
+--export-release. Release and web players no longer get the debug panel or
+Delete-to-kill, and F2 and Delete are bound to nothing else by default, so both keys
+simply do nothing there. Running from the editor or the editor binary (the play harness,
+the tests) and a debug export keep F2 as before, which is why the flag stays true.
+Evidence: a scratch harness scenario in a debug run turned god mode on with the
+toggle_god_mode action, showed the HUD, killed a click-selected enemy tank with Delete
+(Delete did nothing before F2), and turned it off again with the real F2 key.
