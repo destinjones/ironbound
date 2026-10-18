@@ -568,6 +568,99 @@ second constructor, a factory, three tanks, a fight, the AI building a base, no 
 errors (it passes on main in 72 s here). The job is not a required check yet; that is a
 repository setting for Destin once it has been green for a few days.
 
+## 2026-10-18: the ending holds on the last structure, counts kills and lets you keep watching
+
+Until now the match froze in the frame it was decided: MatchEndHandler paused the tree and
+put the results over whatever the camera happened to show. Item 7 of docs/direction.md asks
+for an ending that holds for a moment and shows what happened. What changed:
+
+- The hold. On victory or defeat (surrender too) the HUD, the city centres' rings, site
+  labels and rebuild countdown go away, the selection is cleared, the camera jumps to where
+  the deciding blow landed and zooms in one wheel step. Engine.time_scale drops to a quarter
+  of what it was for 2.5 real seconds while the view dims a little and VICTORY or DEFEAT
+  (the TitleLabel stencil face, amber or rust from MenuStyle and HudStyle) fades in over
+  0.4 s on a thin dark band at the top third of the screen, with "Press any key or click to
+  continue" at the bottom in the city build-up's hint style. Any key or mouse button cuts
+  the hold short, except the wheel (a zoom) and a modifier on its own. Then the time scale
+  is put back exactly, the tree pauses and the blur and the results fade in over 0.25 s
+  with the banner as their title. A surrender comes from the pause menu with the tree
+  paused, so the hold unpauses it; the results pause it again.
+- Where the camera goes. MatchStats remembers where every unit and structure of each player
+  fell (structures by the spot they stood on, since unit_died comes after the node has left
+  the tree). The handler frames the unit whose death decided the match first (its
+  tree_exited is what decides, so it is not in the stats yet), else the last fall of the
+  human (defeat) or of the hostile players (victory), else a lost city site from
+  CityCentres.lost_sites, else the human's remaining units, else the camera stays. A first
+  version framed the last fallen structure, which in the proof scenario was a defence post
+  that fell two minutes before the end: an empty patch of sand at the map edge.
+- The hold's clock is counted in _process in real time with at most 0.1 s per frame, not a
+  SceneTreeTimer: the first 3D frame after the camera jump on a cold software renderer
+  took up to 3.4 s and swallowed the whole hold, so the harness's hold screenshot showed
+  the results panel. A hitch at the jump now costs the hold 0.1 s.
+- The hit-stop. IsometricCamera3D's hit-stop sets Engine.time_scale to 0.05 for 60 ms and
+  restores 1.0 only if it still reads 0.05. A structure's death shake runs in the frame the
+  match is decided (hp_changed comes before tree_exited), so the hold read 0.05 as the
+  speed to come back to and the whole session was left at one twentieth speed after the
+  ending. The hold now treats a time scale equal to HIT_STOP_TIME_SCALE as 1.0, the
+  hit-stop's own restore target, without touching the camera.
+- No hold for a match ended by the match limits (time up, dry map) or a match without a
+  human player: there is nothing to frame, and tests/caps/CapsChecks.gd expects the pause
+  within twenty frames of the limit signal.
+- Kills: on unit_died the dying unit's last_attacker_player gets one, units and structures
+  alike, never for friendly fire. Units taken away by CityCentres._remove_unit emit no
+  unit_died and count for nobody. A fuel crash or a god-mode delete still credits the last
+  attacker; accepted. The results table has a Kills column next to Units lost.
+- Keep watching, a third button between Play again and Main menu: unpauses, hides the panel
+  and the blur, shows the HUD again and lets the match run on. After a defeat the city
+  centre rings, labels and countdown stay hidden: there is no city left to keep, and the
+  countdown would tick toward a second defeat. The handler never decides a second ending
+  (one _decided guard) and the match limits cannot re-open it. A small Results button sits
+  bottom centre just above the screen edge, where neither the HUD nor the diplomacy panel
+  draws (a first version put it top centre, inside the diplomacy offer), and brings the
+  panel back; Surrender after Keep watching does the same instead of starting a new ending.
+- Allies: victory comes when no hostile player has units left, and only an alliance excuses
+  a living player. A pact partner, a neutral and an enemy at war all block victory: a first
+  version used Diplomacy.can_attack, under which buying a non-aggression pact from the
+  only enemy would have won the match at the next death of anything. Defeat stays "the
+  human has no units"; a match without a human still finishes when one player is left.
+- Harness: HarnessApi.state() carries "match_end" {shown, result, hold} and "stats" (the
+  MatchStats counters by player index), expr checks can call api as well as read state,
+  the Recorder writes a "hold" event when the hold begins and an "ending" event (with the
+  speed the match is back at) when the results come up, and with match_end true a run goes
+  on past the match_end event until the ending event and its screenshots are in: a 10 s
+  real-time grace, extended while a screenshot is still on its way, capped at 30 s. One
+  shot is taken 0.5 s into the hold and one 0.3 s after the results come up; the end shot
+  waits for any shot in flight and skips the jump to a command centre the human no longer
+  has ("no such unit" from the camera order). Scenarios with match_end false end as before.
+- New strings MATCH_END_KEEP_WATCHING, MATCH_END_RESULTS, MATCH_END_KILLS and
+  MATCH_END_SKIP_HINT in assets/translations/match.csv. MatchEndHandler lost its private
+  copy of the palette.
+
+Evidence, scenario tools/harness/scenarios/ending.json (twenty-four enemy tanks next to the
+player's command centre on Big Arena, match_end true, speed 4), run twice in a row: the
+command centre falls at 0:27 and two defence posts by 0:47, "the human player lost" and
+"the hold began: Defeat" at 2:29, "the results screen is up: Defeat, speed back at 4.0" at
+2:33; HARNESS PASS ending: 6/6 checks ok both times (the match was lost, the hold ran
+before the results, the results screen came up with Defeat, match_end shown and result ==
+"defeat", stats[1]["kills"] >= 1 with 10 kills for the AI, no_errors), 153 game seconds in
+46 real seconds. Both 00-hold.png files show the DEFEAT band, the dim and the hint over
+the scorch of the last unit, the HUD gone; 01-results.png the panel with the Kills column
+and Keep watching. tools/harness/scenarios/ending-victory.json (the player's tanks at the
+enemy command centre): HARNESS PASS ending-victory: 6/6 checks ok, "the human player won"
+at 2:29, "the results screen is up: Victory, speed back at 4.0" at 2:34, 20 kills for the
+player, 00-hold.png the VICTORY band over the enemy base with the tanks and a wreck. A
+speed-1 reproduction of the hit-stop (camera_shake 1.0 and every unit killed in one frame)
+reads 0.05 in that frame, then inside the hold _time_scale_before 1.0 and speed 0.25, and
+1.0 after the skip. A copy of the ending scenario that presses Keep watching as an end
+check ends unpaused with the HUD back, CityCentres and its banner layer hidden, and the
+Results button at the bottom centre in its end shot. smoke (10/10) and die-once (3/3)
+still pass; the data validator reports 0 errors. The four tests that look at the end
+screen pass unchanged: CityCentreChecks 0 failures ("PASS the match ends in defeat", its
+6-defeat.png is the DEFEAT band over the old city), CapsChecks 0 failures ("the match is
+over (paused behind the end screen)", "the end screen shows Defeat"), OptionsShots
+failures=0 ("surrender shows Defeat"), Playthrough exit 0 (time limit after 406 s, no
+script errors; the bot reached no ending in six minutes).
+
 ## 2026-10-18: health bars colour by thirds, on a dark backing, held on with Alt or an option
 Health bars colour by thirds (HudStyle.health_color: green at or above 2/3, amber down to 1/3,
 red below, the StarCraft II steps that Generals also uses) over a black quad at 0.55 alpha two

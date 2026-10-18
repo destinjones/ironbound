@@ -88,6 +88,7 @@ var elapsed_s = 0.0  # game seconds since the match started
 var ended = false  # set by the "end" command
 
 var _kinds = {}  # scene path -> unit id from data/units
+var _end_handler = null  # the match's MatchEndHandler, looked up once
 
 
 func _ready():
@@ -164,7 +165,44 @@ func state(with_units = true):
 		}
 	if recorder != null:
 		data["recent_events"] = recorder.timeline.slice(-10)
+	data["match_end"] = match_end_state()
+	data["stats"] = match_stats()
 	return data
+
+
+func end_handler():
+	"""the match's MatchEndHandler, or null when the ending is off (match_end false)"""
+	if _end_handler != null and is_instance_valid(_end_handler) and _end_handler.is_inside_tree():
+		return _end_handler
+	_end_handler = null
+	if match_node != null and is_instance_valid(match_node):
+		_end_handler = match_node.find_child("MatchEndHandler", true, false)
+	return _end_handler
+
+
+func match_end_state():
+	"""{shown: the results panel is up, result: "victory", "defeat", "draw" or null, hold:
+	the slow-motion moment before the results is running}"""
+	var handler = end_handler()
+	if handler == null or handler.is_queued_for_deletion():
+		return {"shown": false, "result": null, "hold": false}
+	return {
+		"shown": handler.is_results_shown(),
+		"result": handler.result,
+		"hold": handler.is_holding(),
+	}
+
+
+func match_stats():
+	"""MatchStats' counters by player index: built, lost, kills, structures, delivered,
+	trades, tier; empty when the ending is off"""
+	var stats = {}
+	var handler = end_handler()
+	if handler == null or handler.is_queued_for_deletion() or handler.stats == null:
+		return stats
+	for player in players():
+		stats[player.get_index()] = handler.stats.counters_of(player).duplicate()
+	return stats
 
 
 func _player_state(player):
@@ -817,8 +855,9 @@ func _do_camera(order):
 		target = Vector3(spots[0].x, 0, spots[0].z - spots[0].y * sqrt(3.0))
 	elif order.has("follow"):
 		var units = find_units(order["follow"])
-		if not units.is_empty():
-			target = units[0].global_position
+		if units.is_empty():
+			return {"ok": false, "error": "no such unit"}
+		target = units[0].global_position
 	if target == null:
 		return {"ok": false, "error": 'camera needs "spot" or "follow"'}
 	camera.set_position_safely(ground(target) if not target is Vector3 else target)
