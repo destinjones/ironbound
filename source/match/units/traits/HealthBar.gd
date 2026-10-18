@@ -1,24 +1,37 @@
 @tool
 extends Node3D
 
+# The bar over a unit: coloured by thirds (HudStyle.health_color) on a dark backing, shown
+# while the unit is selected or hovered, for 2 s after a hit, or for everyone while the
+# show_health_bars key is held or the option is on (HealthBarsControl).
+
+const HudStyle = preload("res://source/match/hud/HudStyle.gd")
+const HealthBarsControl = preload("res://source/match/hud/HealthBarsControl.gd")
+
 const BAR_AUTO_VISIBILITY_DURATION = 2.0
 # hp just lost stays on the bar as a pale chunk that drains away, so a hit reads at a glance
 const DAMAGE_CHUNK_COLOR = Color(1.0, 0.95, 0.7)
 const DAMAGE_CHUNK_HOLD_S = 0.25
 const DAMAGE_CHUNK_DRAIN_PER_S = 0.9  # of the full bar
+const BACKING_MARGIN_PX = 2  # the dark edge around the bar, each side
 
 @export var size = Vector2(200, 20):
 	set(value):
 		size = value
 		find_child("ActualBar").texture.width = size.x
 		find_child("ActualBar").texture.height = size.y
+		find_child("Backing").texture.width = size.x + 2 * BACKING_MARGIN_PX
+		find_child("Backing").texture.height = size.y + 2 * BACKING_MARGIN_PX
 
 var _bar_value_initialized = false
 var _value = 1.1
 var _chunk_end = 1.1
 var _chunk_hold = 0.0
-var _health_color = Color.GREEN
-var _empty_color = Color.DIM_GRAY
+var _health_color = HudStyle.GOOD
+var _empty_color = HudStyle.SURFACE_2
+var _selected = false
+var _hovered = false
+var _forced = false
 
 @onready var _unit = get_parent()
 @onready var _actual_bar = find_child("ActualBar")
@@ -29,15 +42,19 @@ func _ready():
 	if Engine.is_editor_hint():
 		return
 	hide()
-	var colors = _actual_bar.texture.gradient.colors
-	_health_color = colors[0]
-	_empty_color = colors[colors.size() - 1]
 	set_process(false)
 	_recalulate_bar_value()
 	_unit.selected.connect(_on_unit_selected)
 	_unit.deselected.connect(_on_unit_deselected)
 	_unit.hp_changed.connect(_on_hp_changed)
-	_visibility_timer.timeout.connect(_on_visibility_timer_timeout)
+	if _unit.has_signal("mouse_entered"):  # Unit is an Area3D, enemies included
+		_unit.mouse_entered.connect(_on_unit_mouse_entered)
+		_unit.mouse_exited.connect(_on_unit_mouse_exited)
+	_visibility_timer.timeout.connect(_refresh_visibility)
+	MatchSignals.health_bars_forced.connect(_on_health_bars_forced)
+	var control = HealthBarsControl.of(get_tree())
+	_forced = control.forced if control != null else false
+	_refresh_visibility()
 
 
 func _process(delta):
@@ -57,6 +74,7 @@ func _recalulate_bar_value():
 	var new_value = float(_unit.hp) / _unit.hp_max
 	new_value = new_value if not is_equal_approx(new_value, 1.0) else 1.1  # fixing 1px gap
 	_value = new_value
+	_health_color = HudStyle.health_color(_value)
 	if _bar_value_initialized and new_value < old_value and _unit.visible:
 		_chunk_end = max(_chunk_end, old_value)
 		_chunk_hold = DAMAGE_CHUNK_HOLD_S
@@ -80,26 +98,40 @@ func _apply_offsets():
 		gradient.colors = PackedColorArray([_health_color, _empty_color])
 
 
+func _refresh_visibility():
+	visible = _forced or _selected or _hovered or not _visibility_timer.is_stopped()
+
+
 func _show_for_a_while():
-	if visible and _visibility_timer.is_stopped():
-		return  # shown because the unit is selected
-	show()
 	# restart on every hit: a unit under steady fire keeps its bar up
 	_visibility_timer.start(BAR_AUTO_VISIBILITY_DURATION)
+	_refresh_visibility()
 
 
 func _on_unit_selected():
-	_visibility_timer.stop()
-	show()
+	_selected = true
+	_refresh_visibility()
 
 
 func _on_unit_deselected():
-	hide()
+	_selected = false
+	_refresh_visibility()
+
+
+func _on_unit_mouse_entered():
+	_hovered = true
+	_refresh_visibility()
+
+
+func _on_unit_mouse_exited():
+	_hovered = false
+	_refresh_visibility()
+
+
+func _on_health_bars_forced(on):
+	_forced = on
+	_refresh_visibility()
 
 
 func _on_hp_changed():
 	_recalulate_bar_value()
-
-
-func _on_visibility_timer_timeout():
-	hide()

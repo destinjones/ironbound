@@ -567,3 +567,33 @@ minutes a run and the smoke match covers the loop that must never break: extract
 second constructor, a factory, three tanks, a fight, the AI building a base, no script
 errors (it passes on main in 72 s here). The job is not a required check yet; that is a
 repository setting for Destin once it has been green for a few days.
+
+## 2026-10-18: health bars colour by thirds, on a dark backing, held on with Alt or an option
+Health bars colour by thirds (HudStyle.health_color: green at or above 2/3, amber down to 1/3,
+red below, the StarCraft II steps that Generals also uses) over a black quad at 0.55 alpha two
+texture pixels larger each side, and every bar shows while Alt (the show_health_bars action,
+rebindable in controls.cfg) is held or Options > Interface > "Always show health bars" is on.
+One node, HUD/HealthBarsControl, polls the option and the key and tells the bars through
+MatchSignals.health_bars_forced; no bar polls Input. Hover shows a bar too, enemies included,
+through the unit's own mouse_entered and mouse_exited (Unit is an Area3D). pixel_size 0.0125 in
+HealthBar.tscn instead of 23 scene edits: the tank's 160 x 10 bar is now 2.0 x 0.125 m, 144 x
+9 px at 1080p and 96 x 6 px at 720p at the default zoom, and the node does not move, so the
+veterancy chevrons and the surrender flag that read its position stay put. Why: a 7 px green
+hairline on sand was unreadable at 1080p and invisible at 720p, and a bar that only ever shows
+green says nothing about who is dying. The lost-hp chunk keeps its pale colour; the empty part is
+SURFACE_2, the dark panel tone. Both sprites disable the depth test, which puts them in the
+transparent pass where render_priority orders them (backing 0 under the bar's 1); the pixel
+samples of the 1080p shot read the green fill at (163, 186, 107) after the Look's grade with a
+dark edge above and below, so the backing does not dim the bar. Evidence: the new scenario
+hud-health-bars (eight raiders charging six tanks in Big Arena; Alt held at 6 s, released at
+7.5 s, the option on at 8 s) passes at 1920x1080 with its three checks: every bar visible while
+the key is held, no bar visible without a reason (selected, hovered or hit in the last 2 s) once
+the key is released with the option off, and every bar visible with the option on. In the shots
+the tanks read amber, amber with the pale chunk and green while the raiders read red, amber and
+green at 7 s, and a red tank, an amber tank and green tanks at 9 s, with the dark edge visible
+on sand. The spec's four raiders standing 8 m away were tried first: all four died by 6 s having
+dealt about 28 damage spread over six 33 hp tanks, so every bar stayed green; the raiders now
+start out of the tanks' range at [54, 40] and charge on a fight order, which keeps the fight
+alive to 12 s. The harness gained the two verbs this needed, a held key ({"do": "key", "action":
+..., "hold": true} and "release": true) and {"do": "option", "set": ..., "value": ...}, plus a
+"health_bars" field in state() with the counts the checks read.
