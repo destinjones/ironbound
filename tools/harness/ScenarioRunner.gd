@@ -16,6 +16,11 @@ const Recorder = preload("res://tools/harness/Recorder.gd")
 const VirtualMouse = preload("res://tools/harness/VirtualMouse.gd")
 const TutorialScript = preload("res://source/data-model/TutorialScript.gd")
 
+const HOLD_SHOT_DELAY_S = 0.5  # real seconds into the ending's hold before its screenshot
+const RESULTS_SHOT_DELAY_S = 0.3  # the results panel fades in over 0.25 s
+const ENDING_GRACE_S = 10.0  # real seconds to wait for the results panel after match_end
+const ENDING_CAP_S = 30.0  # and at most this long for the ending's screenshots to land
+
 const DEFAULTS = {
 	"name": "",
 	"description": "",
@@ -55,6 +60,8 @@ var _always_checks = []
 var _failed_always = {}
 var _ended = ""
 var _busy = false
+var _match_over_real_s = -1.0  # recorder real seconds when the match_end event was seen
+var _shots_pending = 0  # ending screenshots on their way
 
 
 static func load_file(path):
@@ -123,6 +130,12 @@ func run():
 		get_viewport().disable_3d = true
 	_set_speed(float(scenario["speed"]))
 	recorder.start()
+	var end_handler = api.end_handler()
+	if end_handler != null:  # match_end true: a shot during the hold and one of the results
+		end_handler.hold_started.connect(func(_result): _shoot_hold())
+		end_handler.results_shown.connect(
+			func(_result): _shoot_after(RESULTS_SHOT_DELAY_S, "results")
+		)
 	recorder.note(
 		(
 			"started %s on %s, seed %s, %s"
@@ -267,7 +280,46 @@ func _loop():
 
 func _match_over():
 	var ends = recorder.timeline.filter(func(entry): return entry["kind"] == "match_end")
-	return ends[-1]["text"] if not ends.is_empty() else ""
+	if ends.is_empty():
+		return ""
+	if not scenario["match_end"]:
+		return ends[-1]["text"]
+	# the real ending is on: wait for the hold and the results panel (the "ending" event and
+	# the screenshots of both), so the report shows them; a grace in real time, since game
+	# time stands still behind the panel, and a screenshot still on its way (slow frames on
+	# a software renderer) is waited for up to the cap
+	if _match_over_real_s < 0.0:
+		_match_over_real_s = recorder.real_seconds()
+	var ending_up = recorder.timeline.any(func(entry): return entry["kind"] == "ending")
+	var waited_s = recorder.real_seconds() - _match_over_real_s
+	var shots_done = _shots_pending == 0
+	if (shots_done and (ending_up or waited_s > ENDING_GRACE_S)) or waited_s > ENDING_CAP_S:
+		return ends[-1]["text"]
+	return ""
+
+
+func _shoot_hold():
+	"""3D goes on at once, so its slow first frame after a 3D-off stretch is spent before
+	the shot; the shot itself then needs one more frame, taken once the banner has faded
+	in, which keeps it inside the hold even on a slow software renderer"""
+	var three_d_was_off = recorder.three_d_off
+	get_viewport().disable_3d = false
+	recorder.three_d_off = false
+	await _shoot_after(HOLD_SHOT_DELAY_S, "hold")
+	recorder.three_d_off = three_d_was_off
+	if three_d_was_off:
+		get_viewport().disable_3d = true
+
+
+func _shoot_after(real_seconds, label):
+	"""a screenshot after real_seconds, whatever the game speed or pause, one at a time"""
+	_shots_pending += 1
+	if real_seconds > 0.0:
+		await get_tree().create_timer(real_seconds, true, false, true).timeout
+	while recorder._shooting:
+		await get_tree().process_frame
+	await recorder.screenshot(label)
+	_shots_pending -= 1
 
 
 func _run_order(order):
@@ -475,9 +527,9 @@ func _spread(check):
 
 func _expression(check):
 	var expression = Expression.new()
-	if expression.parse(check.get("code", "false"), ["state"]) != OK:
+	if expression.parse(check.get("code", "false"), ["state", "api"]) != OK:
 		return {"ok": false, "detail": "cannot parse: " + expression.get_error_text()}
-	var value = expression.execute([api.state()], null, false)
+	var value = expression.execute([api.state(), api], null, false)
 	if expression.has_execute_failed():
 		return {"ok": false, "detail": "failed: " + expression.get_error_text()}
 	return {"ok": bool(value), "detail": "%s -> %s" % [check["code"], value]}
@@ -520,8 +572,10 @@ func _finish():
 					"t": snapped(api.elapsed_s, 0.1)
 				}
 			)
-	if api.human() != null:
+	if api.human() != null and not api.find_units("own:command_center").is_empty():
 		await api.command({"do": "camera", "follow": "own:command_center"})
+	while recorder._shooting:  # an ending screenshot still on its way
+		await get_tree().process_frame
 	await recorder.screenshot("end")
 	var verdict = "pass" if _results.all(func(result): return result["ok"]) else "fail"
 	var report = (

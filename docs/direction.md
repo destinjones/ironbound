@@ -89,7 +89,8 @@ One concern per PR, main stays releasable, every PR carries its evidence.
    that hold a few tanks, artillery that sees what it shoots. Units get roles.
 6. Difficulty retune in data once 3 to 5 are in: Easy for the first match, Normal for the
    20-minute skirmish above, Hard and Brutal that hit harder, not just fatter.
-7. The ending: a hold with the camera on the last structure, kills and losses, Continue.
+7. Done (branch claude/game-direction-o3plha-10-ending): the ending: a hold with the camera on
+   the last structure, kills and losses, Continue.
 8. The HUD: one bottom bar (minimap, selection with counts and health, icon command card),
    an under-attack banner with a jump key, health bars that can stay on.
 9. CI runs the smoke harness and the validator, not only the formatter.
