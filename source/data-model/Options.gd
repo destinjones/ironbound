@@ -45,6 +45,7 @@ const RESETTABLE = [
 	"mute_when_unfocused",
 	"ui_scale",
 	"show_fps",
+	"show_health_bars",
 	"camera_scroll_speed",
 	"edge_scrolling",
 	"invert_zoom",
@@ -102,6 +103,11 @@ const RESETTABLE = [
 @export var show_fps = false:
 	set(value):
 		show_fps = value
+		emit_changed()
+# every unit's health bar stays on (read by source/match/hud/HealthBarsControl.gd)
+@export var show_health_bars = false:
+	set(value):
+		show_health_bars = value
 		emit_changed()
 
 # --- first-time tips (read by source/match/hud/Guide.gd)

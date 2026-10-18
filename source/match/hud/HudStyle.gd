@@ -7,6 +7,7 @@ extends RefCounted
 const ICONS = "res://assets/ui/icons/hud/"
 const BG = Color("#14110d")
 const SURFACE = Color("#1f1a14")
+const SURFACE_2 = Color("#2a231b")
 const LINE = Color("#3d3326")
 const FG = Color("#efe4cf")
 const MUTED = Color("#b5a68c")
@@ -16,6 +17,9 @@ const OASIS = Color("#4cc1b0")
 const GOOD = Color("#8fbf5a")
 const WARN = Color("#f2a93b")
 const BAD = Color("#e0603f")
+# health reads in thirds (StarCraft II's steps): GOOD at or above 2/3, WARN down to 1/3, BAD below
+const HEALTH_WARN_BELOW = 2.0 / 3.0
+const HEALTH_BAD_BELOW = 1.0 / 3.0
 # brand colours of the commodities; data/resources.json colours paint the 3D deposits
 # (oil there is almost black, unreadable on a dark bar)
 const RESOURCE_COLORS = {
@@ -39,6 +43,15 @@ static func resource_color(resource):
 	if resource in RESOURCE_COLORS:
 		return RESOURCE_COLORS[resource]
 	return Constants.Match.Resources.COLORS.get(resource, FG)
+
+
+static func health_color(fraction):
+	"""the colour of a health bar, strip or number at `fraction` of full health"""
+	if fraction < HEALTH_BAD_BELOW:
+		return BAD
+	if fraction < HEALTH_WARN_BELOW:
+		return WARN
+	return GOOD
 
 
 static func icon_rect(texture, size = 20):

@@ -56,6 +56,7 @@ const COMMANDS = [
 	"click",
 	"drag",
 	"key",
+	"option",
 	"give",
 	"spawn",
 	"declare_war",
@@ -153,6 +154,7 @@ func state(with_units = true):
 		func(unit): return unit.get_instance_id()
 	)
 	data["threats"] = threats()
+	data["health_bars"] = _health_bars_state(units)
 	var guide = match_node.find_child("Guide", true, false) if match_node != null else null
 	if guide != null and "steps" in guide:  # where the tutorial is: step index and its id
 		data["tutorial"] = {
@@ -257,6 +259,30 @@ func _unit_state(unit):
 	if unit is Structure:
 		entry["built"] = unit.is_constructed()
 	return entry
+
+
+func _health_bars_state(units):
+	"""how many units show a health bar and why (source/match/units/traits/HealthBar.gd)"""
+	var control = get_tree().get_first_node_in_group("health_bars_control")
+	var out = {
+		"forced": control.forced if control != null else false,  # the option or the key held
+		"units": 0,  # units with a bar
+		"visible": 0,
+		"hit": 0,  # bars in the 2 s after a hit
+		"forced_only": 0,  # visible bars with no other reason: not selected, hovered or hit
+	}
+	for unit in units:
+		var bar = unit.get_node_or_null("HealthBar")
+		if bar == null or bar.get("_visibility_timer") == null:
+			continue
+		out["units"] += 1
+		var hit = not bar.get("_visibility_timer").is_stopped()
+		out["hit"] += 1 if hit else 0
+		if bar.visible:
+			out["visible"] += 1
+			if not (bar.get("_selected") or bar.get("_hovered") or hit):
+				out["forced_only"] += 1
+	return out
 
 
 func _action_name(action):
@@ -869,13 +895,34 @@ func _screen_point(order):
 
 func _do_key(order):
 	if order.has("action"):
-		await mouse.action(order["action"])
+		var action = str(order["action"])
+		if order.get("hold", false) or order.get("release", false):
+			# a key held down: pressed until the matching {"release": true} order
+			if not InputMap.has_action(action):
+				return {"ok": false, "error": "unknown action '%s'" % action}
+			if order.get("hold", false):
+				Input.action_press(action)
+			else:
+				Input.action_release(action)
+			await _frames(1)
+		else:
+			await mouse.action(action)
 	else:
 		var keycode = OS.find_keycode_from_string(str(order.get("key", "")))
 		if keycode == KEY_NONE:
 			return {"ok": false, "error": "unknown key '%s'" % order.get("key")}
 		await mouse.key(keycode, order.get("shift", false))
 	return {"ok": true}
+
+
+func _do_option(order):
+	"""sets one of the player's options (Globals.options) for this run; nothing is saved"""
+	var property = str(order.get("set", ""))
+	if property == "" or not property in Globals.options:
+		return {"ok": false, "error": "unknown option '%s'" % property}
+	Globals.options.set(property, order.get("value"))
+	await _frames(1)
+	return {"ok": true, "value": Globals.options.get(property)}
 
 
 func _do_give(order):

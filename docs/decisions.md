@@ -660,3 +660,53 @@ screen pass unchanged: CityCentreChecks 0 failures ("PASS the match ends in defe
 over (paused behind the end screen)", "the end screen shows Defeat"), OptionsShots
 failures=0 ("surrender shows Defeat"), Playthrough exit 0 (time limit after 406 s, no
 script errors; the bot reached no ending in six minutes).
+
+## 2026-10-18: health bars colour by thirds, on a dark backing, held on with Alt or an option
+Health bars colour by thirds (HudStyle.health_color: green at or above 2/3, amber down to 1/3,
+red below, the StarCraft II steps that Generals also uses) and sit on a black backing, and every
+bar shows while Alt (the show_health_bars action, rebindable in controls.cfg) is held or
+Options > Interface > "Always show health bars" is on. One node, HUD/HealthBarsControl, polls
+the option and the key and tells the bars through MatchSignals.health_bars_forced; no bar polls
+Input. Hover shows a bar too, enemies included, through the unit's own mouse_entered and
+mouse_exited (Unit is an Area3D). pixel_size 0.0125 in HealthBar.tscn instead of 23 scene
+edits: the tank's 160 x 10 bar is now 2.0 x 0.125 m, and the node does not move, so the
+veterancy chevrons and the surrender flag that read its position stay put. Why: a 7 px green
+hairline on sand was unreadable at 1080p and invisible at 720p, and a bar that only ever shows
+green says nothing about who is dying. The lost-hp chunk keeps its pale colour; the empty part
+is SURFACE_2, the dark panel tone. A site under construction draws its bar in MUTED until it is
+built: its hp is build progress, and a red sliver by the command centre would read as an attack.
+
+The backing is black at 0.85 alpha and three texture pixels larger each side, not the spec's
+0.55 and two: after the Look's haze, tonemap and contrast, 0.55 came out mid-tan on sand
+((171, 134, 98) against (250, 226, 196) at 1080p), and at 720p, where two texture pixels are
+1.2 screen pixels, the bottom row went missing. The backing and the bar share render_priority 1,
+both sort by the node's origin (sorting_use_aabb_center off), and the bar sorts 0.01 m nearer
+(sorting_offset), so each unit's edge is drawn right before its own bar. The spec's split
+(backing 0 under the bar's 1) drew every backing before every bar, so bars that overlap in a
+fight fused into one long strip with no line between them; with the default AABB sort the
+bigger backing sorted nearer than its own bar unless the offset was half a metre. This was seen
+under the Compatibility renderer the cloud box runs; Forward+ on a GPU is still to be looked
+at. The Look also shifts the fills (GOOD #8fbf5a renders about (164, 188, 107)), so the 2D
+strips of a later PR will not match the 3D bars exactly; accepted.
+
+Evidence: the new scenario hud-health-bars (eight raiders charging six tanks in Big Arena; Alt
+held at 6 s, released at 7.5 s, the option on at 8 s) passes 4/4 at 1920x1080 and at a true
+1280x720: every bar visible while the key is held, no bar visible without a reason (selected,
+hovered or hit in the last 2 s) once the key is released with the option off, every bar
+visible with the option on, and no script errors. The fight differs from run to run, but in
+each run looked at the 7 s and 9 s shots between them show green, amber and red bars across the
+tanks and raiders, with the dark edge clear on sand. The tank bar measures about 144 x 9 px at
+1080p with a 2 px edge of about (55, 30, 8), and 96 x 6 px at 720p with a one-pixel dark edge
+and a blended row. In the 40 v 40 window view with the option on, overlapping bars each keep
+their own frame. stress-40v40 (fast view, so the CPU side only) gave frame p95 164.36 ms and
+p50 74.82 ms with the bars off, and p95 108.42 ms and p50 72.99 ms with the option on; both
+fail the 50 ms budget, which this box already failed before the PR (p95 141.04 ms, p50
+95.77 ms in the quick batch at 07:05), so the pair is noise from a shared software-rendering
+box and needs a PC with a GPU before either number means anything. The spec's four raiders
+standing 8 m away were tried first: all four died by 6 s having dealt about 28 damage spread
+over six 33 hp tanks, so every bar stayed green; the raiders now start out of the tanks' range
+at [54, 40] and charge on a fight order, which keeps the fight alive to 12 s. The harness
+gained the two verbs this needed, a held key ({"do": "key", "action": ..., "hold": true} and
+"release": true) and {"do": "option", "set": ..., "value": ...}, plus a "health_bars" field in
+state() with the counts the checks read; docs/testing/play-harness.md lists them and says that
+under xvfb --resolution, not --window, sets the viewport size.

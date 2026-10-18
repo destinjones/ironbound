@@ -83,6 +83,11 @@ Pass them after the scenario: `play smoke --speed=1 --seed=3 --ai=raider,turtle`
 | `--window=1600x900` | Window size |
 | `--max-real-minutes=M` | Give up after M real minutes (default 90) |
 
+Under xvfb `--window` does not resize the window: the viewport size comes from Godot's own
+`--resolution WxH` (before the `--`, on an Xvfb screen at least that big), so a 720p run is
+`xvfb-run -a -s "-screen 0 1280x720x24" godot --path . --resolution 1280x720
+res://tools/harness/Harness.tscn -- --scenario=NAME --view=window --window=1280x720`.
+
 ## Scenario files
 
 A scenario is a JSON file in `tools/harness/scenarios/`. Everything is optional except
@@ -173,7 +178,8 @@ and an `"error"` when something did not work.
 | `speed` | `x` | time scale |
 | `camera` | `spot` or `follow` | the match camera |
 | `click`, `drag` | `screen: [x, y]` or `world: [x, z]`, `button`, `shift` | the virtual mouse |
-| `key` | `key` ("G") or `action` ("command_patrol") | input events |
+| `key` | `key` ("G") or `action` ("command_patrol"); with an `action`, `"hold": true` keeps it pressed until a later order with `"release": true` | input events; a hold and a release are `Input.action_press` and `Input.action_release` |
+| `option` | `set` (a property of `Globals.options`, such as "show_health_bars"), `value` | the player's options, for this run only (nothing is saved) |
 | `screenshot` | `name` | |
 | `wait` | `seconds` | game time (for scripts) |
 | `state` | `units` | returns the state below |
@@ -305,6 +311,7 @@ print(game.state(units=False)["players"][0]["stock"])
   "threats": [{"id": 4410, "player": 1, "kind": "raider", "x": 50, "z": 44, "near": 3054}],
   "recent_events": [...],
   "match_end": {"shown": false, "result": null, "hold": false},
+  "health_bars": {"forced": false, "units": 14, "visible": 3, "hit": 2, "forced_only": 0},
   "stats": {"0": {"built": 3, "lost": 1, "kills": 2, "structures": 4, "delivered": 80.0, "trades": 0, "tier": 1}, ...}
 }
 ```
@@ -314,6 +321,10 @@ the slow-motion moment before the results) and `stats` the MatchStats counters b
 index; both are empty when the scenario has `match_end` false.
 
 `threats` are enemy units at war with you that one of your units can see.
+
+`health_bars` counts the units that have a health bar, how many show it, how many are in
+the 2 s after a hit, and how many show it only because every bar is forced on; `forced` is
+true while the "Always show health bars" option is on or the show_health_bars key is held.
 
 ## Writing a new test
 
