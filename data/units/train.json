@@ -22,6 +22,7 @@
     "sight_range": 6.0,
     "hp": 90,
     "hp_max": 90,
-    "cargo_capacity": 40
+    "cargo_capacity": 40,
+    "armour": "truck"
   }
 }

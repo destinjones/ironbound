@@ -26,7 +26,7 @@
     "vehicle_factory"
   ],
   "properties": {
-    "sight_range": 7.0,
+    "sight_range": 15.0,
     "hp": 27,
     "hp_max": 27,
     "attack_damage": 5,
@@ -34,7 +34,12 @@
     "attack_range": 15.0,
     "attack_domains": [
       "terrain"
-    ]
+    ],
+    "armour": "truck",
+    "damage_vs": {
+      "structure": 2.0,
+      "light": 0.5
+    }
   },
   "projectile": "rocket",
   "fuel_per_s": 0.02

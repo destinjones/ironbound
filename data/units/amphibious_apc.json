@@ -25,7 +25,12 @@
     "hp_max": 36,
     "attack_damage": 1,
     "attack_interval": 0.5,
-    "attack_range": 6.0
+    "attack_range": 6.0,
+    "damage_vs": {
+      "truck": 2.0,
+      "heavy": 0.5,
+      "structure": 0.5
+    }
   },
   "fuel_per_s": 0.015
 }

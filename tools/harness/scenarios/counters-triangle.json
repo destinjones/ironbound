@@ -1,0 +1,53 @@
+{
+  "name": "counters-triangle",
+  "description": "Armour and weapon classes, one fight per rule, all spawned and isolated: a tank beats three raiders, a rocket technical beats a tank, a raider beats a rocket technical, one turret beats one tank, a bunker holds two tanks, and artillery shells a gun nest 13 m away on its own because it can see as far as it shoots. The AI is a Very Easy turtle pinned to the far corner so it attacks nothing (it builds a few structures there); its mobile units are given fight orders so its army positioning does not walk them home mid-fight. Two fights use units as rules, not as rosters: ag_turret is hidden for both factions (their playable turrets are the bunker of fight E and the gun nest), and the Foundry human fields a Syndicate raider (the Foundry's hover skimmer has the same armour class and damage_vs map). The seconds in the check names are the design's predictions. On main 10 of the 12 named checks fail; the two companion checks (the technical is alive, the artillery did not move) pass there too and only guard the branch result.",
+  "map": "big_arena",
+  "minutes": 0.75,
+  "speed": 1,
+  "fog": false,
+  "shots_every": 10,
+  "players": [
+    {"type": "human", "faction": "foundry", "start_zone": 0},
+    {"type": "ai", "personality": "turtle", "difficulty": "very_easy", "faction": "foundry", "start_zone": 4}
+  ],
+  "setup": [
+    {"do": "spawn", "player": "p0", "unit": "tank", "spot": [16, 72], "expect_ok": true},
+    {"do": "spawn", "player": "p1", "unit": "raider", "count": 3, "spot": [16, 79], "spacing": 2.5, "expect_ok": true},
+    {"do": "spawn", "player": "p0", "unit": "tank", "spot": [50, 18], "expect_ok": true},
+    {"do": "spawn", "player": "p1", "unit": "rocket_technical", "spot": [50, 11], "expect_ok": true},
+    {"do": "spawn", "player": "p0", "unit": "raider", "spot": [84, 18], "expect_ok": true},
+    {"do": "spawn", "player": "p1", "unit": "rocket_technical", "spot": [91, 18], "expect_ok": true},
+    {"do": "spawn", "player": "p1", "unit": "ag_turret", "spot": [50, 88], "expect_ok": true},
+    {"do": "spawn", "player": "p0", "unit": "tank", "spot": [50, 81], "expect_ok": true},
+    {"do": "spawn", "player": "p1", "unit": "bunker", "spot": [40, 36], "expect_ok": true},
+    {"do": "spawn", "player": "p0", "unit": "tank", "count": 2, "spot": [40, 30], "spacing": 2.5, "expect_ok": true},
+    {"do": "spawn", "player": "p1", "unit": "gun_nest", "spot": [63, 50], "expect_ok": true},
+    {"do": "spawn", "player": "p0", "unit": "artillery", "spot": [50, 50], "expect_ok": true},
+    {"do": "declare_war", "player": "p1", "on": "p0", "expect_ok": true}
+  ],
+  "events": [
+    {"at": 0.5, "do": "hold_position", "units": "own:tank", "near": [16, 72], "radius": 3, "on": true, "expect_ok": true},
+    {"at": 0.5, "do": "hold_position", "units": "own:artillery", "on": true, "expect_ok": true},
+    {"at": 0.5, "do": "fight", "units": "p1:raider", "to": [16, 62], "expect_ok": true},
+    {"at": 0.5, "do": "fight", "units": "p1:rocket_technical", "near": [50, 11], "radius": 5, "to": [50, 4], "expect_ok": true},
+    {"at": 0.5, "do": "fight", "units": "p1:rocket_technical", "near": [91, 18], "radius": 5, "to": [77, 18], "expect_ok": true},
+    {"at": 0.5, "do": "attack", "units": "own:tank", "near": [50, 81], "radius": 3, "target": "p1:ag_turret", "expect_ok": true},
+    {"at": 0.5, "do": "attack", "units": "own:tank", "near": [40, 30], "radius": 5, "target": "p1:bunker", "expect_ok": true},
+    {"at": 1, "do": "camera", "spot": [50, 50]}
+  ],
+  "checks": [
+    {"at": 20, "name": "one tank beats three raiders (raiders die at 3.0, 6.75, 10.5 s)", "expect": "units", "units": "p1:raider", "max": 0},
+    {"at": 20, "name": "and the tank stands (about 12 hp left)", "expect": "units", "units": "own:tank", "near": [16, 72], "radius": 6, "min": 1},
+    {"at": 12, "name": "a rocket technical beats a tank (tank dead at 6.5 s)", "expect": "units", "units": "own:tank", "near": [50, 18], "radius": 10, "max": 0},
+    {"at": 12, "name": "and the technical is alive (12 hp left)", "expect": "units", "units": "p1:rocket_technical", "near": [50, 18], "radius": 25, "min": 1},
+    {"at": 15, "name": "a raider beats a rocket technical (technical dead at about 7.4 s)", "expect": "units", "units": "p1:rocket_technical", "near": [84, 18], "radius": 25, "max": 0},
+    {"at": 15, "name": "and the raider is alive (about 9 hp left)", "expect": "units", "units": "own:raider", "near": [84, 18], "radius": 12, "min": 1},
+    {"at": 22, "name": "one turret beats one tank (tank dead at 16 s, turret at 14 hp)", "expect": "units", "units": "p1:structures", "near": [50, 88], "radius": 4, "min": 1},
+    {"at": 22, "name": "and the tank is dead", "expect": "units", "units": "own:tank", "near": [50, 88], "radius": 12, "max": 0},
+    {"at": 32, "name": "a bunker holds two tanks (tanks dead at 12.0 and 25.2 s, bunker at 15 hp)", "expect": "units", "units": "p1:structures", "near": [40, 36], "radius": 4, "min": 1},
+    {"at": 32, "name": "and both tanks died", "expect": "units", "units": "own:tank", "near": [40, 36], "radius": 12, "max": 0},
+    {"at": 20, "name": "artillery shells a gun nest it can see at 13 m (4 volleys, 8 s)", "expect": "units", "units": "p1:structures", "near": [63, 50], "radius": 4, "max": 0},
+    {"at": 20, "name": "without moving", "expect": "units", "units": "own:artillery", "near": [50, 50], "radius": 3, "min": 1},
+    {"end": true, "expect": "no_errors"}
+  ]
+}

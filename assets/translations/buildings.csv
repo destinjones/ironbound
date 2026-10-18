@@ -40,6 +40,19 @@ INFO_TRAINS,{0}
 INFO_ATTACK,"{0} damage every {1} s, {2} m range"
 INFO_ATTACK_AIR,air
 INFO_ATTACK_GROUND,ground
+ARMOUR_LIGHT,light vehicles and infantry
+ARMOUR_HEAVY,tanks
+ARMOUR_TRUCK,trucks
+ARMOUR_STRUCTURE,structures
+ARMOUR_AIR,aircraft
+INFO_STRONG_AGAINST,strong against {0}
+INFO_WEAK_AGAINST,weak against {0}
+INFO_LIST_AND,{0} and {1}
+INFO_ARMOUR_LIGHT,Light armour
+INFO_ARMOUR_HEAVY,Tank armour
+INFO_ARMOUR_TRUCK,Unarmoured truck
+INFO_ARMOUR_STRUCTURE,Structure
+INFO_ARMOUR_AIR,Aircraft
 INFO_FASTER_FACTORIES,factories on its grid {0}% faster
 INFO_NOTHING,nothing
 INFO_HP,Health {0}/{1}

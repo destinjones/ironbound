@@ -18,10 +18,15 @@
   },
   "properties": {
     "sight_range": 9.0,
-    "hp": 24,
-    "hp_max": 24,
+    "hp": 36,
+    "hp_max": 36,
     "attack_damage": 1,
     "attack_interval": 0.45,
-    "attack_range": 8.5
+    "attack_range": 8.5,
+    "damage_vs": {
+      "truck": 2.0,
+      "heavy": 0.5,
+      "structure": 0.5
+    }
   }
 }

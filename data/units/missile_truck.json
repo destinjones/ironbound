@@ -31,7 +31,11 @@
     "attack_range": 9.5,
     "attack_domains": [
       "air"
-    ]
+    ],
+    "armour": "truck",
+    "damage_vs": {
+      "air": 2.0
+    }
   },
   "projectile": "rocket",
   "fuel_per_s": 0.015

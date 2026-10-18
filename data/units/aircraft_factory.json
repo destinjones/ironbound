@@ -23,8 +23,9 @@
   ],
   "properties": {
     "sight_range": 8.0,
-    "hp": 48,
-    "hp_max": 48
+    "hp": 72,
+    "hp_max": 72,
+    "armour": "structure"
   },
   "power": {
     "demand_mw": 6.0
