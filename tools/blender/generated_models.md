@@ -116,6 +116,34 @@ The raw Tripo download is kept outside the repository, in the project's shared f
 (`game/modern/tank/tank_raw_concept_b.glb`).
 
 
+## The militia squad (2026-10-18)
+
+The Militia's built squad (`rifleman_squad.glb`) was replaced with a generated rifleman,
+placed three times. 10.5 credits: 1.5 for the concept image, 9 for the 3D model.
+
+- **Prompt core:** one modern rifleman in olive fatigues, tan plate carrier with magazine
+  pouches, shemagh scarf, carbine at the low ready; only the helmet and the shoulder patches
+  cobalt blue. Same opening and closing sentences as above, "whole figure visible".
+- **Tripo:** `face_limit` 5000; it returned 4,880 triangles. Each soldier is decimated to
+  1,200, so the squad is 3,600, the tank's count.
+- **Clean-up:**
+
+```sh
+python3 tools/blender/clean_generated.py -- --in raw/militia.glb \
+    --out assets/models/ironbound/units/militia.glb --yaw 90 --length 0.9 --max-tris 1200 \
+    --squad --team-up -0.2 --team-smooth 2 --saturation 1.5
+```
+
+`--length 0.9` (his widest side, rifle included) makes him 1.81 m tall, the built
+soldier's height, so `model_scale` stays 1.0. `--squad` lays the three out as
+`build_soldier.py` does. `--team-up -0.2` lets the helmet sides and shoulder patches take
+team colour: at the default 0.5 only the helmet crown did, and blue and red squads looked
+the same at play zoom. In `tests/perf/UnitModelBench.tscn` (llvmpipe) 30 squads cost
+85 ms against 89 ms for the built squad, with the same 122 draw calls.
+
+The raw Tripo download and concept are in the project's shared files (`game/art/militia/`).
+`rifleman_squad.glb` stays in the repository for `tools/blender/build_soldier.py --squad`.
+
 ## The hauler (2026-10-18)
 
 The hauler's built truck (`units/hauler.glb`, 13 flat-colour materials) was replaced with a

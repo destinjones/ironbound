@@ -909,6 +909,15 @@ screen. A production queue button left focused by a press dragged off it took Sp
 ui_accept and cancelled that unit before the jump saw the key, so the queue buttons are now
 FOCUS_NONE like every other HUD button.
 
+## 2026-10-18: the Militia uses a generated squad
+
+The Militia's procedural squad looked like toys next to the remade tank, so it was replaced
+with a Higgsfield rifleman (concept, then Tripo) placed three times by
+`clean_generated.py --squad`, at the tank's 3,600 triangles. Team colour goes on the helmet
+and shoulder patches, including their sides (`--team-up -0.2`), against the "top surfaces
+only" rule: on a 15-pixel soldier the tops alone did not tell blue from red. The classic
+model option is unchanged. Details in tools/blender/generated_models.md.
+
 ## 2026-10-18: the hauler uses a generated truck
 
 Haulers are always on screen, and the built truck was flat-colour
