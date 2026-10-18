@@ -538,3 +538,18 @@ MatchSignals.unit_command_issued, which UnitCommandHandler emits for every playe
 instant ones (Stop, Hold Position, fire stance) included, and drops the selected units from
 its list of responders. The distance rule stays as a second net for orders that bypass the
 handler. base-defence and base-defence-stop pass unchanged.
+
+## 2026-10-18: a unit dies once, however many shells land in the killing frame
+
+Shells are hitscan: CannonShell deals its damage in _ready, so every tank whose fire timer
+goes off in the same frame lands in that frame, and tanks that start shooting together stay
+in step volley after volley. Unit._set_hp ran _handle_unit_death every time it was called
+with hp at 0, so each shell after the killing one handed out the loot again and emitted
+unit_died again; that is why probe reports listed one command centre as lost three or four
+times, and the loss counters, the loot and anything else listening to unit_died were off by
+the same number. A unit now marks itself dying on its first death and later hits in that
+frame do nothing more. Evidence: new scenario die-once (twenty tanks standing in range of an
+enemy vehicle factory on all four sides): on main the factory is reported lost three times
+at 0:01.9, with the fix exactly once, all checks pass, no script errors. The target is a
+factory and not a command centre because a command centre with no defenders near surrenders
+and is captured, not destroyed, so it never dies at all.
