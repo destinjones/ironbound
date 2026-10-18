@@ -933,3 +933,13 @@ programmer art next to the remade tank. It is now a generated 6x6 cargo truck at
 3,600 triangles; the old truck stays as the classic model. It costs about as much to draw as
 the tank in the software-renderer bench (128 ms vs 129 ms for 30) and a sixth of the draw
 calls of the old one. Details in tools/blender/generated_models.md.
+
+## 2026-10-18: CI prints the smoke report when the smoke match fails
+
+The "Play the smoke match" step ran `./play.sh smoke` and then `cat report.md`, but the step
+runs under `bash -e`, so a failing match ended the step before the report was printed. Two
+failures today (#114's run 239 and #116's run 248, both on changes that cannot touch the
+match) said only `HARNESS FAIL smoke: 9/10 checks ok`: the failed item was one of the six
+`expect_ok` orders, which the log does not print, and the uploaded report cannot be read from
+the cloud session. The step now keeps play.sh's exit status, prints the report either way and
+exits with that status, so the next failure names the order and its error in the log.
