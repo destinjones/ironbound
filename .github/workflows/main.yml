@@ -67,8 +67,11 @@ jobs:
       shell: bash
       run: |
         export GODOT="$HOME/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64"
-        ./play.sh smoke --out=harness-out/smoke
-        cat harness-out/smoke/report.md
+        status=0
+        ./play.sh smoke --out=harness-out/smoke || status=$?
+        # print the report on a failure too: it names the failed check or order and why
+        cat harness-out/smoke/report.md || true
+        exit $status
 
     - name: Keep the report
       if: always()

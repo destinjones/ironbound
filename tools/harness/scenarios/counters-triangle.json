@@ -1,6 +1,6 @@
 {
   "name": "counters-triangle",
-  "description": "Armour and weapon classes, one fight per rule, all spawned and isolated: a tank beats three raiders, a rocket technical beats a tank, a raider beats a rocket technical, one turret beats one tank, a bunker holds two tanks, and artillery shells a gun nest 13 m away on its own because it can see as far as it shoots. The AI is a Very Easy turtle pinned to the far corner so it attacks nothing (it builds a few structures there); its mobile units are given fight orders so its army positioning does not walk them home mid-fight. Two fights use units as rules, not as rosters: ag_turret is hidden for both factions (their playable turrets are the bunker of fight E and the gun nest), and the Foundry human fields a Syndicate raider (the Foundry's hover skimmer has the same armour class and damage_vs map). The seconds in the check names are the design's predictions. On main 10 of the 12 named checks fail; the two companion checks (the technical is alive, the artillery did not move) pass there too and only guard the branch result.",
+  "description": "Armour and weapon classes, one fight per rule, all spawned and isolated: a tank beats three raiders, a rocket technical beats a tank, a raider beats a rocket technical, one turret beats one tank, a bunker holds two tanks, artillery shells a gun nest 13 m away on its own because it can see as far as it shoots, a missile truck beats a tank, and a raider beats a missile truck. The AI is a Very Easy turtle pinned to the far corner so it attacks nothing (it builds a few structures there); its mobile units are given fight orders so its army positioning does not walk them home mid-fight. Two fights use units as rules, not as rosters: ag_turret is hidden for both factions (their playable turrets are the bunker of fight E and the gun nest), and the Foundry human fields a Syndicate raider in fights C and H (the Foundry's hover skimmer has the same armour class and damage_vs map, but 15 hp to the raider's 18, so its win over a missile truck is narrower). The missile truck of fight G holds position and the raider of fight H is on return fire with an attack order, so that once their own fight is over the home guard does not send them on to fights D and E. The seconds in the check names are the design's predictions. Before the armour classes 10 of the first 12 named checks failed; the two companion checks (the technical is alive, the artillery did not move) passed there too and only guard the result. Before the missile truck fired at ground targets, 'a missile truck beats a tank' failed (the tank killed the truck at about 12 s); 'and the truck stands' at 11 s and both checks of fight H passed there too (the truck could not shoot back) and only guard the result.",
   "map": "big_arena",
   "minutes": 0.75,
   "speed": 1,
@@ -23,6 +23,10 @@
     {"do": "spawn", "player": "p0", "unit": "tank", "count": 2, "spot": [40, 30], "spacing": 2.5, "expect_ok": true},
     {"do": "spawn", "player": "p1", "unit": "gun_nest", "spot": [63, 50], "expect_ok": true},
     {"do": "spawn", "player": "p0", "unit": "artillery", "spot": [50, 50], "expect_ok": true},
+    {"do": "spawn", "player": "p0", "unit": "missile_truck", "spot": [30, 85], "expect_ok": true},
+    {"do": "spawn", "player": "p1", "unit": "tank", "spot": [30, 94.5], "expect_ok": true},
+    {"do": "spawn", "player": "p0", "unit": "raider", "spot": [26, 10], "expect_ok": true},
+    {"do": "spawn", "player": "p1", "unit": "missile_truck", "spot": [35.5, 10], "expect_ok": true},
     {"do": "declare_war", "player": "p1", "on": "p0", "expect_ok": true}
   ],
   "events": [
@@ -33,6 +37,11 @@
     {"at": 0.5, "do": "fight", "units": "p1:rocket_technical", "near": [91, 18], "radius": 5, "to": [77, 18], "expect_ok": true},
     {"at": 0.5, "do": "attack", "units": "own:tank", "near": [50, 81], "radius": 3, "target": "p1:ag_turret", "expect_ok": true},
     {"at": 0.5, "do": "attack", "units": "own:tank", "near": [40, 30], "radius": 5, "target": "p1:bunker", "expect_ok": true},
+    {"at": 0.5, "do": "hold_position", "units": "own:missile_truck", "on": true, "expect_ok": true},
+    {"at": 0.5, "do": "fight", "units": "p1:tank", "near": [30, 94.5], "radius": 3, "to": [30, 78], "expect_ok": true},
+    {"at": 0.5, "do": "stance", "units": "own:raider", "near": [26, 10], "radius": 3, "stance": "return", "expect_ok": true},
+    {"at": 0.5, "do": "attack", "units": "own:raider", "near": [26, 10], "radius": 3, "target": "p1:missile_truck", "expect_ok": true},
+    {"at": 0.5, "do": "fight", "units": "p1:missile_truck", "to": [22, 10], "expect_ok": true},
     {"at": 1, "do": "camera", "spot": [50, 50]}
   ],
   "checks": [
@@ -48,6 +57,10 @@
     {"at": 32, "name": "and both tanks died", "expect": "units", "units": "own:tank", "near": [40, 36], "radius": 12, "max": 0},
     {"at": 20, "name": "artillery shells a gun nest it can see at 13 m (4 volleys, 8 s)", "expect": "units", "units": "p1:structures", "near": [63, 50], "radius": 4, "max": 0},
     {"at": 20, "name": "without moving", "expect": "units", "units": "own:artillery", "near": [50, 50], "radius": 3, "min": 1},
+    {"at": 11, "name": "a missile truck beats a tank (tank dead at 6.5 s)", "expect": "units", "units": "p1:tank", "near": [30, 85], "radius": 12, "max": 0},
+    {"at": 11, "name": "and the truck stands (about 9 hp left)", "expect": "units", "units": "own:missile_truck", "near": [30, 85], "radius": 6, "min": 1},
+    {"at": 15, "name": "a raider beats a missile truck (truck dead at about 8 s)", "expect": "units", "units": "p1:missile_truck", "near": [26, 10], "radius": 25, "max": 0},
+    {"at": 15, "name": "and the raider is alive (about 9 hp left)", "expect": "units", "units": "own:raider", "near": [26, 10], "radius": 12, "min": 1},
     {"end": true, "expect": "no_errors"}
   ]
 }
