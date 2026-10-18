@@ -3,7 +3,7 @@
   "category": "unit",
   "scene": "res://source/match/units/Militia.tscn",
   "model": "res://assets/models/ironbound/units/rifleman_squad.glb",
-  "model_scale": 0.7,
+  "model_scale": 1.0,
   "classic_model": "res://assets/models/ironbound/units/militia_squad.glb",
   "classic_model_scale": 2.083,
   "name": "MILITIA",
