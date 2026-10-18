@@ -312,6 +312,8 @@ print(game.state(units=False)["players"][0]["stock"])
   "recent_events": [...],
   "match_end": {"shown": false, "result": null, "hold": false},
   "health_bars": {"forced": false, "units": 14, "visible": 3, "hit": 2, "forced_only": 0},
+  "camera": [44.0, 40.0],
+  "alert": {"visible": true, "text": "Base under attack: Storage 1", "position": [18.0, 7.0], "shows": 1, "visible_s": 4.2},
   "stats": {"0": {"built": 3, "lost": 1, "kills": 2, "structures": 4, "delivered": 80.0, "trades": 0, "tier": 1}, ...}
 }
 ```
@@ -325,6 +327,16 @@ index; both are empty when the scenario has `match_end` false.
 `health_bars` counts the units that have a health bar, how many show it, how many are in
 the 2 s after a hit, and how many show it only because every bar is forced on; `forced` is
 true while the "Always show health bars" option is on or the show_health_bars key is held.
+
+`camera` is [x, z] of the ground under the middle of the view, where a camera jump puts its
+target.
+
+`alert` is the under-attack banner above the minimap (source/match/hud/AlertBanner.gd):
+whether it shows (true while it fades too), its text, [x, z] of the place it names (null
+before the first alert), `shows`, how many times it has come up this match, and `visible_s`,
+how many game seconds it has been up in all; the two make the alert fatigue count. An alert
+that arrives while the banner fades keeps it up and is not a new show. `alert` is null in a
+match without the banner.
 
 ## Writing a new test
 

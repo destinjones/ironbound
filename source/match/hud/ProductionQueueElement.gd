@@ -13,6 +13,7 @@ var _progress = ProgressBar.new()
 
 func _ready():
 	theme_type_variation = "SlotButton"
+	focus_mode = Control.FOCUS_NONE  # a focused queue button takes Space (jump_to_alert) as ui_accept
 	if queue == null or queue_element == null:
 		return
 	queue_element.changed.connect(_on_queue_element_changed)

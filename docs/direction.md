@@ -95,8 +95,10 @@ One concern per PR, main stays releasable, every PR carries its evidence.
    20-minute skirmish above, Hard and Brutal that hit harder, not just fatter.
 7. Done, #109: the ending: a hold with the camera on the last structure, kills and losses,
    Continue.
-8. In progress, slice 1 of 5 done (#110, health bars by thirds with Alt and an option). The HUD: one bottom bar (minimap, selection with counts and health, icon command card),
-   an under-attack banner with a jump key, health bars that can stay on.
+8. In progress, slices 1 and 2 of 5 done (#110, health bars by thirds with Alt and an
+   option; #112, the under-attack banner with Space to go there). The HUD: one bottom bar
+   (minimap, selection with counts and health, icon command card), an under-attack banner
+   with a jump key, health bars that can stay on.
 9. Done (PR #108): CI runs the smoke harness and the validator, not only the formatter.
 10. Art: every unit through the one textured pipeline at the tank's quality (bake, do not
     decimate), one explosion look, wrecks that keep their texture, recorded sound.

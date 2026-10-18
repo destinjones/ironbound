@@ -20,6 +20,7 @@ const ACTIONS = [
 	"command_fire_stance",
 	"command_hold_position",
 	"show_health_bars",
+	"jump_to_alert",
 ]
 
 

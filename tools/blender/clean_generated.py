@@ -22,7 +22,9 @@ The concept images paint every team-colour surface flat bright cobalt blue. This
   * --saturation pulls dusty generated paint back toward its hue so it does not sink into
     the sand;
   * with --rotors, adds spinning "RotorMain" and "RotorTail" blades (see RotorSpin.gd) at the
-    rotor hub and the tail, for helicopters generated without blades.
+    rotor hub and the tail, for helicopters generated without blades;
+  * with --squad, places three copies of a generated soldier in the Militia squad layout
+    (SQUAD, the same as build_soldier.py) and centres the group; --max-tris is per soldier.
 
   python3 tools/blender/clean_generated.py -- --in raw.glb --out model.glb --yaw 90 \
       --length 3.2 [--rotors] [--turret 0.55 --turret-front 0.3] [--render previews/dir]
@@ -47,12 +49,12 @@ def _args():
     opts = {"yaw": 0.0, "length": 0.0, "tex": 1024, "max_tris": 9000, "rotors": False,
             "render": None, "blue": 0.16, "team_up": 0.5, "normal": True, "turret": None,
             "turret_front": 1e9, "barrel_width": 0.06, "team_smooth": 0,
-            "saturation": 1.0, "barrel_scale": 1.0}
+            "saturation": 1.0, "barrel_scale": 1.0, "squad": False}
     i = 0
     while i < len(argv):
         key = argv[i].lstrip("-").replace("-", "_")
-        if key in ("rotors", "no_normal"):
-            opts[key.replace("no_", "")] = key == "rotors"
+        if key in ("rotors", "squad", "no_normal"):
+            opts[key.replace("no_", "")] = key != "no_normal"
             i += 1
             continue
         value = argv[i + 1]
@@ -375,6 +377,33 @@ def _add_rotors(ob):
     return hub, tail
 
 
+# Militia squad layout, copied from build_soldier.py so both squads stand the same way: two
+# men abreast in front, the third behind and right of centre; (x, y, yaw degrees), +Y front.
+SQUAD = [(-0.75, 1.0, 6.0), (0.75, 0.9, -4.0), (0.3, -1.15, 10.0)]
+
+
+def _make_squad(ob):
+    one = bmesh.new()
+    one.from_mesh(ob.data)
+    squad = bmesh.new()
+    for x, y, yaw in SQUAD:
+        copy = one.copy()
+        bmesh.ops.transform(copy, verts=copy.verts,
+                            matrix=Matrix.Translation((x, y, 0)) @ Matrix.Rotation(
+                                math.radians(yaw), 4, "Z"))
+        mesh = bpy.data.meshes.new("SquadPart")
+        copy.to_mesh(mesh)
+        copy.free()
+        squad.from_mesh(mesh)
+        bpy.data.meshes.remove(mesh)
+    one.free()
+    squad.to_mesh(ob.data)
+    squad.free()
+    ob.name = "MilitiaSquad"
+    _place(ob, 0.0, 0.0)
+    return sum(len(p.vertices) - 2 for p in ob.data.polygons)
+
+
 def _export(path):
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     bpy.ops.object.select_all(action="SELECT")
@@ -416,6 +445,8 @@ def main():
     tris = _decimate(ob, opts["max_tris"])
     if opts["rotors"]:
         _add_rotors(ob)
+    if opts["squad"]:
+        tris = _make_squad(ob)
     co = np.empty(len(ob.data.vertices) * 3)
     ob.data.vertices.foreach_get("co", co)
     co = co.reshape(-1, 3)
