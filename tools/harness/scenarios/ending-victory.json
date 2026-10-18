@@ -1,0 +1,26 @@
+{
+  "name": "ending-victory",
+  "description": "The ending, won: twenty-four of the player's tanks appear next to the enemy command centre on Big Arena and raze the base, so the match is won. The real ending is on (match_end): the HUD goes, the camera holds on the deciding blow under a VICTORY banner in slow motion, then the results come up with kills and losses. Checks the match_end, hold and ending events, the end state the harness reports and that the player was credited with kills. Screenshots: one during the hold, one with the results up.",
+  "map": "big_arena",
+  "seed": 1,
+  "minutes": 6,
+  "speed": 4,
+  "fog": false,
+  "match_end": true,
+  "players": [
+    {"type": "human"},
+    {"type": "ai", "personality": "turtle", "difficulty": "very_easy"}
+  ],
+  "setup": [
+    {"do": "declare_war", "player": "p0", "on": "p1"},
+    {"do": "spawn", "player": "p0", "unit": "tank", "count": 24, "spot": "enemy:command_center", "offset": [12, 0], "spacing": 2.0}
+  ],
+  "checks": [
+    {"end": true, "name": "the match was won", "expect": "timeline", "kind": "match_end", "contains": "won", "min": 1},
+    {"end": true, "name": "the hold ran before the results", "expect": "timeline", "kind": "hold", "contains": "Victory", "min": 1},
+    {"end": true, "name": "the results screen came up with Victory", "expect": "timeline", "kind": "ending", "contains": "Victory", "min": 1},
+    {"end": true, "name": "the harness sees the end screen", "expect": "expr", "code": "api.state()[\"match_end\"][\"shown\"] and api.state()[\"match_end\"][\"result\"] == \"victory\""},
+    {"end": true, "name": "the player was credited with kills", "expect": "expr", "code": "api.state()[\"stats\"][0][\"kills\"] >= 1"},
+    {"end": true, "expect": "no_errors"}
+  ]
+}

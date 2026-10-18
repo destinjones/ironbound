@@ -341,3 +341,7 @@ HUD_CITY_DETAILS_BUTTON_TOOLTIP,"What the city needs, makes and earns, item by i
 TRADE_BUTTON_TOOLTIP,Swap goods with another faction; deals are judged at your own prices,Wymiana towarów z inną frakcją; oferty są oceniane według twoich cen
 SUPPLY_REPAIRED,Supply drop: {0} units repaired,Zrzut zaopatrzenia: naprawiono jednostki ({0})
 SUPPLY_TRAINED,Supply drop: {0} units trained,Zrzut zaopatrzenia: przeszkolono jednostki ({0})
+MATCH_END_KEEP_WATCHING,Keep watching,Oglądaj dalej
+MATCH_END_RESULTS,Results,Wyniki
+MATCH_END_KILLS,Kills,Zniszczone
+MATCH_END_SKIP_HINT,Press any key or click to continue,"Dowolny klawisz lub kliknięcie, aby kontynuować"

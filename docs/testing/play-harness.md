@@ -128,7 +128,7 @@ what you want to test. A short one:
 | `weather` | `clear` | `clear`, `overcast`, `rain`, `sandstorm`, or `random` for the map's own changing weather |
 | `tutorial` | false | true keeps the tutorial panel; a name from `data/tutorial/` (e.g. `"first_match"`) plays that tutorial script |
 | `city_build_up` | false | true plays the starter-city build-up first |
-| `match_end` | false | true lets the match end on victory, defeat or the match limits |
+| `match_end` | false | true lets the match end on victory, defeat or the match limits; the run then goes on past the `match_end` event until the results are up (the `ending` event) and the hold and results screenshots are saved |
 | `sample_every` | 5 | Seconds between metric samples |
 | `shots_every` | 0 | Seconds between screenshots (0: only requested ones and the last one) |
 | `setup` | [] | Orders run right after the start, one after the other |
@@ -204,9 +204,9 @@ compared with `min`, `max` or `equals`. Give a `name` so the report reads well.
 | `no_errors` | | no script errors so far |
 | `no_war_started_by` | `player` | that player struck first in no war |
 | `helper` | `stat` | a helper statistic (`attack_orders`, `retreats`, `detours`, `constructors_ordered`...) is in range |
-| `timeline` | `kind`, `contains` | the number of timeline events of that kind is in range (`built`, `losses`, `placement_refused`, `tier`, `diplomacy`, `trade`, `unit_cap`, `match_end`...) |
+| `timeline` | `kind`, `contains` | the number of timeline events of that kind is in range (`built`, `losses`, `placement_refused`, `tier`, `diplomacy`, `trade`, `unit_cap`, `match_end`, `hold`, `ending`...) |
 | `metric` | `metric` | an end metric is in range (`frame_ms_p95`, `process_ms_p95`, `fps_mean`, `script_errors`, `slow_frames_over_50ms`...) |
-| `expr` | `code` | a Godot expression over `state` is true, e.g. `state.players[1].tier >= 2` |
+| `expr` | `code` | a Godot expression over `state` (and `api`, the HarnessApi node) is true, e.g. `state.players[1].tier >= 2` or `api.state()["match_end"]["shown"]` |
 
 ## Batches
 
@@ -303,9 +303,15 @@ print(game.state(units=False)["players"][0]["stock"])
              "hp": 10, "hp_max": 10, "action": "Moving", "selected": true}, ...],
   "selected": [3054],
   "threats": [{"id": 4410, "player": 1, "kind": "raider", "x": 50, "z": 44, "near": 3054}],
-  "recent_events": [...]
+  "recent_events": [...],
+  "match_end": {"shown": false, "result": null, "hold": false},
+  "stats": {"0": {"built": 3, "lost": 1, "kills": 2, "structures": 4, "delivered": 80.0, "trades": 0, "tier": 1}, ...}
 }
 ```
+
+`match_end` is the end screen (`result` is `victory`, `defeat`, `draw` or null; `hold` is
+the slow-motion moment before the results) and `stats` the MatchStats counters by player
+index; both are empty when the scenario has `match_end` false.
 
 `threats` are enemy units at war with you that one of your units can see.
 

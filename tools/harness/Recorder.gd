@@ -121,6 +121,23 @@ func start():
 	MatchSignals.match_finished_with_defeat.connect(
 		func(): _event("match_end", "the human player lost")
 	)
+	# the hold and then the results panel come a moment after the match is decided
+	# (MatchEndHandler); the speed in the ending line shows the hold gave it back
+	var end_handler = api.end_handler() if api != null else null
+	if end_handler != null and end_handler.has_signal("results_shown"):
+		end_handler.hold_started.connect(
+			func(result): _event("hold", "the hold began: %s" % str(result).capitalize())
+		)
+		end_handler.results_shown.connect(
+			func(result):
+				_event(
+					"ending",
+					(
+						"the results screen is up: %s, speed back at %s"
+						% [str(result).capitalize(), Engine.time_scale]
+					)
+				)
+		)
 
 
 func _process(_delta):

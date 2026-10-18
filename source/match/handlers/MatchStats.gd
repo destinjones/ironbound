@@ -1,8 +1,9 @@
 extends Node
 
 # Collects per-player numbers during a match for the end screen: a score sample every
-# SAMPLE_EVERY_S seconds of match time, plus counters for units built and lost, buildings
-# finished, goods delivered, trades and the highest city tier.
+# SAMPLE_EVERY_S seconds of match time, plus counters for units built, lost and killed,
+# buildings finished, goods delivered, trades and the highest city tier. It also remembers
+# where each player's last unit or structure fell, so the ending can show that spot.
 
 const MatchLimits = preload("res://source/match/MatchLimits.gd")
 const Structure = preload("res://source/match/units/Structure.gd")
@@ -11,9 +12,12 @@ const SAMPLE_EVERY_S = 15.0
 
 var elapsed_s = 0.0
 var samples = []  # [{t: seconds, scores: {player instance id: total}}]
-var counters = {}  # player instance id -> {built, lost, structures, delivered, trades, tier}
+var counters = {}  # player instance id -> {built, lost, kills, structures, delivered, trades, tier}
 
 var _owners = {}  # unit instance id -> player, units have left the tree when unit_died fires
+var _structure_spots = {}  # structure instance id -> where it stands (structures do not move)
+var _last_falls = {}  # player instance id -> {"position": Vector3, "order": int}, its last fall
+var _fall_order = 0
 var _since_sample_s = 0.0
 
 
@@ -49,7 +53,13 @@ func counters_of(player):
 	var key = player.get_instance_id()
 	if not key in counters:
 		counters[key] = {
-			"built": 0, "lost": 0, "structures": 0, "delivered": 0, "trades": 0, "tier": 1
+			"built": 0,
+			"lost": 0,
+			"kills": 0,
+			"structures": 0,
+			"delivered": 0,
+			"trades": 0,
+			"tier": 1,
 		}
 	return counters[key]
 
@@ -59,6 +69,28 @@ func score_of(player):
 	if limits == null:
 		return 0
 	return limits.score_of(player)["total"]
+
+
+func spot_of(unit):
+	"""where a unit stands or stood: a structure's stored spot, else its position, which
+	is still readable once it has left the tree (unit_died comes after tree_exited)"""
+	var stored = _structure_spots.get(unit.get_instance_id())
+	if stored != null:
+		return stored
+	return unit.global_position if unit.is_inside_tree() else unit.position
+
+
+func last_fall(players):
+	"""where the unit or structure that fell last among those of the given players stood,
+	or null when none of them lost anything"""
+	var best = null
+	for player in players:
+		if player == null or not is_instance_valid(player):
+			continue
+		var fall = _last_falls.get(player.get_instance_id())
+		if fall != null and (best == null or fall["order"] > best["order"]):
+			best = fall
+	return best["position"] if best != null else null
 
 
 func _sample():
@@ -71,14 +103,26 @@ func _sample():
 func _on_unit_spawned(unit):
 	if "player" in unit and unit.player != null:
 		_owners[unit.get_instance_id()] = unit.player
+	if unit is Structure and unit.is_inside_tree():
+		_structure_spots[unit.get_instance_id()] = unit.global_position
 
 
 func _on_unit_died(unit):
-	var owner = _owners.get(unit.get_instance_id())
+	var key = unit.get_instance_id()
+	var owner = _owners.get(key)
 	if owner == null and "player" in unit:
 		owner = unit.player
+	_owners.erase(key)
 	if owner != null and is_instance_valid(owner):
 		counters_of(owner)["lost"] += 1
+		_fall_order += 1
+		_last_falls[owner.get_instance_id()] = {"position": spot_of(unit), "order": _fall_order}
+	_structure_spots.erase(key)
+	# the killer gets a kill: units and structures both count, friendly fire does not; units
+	# taken away when a player is defeated (CityCentres) never die, so they count for nobody
+	var killer = unit.last_attacker_player if "last_attacker_player" in unit else null
+	if killer != null and is_instance_valid(killer) and killer != owner:
+		counters_of(killer)["kills"] += 1
 
 
 func _on_unit_production_finished(unit, _producer):
