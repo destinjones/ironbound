@@ -1168,6 +1168,38 @@ Evidence: a scratch harness scenario in a debug run turned god mode on with the
 toggle_god_mode action, showed the HUD, killed a click-selected enemy tank with Delete
 (Delete did nothing before F2), and turned it off again with the real F2 key.
 
+## 2026-10-18: a cannon shot draws one muzzle effect, ShotEffects'
+
+CannonShell.tscn still carried the upstream OriginParticles, a GPUParticles3D of 32 particles
+under a DetachTransform node, which every shot emitted at the muzzle next to ShotEffects'
+flash, smoke and recoil, and a Timer kept the shell node alive for the particles' one second
+lifetime. The spray was a cost, not a second visible effect: each particle was a 0.05 m quad
+scaled by 0.05, 2.5 mm across, 0.18 px at the default zoom. With the game paused on a tank
+shot and the particles hidden for one frame, no pixel changed at the default zoom, 1 at a 6 m
+view and 17 faint specks at a 2 m view. The particles, their scene-local materials and the
+Timer are gone. The shell still deals its damage in _ready, still calls ShotEffects.cannon_shot
+a physics frame later with the same transform, and then frees itself; nothing ShotEffects draws
+is parented to it.
+
+Evidence: a scratch probe in a fight of one tank against three raiders counted, per shot, one
+GPUParticles3D plus ShotEffects' 2 flash quads, 1 smoke and 1 tracer before (46 of 50 shots,
+the shell living 60 to 65 physics frames) and no GPUParticles3D with the same quads after (45
+of 48, the shell living 1 frame). In counters-triangle, two runs each side, every fight takes
+the same number of shots with the same damage per hit, and the kill times differ between two
+runs of the same code as much as between before and after. smoke 10/10, counters-triangle
+33/33, hud-health-bars 4/4 and die-once 3/3 pass, the validator reports 0 errors and 0
+warnings, gdformat and gdlint are clean. Screenshots: game/direction/feel/muzzle-flash.
+
+Known and left for later. The killing shot draws no muzzle effect, before as after: the target
+is freed in the frame the damage lands, so a physics frame later the shell finds it gone and
+skips cannon_shot (3 of 50 shots in the probe; before, only the invisible particles fired).
+And the tank's flash and smoke are drawn inside its hull, at the unit's own origin: the shell
+looks the marker up with find_child("ProjectileOrigin"), whose default owned = true skips
+nodes added at run time (the data model, UnitMotion's pivot), and UnitMotion and TurretAim have
+moved the marker under them, onto the barrel tip (1.35 m ahead, 0.79 m up). The lookup finds
+nothing, so the shot leaves from the unit's 0, 0, 0 and only the tracer shows, coming out of
+the lower hull. Rocket.gd makes the same lookup.
+
 ## 2026-10-18: upstream files nothing uses are deleted
 
 The repo and the exported game carried upstream leftovers that no scene, script, data
