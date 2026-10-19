@@ -1354,12 +1354,12 @@ keeps the camera at size 28 on a point 10 m short of the fight goal and draws th
 the goal: at 720p the click lands at y 489 and both ends of the line at y 540, inside the bar
 (top 504). The bar takes that press, as it should for a click on it. A scratch scenario at 1280
 x 720 (not committed) passes 17/17: after F, a left-drag across the bar at y 600 gives no order
-and the fight mode still waits, and the same drag at y 430 gives every tank a fight order. The
-test is not changed in this PR (tests are read-only here). Framing the camera on the goal before
+and the fight mode still waits, and the same drag at y 430 gives every tank a fight order. Tests
+are read-only without Destin's approval. Framing the camera on the goal before
 the line (camera_on(goal, 28.0) and ten frames before the F press in _check_fight) puts both
 ends at y 411: a scratch subclass of CommandChecks with that change and only the fight check
 (not committed) passes 8 PASS, 0 failure(s), with the line's ends at (485.7, 411.4) and (794.3,
-411.4). The change to the test itself needs Destin's approval.
+411.4). Destin approved that two-line change to the test, and this PR carries it.
 
 Known and left for later. With nothing selected everything right of the minimap is empty bar
 (about 1650 x 248 px at 1080p, 1050 x 200 at 720p), and with several units selected the middle
