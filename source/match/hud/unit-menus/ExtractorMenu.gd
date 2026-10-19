@@ -5,6 +5,7 @@ extends GridContainer
 # a storage keeps. Tooltips show the route's statistics.
 
 const Storage = preload("res://source/match/units/Storage.gd")
+const HudStyle = preload("res://source/match/hud/HudStyle.gd")
 
 const REFRESH_INTERVAL_S = 0.5
 const PRIORITY_KEYS = ["PRIORITY_LOW", "PRIORITY_NORMAL", "PRIORITY_HIGH"]
@@ -33,7 +34,8 @@ func _ready():
 func _make_button(text, on_pressed):
 	var button = Button.new()
 	button.theme_type_variation = "SlotButton"
-	button.custom_minimum_size = Vector2(80, 80)
+	var slot = HudStyle.slot_px(get_viewport().get_visible_rect().size.y)
+	button.custom_minimum_size = Vector2(slot, slot)
 	button.text = text
 	button.focus_mode = Control.FOCUS_NONE
 	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

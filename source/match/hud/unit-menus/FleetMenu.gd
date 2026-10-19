@@ -2,9 +2,12 @@ extends GridContainer
 
 # Menu of selected trucks and trains: recycle them at the closest depot for part of
 # their cost back, and for a train its line: what it is doing, and a button to let it
-# plan its own line again after the player edited it.
+# plan its own line again after the player edited it. It is drawn over the command card
+# (GenericMenu), so its buttons start on the card's free third row, or on the second
+# when nothing selected drives (trains run on rails, and the card then shows only Stop).
 
 const Hauler = preload("res://source/match/units/Hauler.gd")
+const HudStyle = preload("res://source/match/hud/HudStyle.gd")
 
 const REFRESH_INTERVAL_S = 0.4
 
@@ -14,19 +17,40 @@ var units = []:
 var _recycle_button = null
 var _line_button = null
 var _status = Label.new()
+var _spacers = []
+var _slot = HudStyle.SLOT_FULL_PX
 
 
 func _ready():
 	columns = 4
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_slot = HudStyle.slot_px(get_viewport().get_visible_rect().size.y)
+	# the command card's two order rows show through these
+	for _i in range(2 * columns):
+		var spacer = Control.new()
+		spacer.custom_minimum_size = Vector2(_slot, _slot)
+		spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(spacer)
+		_spacers.append(spacer)
 	_recycle_button = _make_button(_on_recycle_pressed)
 	_line_button = _make_button(_on_line_pressed)
 	_line_button.text = tr("TRAIN_AUTO_LINE")
 	_line_button.tooltip_text = tr("TRAIN_AUTO_LINE_TOOLTIP")
-	_status.custom_minimum_size = Vector2(160, 80)
+	# one slot in the grid, the text runs over the next one, so the columns stay slot wide
+	var holder = Control.new()
+	holder.custom_minimum_size = Vector2(_slot, _slot)
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(holder)
+	# a long train line grows the text upwards, over the card, not below the screen's edge
+	_status.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	_status.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_status.offset_top = -_slot
+	_status.offset_right = 2 * _slot + HudStyle.SLOT_GAP
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_status.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_status.add_theme_font_size_override("font_size", 12)
-	add_child(_status)
+	_status.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.add_child(_status)
 	var timer = Timer.new()
 	timer.timeout.connect(_refresh)
 	add_child(timer)
@@ -43,7 +67,7 @@ static func applies_to(selection):
 func _make_button(on_pressed):
 	var button = Button.new()
 	button.theme_type_variation = "SlotButton"
-	button.custom_minimum_size = Vector2(80, 80)
+	button.custom_minimum_size = Vector2(_slot, _slot)
 	button.focus_mode = Control.FOCUS_NONE
 	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	button.add_theme_font_size_override("font_size", 13)
@@ -55,6 +79,9 @@ func _make_button(on_pressed):
 func _set_units(selection):
 	units = selection
 	if is_node_ready():
+		var drives = _valid_units().any(func(unit): return unit.movement_speed > 0.0)
+		for spacer in _spacers.slice(columns):
+			spacer.visible = drives
 		_refresh()
 
 

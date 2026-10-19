@@ -24,7 +24,8 @@ func _unhandled_input(event):
 
 
 func _toggle_god_mode():
-	if not FeatureFlags.god_mode:
+	# a developer tool: release exports (the downloads and the web build) never turn it on
+	if not FeatureFlags.god_mode or not OS.is_debug_build():
 		return
 	god_mode = not god_mode
 	if god_mode:
