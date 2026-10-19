@@ -33,6 +33,7 @@ const TutorialScript = preload("res://source/data-model/TutorialScript.gd")
 const HarnessApi = preload("res://tools/harness/HarnessApi.gd")
 const Fleet = preload("res://source/match/economy/Fleet.gd")
 const AlertBanner = preload("res://source/match/hud/AlertBanner.gd")
+const BottomBar = preload("res://source/match/hud/BottomBar.gd")
 
 const SETTINGS_PATH = "user://guide.cfg"
 const REFRESH_INTERVAL_S = 0.5
@@ -144,7 +145,7 @@ func _ready():
 	if auto_build_on:  # no panel, no bar, no G key
 		auto_expand_panel = AutoExpandPanel.new()
 		add_child(auto_expand_panel)
-		auto_expand_bar = AutoExpandBar.new()  # placed left of the unit menu, see _layout
+		auto_expand_bar = AutoExpandBar.new()  # placed above the bottom bar, see _layout
 		add_child(auto_expand_bar)
 	help_window = HelpWindow.new()
 	add_child(help_window)
@@ -313,9 +314,10 @@ func _layout():
 		helper_panel.position = Vector2(GAP, top_left)
 		if helper_panel.visible:
 			below_helper = helper_panel.position.y + helper_panel.size.y + GAP
-	var minimap_top = screen.y - 225
+	var bar = BottomBar.of(get_tree())
+	var bar_top = bar.top() if bar != null and bar.is_visible_in_tree() else screen.y - 225
 	# the row above the minimap stays free for the under-attack banner
-	var lowest = minimap_top - AlertBanner.ROW_PX - GAP
+	var lowest = bar_top - AlertBanner.ROW_PX - GAP
 	if auto_expand_panel != null:
 		if auto_expand_panel.size.y > auto_expand_panel.get_combined_minimum_size().y + 1.0:
 			auto_expand_panel.reset_size()
@@ -331,6 +333,13 @@ func _layout():
 	var hint_top = _tutorial.position.y + _tutorial.size.y + GAP if _tutorial.visible else top
 	_hint_panel.position = Vector2(GAP, hint_top)
 	if auto_expand_bar == null:
+		return
+	if bar != null and bar.is_visible_in_tree():
+		# above the bar at the right edge, over the command card, never beside the unit card
+		auto_expand_bar.position = Vector2(
+			screen.x - HudStyle.BAR_MARGIN - auto_expand_bar.size.x,
+			bar_top - GAP - auto_expand_bar.size.y
+		)
 		return
 	var unit_menus = get_parent().find_child("UnitMenus", true, false)
 	var right = screen.x - 5

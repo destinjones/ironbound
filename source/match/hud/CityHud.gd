@@ -8,6 +8,7 @@ const Human = preload("res://source/match/players/human/Human.gd")
 const Trade = preload("res://source/match/city/Trade.gd")
 const CivilDefense = preload("res://source/match/city/CivilDefense.gd")
 const HudStyle = preload("res://source/match/hud/HudStyle.gd")
+const BottomBar = preload("res://source/match/hud/BottomBar.gd")
 const FactionRules = preload("res://source/data-model/Factions.gd")
 
 const MAX_TRADE_AMOUNT = 40
@@ -80,8 +81,6 @@ var _trade_box = VBoxContainer.new()
 var _details_button = Button.new()
 var _trade_button = Button.new()
 var _price_cells = {}  # resource -> [here label, partner label]
-var _unit_menus = null
-var _production_queue = null
 
 @onready var _match = find_parent("Match")
 
@@ -336,23 +335,21 @@ func _build_offer_box():
 
 
 func _fit_to_screen():
-	"""keeps the panel clear of the unit menu and on screen, scrolling its body if needed"""
+	"""keeps the panel above the bottom bar (and the auto-expand switch over it) and on
+	screen, scrolling its body if needed"""
 	for label in [_result_label, _agreements_label]:
 		label.visible = label.text != ""  # no blank lines under the buttons
-	if _unit_menus == null and _match != null:
-		_unit_menus = _match.find_child("UnitMenus", true, false)
-		_production_queue = _match.get_node_or_null(
-			"HUD/MarginContainer3/VBoxContainer/ProductionQueue"
-		)
 	var bottom = get_viewport_rect().size.y - 5.0
-	if _unit_menus != null and _unit_menus.is_visible_in_tree():
-		bottom = min(bottom, _unit_menus.global_position.y - 6.0)
-	if (
-		_production_queue != null
-		and _production_queue.is_visible_in_tree()
-		and _production_queue.find_child("QueueElements").get_child_count() > 0
-	):
-		bottom = min(bottom, _production_queue.global_position.y - 6.0)
+	var bar = BottomBar.of(get_tree())
+	if bar != null and bar.is_visible_in_tree():
+		bottom = min(bottom, bar.top() - 6.0)
+	# Guide puts the auto-expand switch just above the bar at the right edge, under this
+	# panel: while it shows, the panel stops above it too
+	var switch = get_parent().get_node_or_null("Guide/AutoExpandBar")
+	if switch != null and switch.is_visible_in_tree():
+		var spot = switch.get_global_rect()
+		if spot.position.x < global_position.x + size.x and spot.end.x > global_position.x:
+			bottom = min(bottom, spot.position.y - 6.0)
 	var wanted = _rows.get_combined_minimum_size().y if _scroll.visible else 0.0
 	var chrome = get_combined_minimum_size().y - _scroll.custom_minimum_size.y
 	var room = max(80.0, bottom - global_position.y - chrome)
