@@ -4,10 +4,13 @@ extends Control
 # - hovering any unit or building shows a small tip by the cursor with its name and one
 #   line of state (for your resource buildings: yard and how many trucks are coming; for
 #   your trucks: their current job),
-# - selecting one unit or building opens a card next to the minimap with its name, role,
-#   what it does, what it costs and needs, what it makes, its live status and, for your
-#   extractors, storages, depots and construction sites, the trucks working for it.
-#   Truck names on the card select that truck and centre the camera on it,
+# - selecting one unit or building shows its card in the middle of the bottom bar
+#   (HUD/BottomBar/SelectionPanel/Single): on the left its icon, name, role, rank, health
+#   bar and, for your factories, the production queue; on the right what it does, what it
+#   costs and needs, what it makes, its live status and, for your extractors, storages,
+#   depots and construction sites, the trucks working for it (scrolling when it is long).
+#   Truck names on the card select that truck and centre the camera on it. A match scene
+#   without the bar gets the same card floating next to the minimap,
 # - the routes of those trucks are drawn on the ground (HaulerRouteLines.gd), for the
 #   building under the cursor and the selected one, and the route of a selected truck.
 # Texts come from data/units (role, info, cost, power...) via BuildingInfoText.gd.
@@ -18,16 +21,24 @@ const HaulerLinks = preload("res://source/match/economy/HaulerLinks.gd")
 const HaulerRouteLines = preload("res://source/match/hud/HaulerRouteLines.gd")
 const Hauler = preload("res://source/match/units/Hauler.gd")
 const Structure = preload("res://source/match/units/Structure.gd")
+const Veterancy = preload("res://source/match/veterancy/Veterancy.gd")
+const ProductionQueueScene = preload("res://source/match/hud/ProductionQueue.tscn")
 
 const REFRESH_INTERVAL_S = 0.25
-const CARD_WIDTH = 380
+const CARD_WIDTH = 380  # the floating card, without the bar
+const SUMMARY_FULL_PX = 300  # the card's left column in the bar (80 px slots)
+const SUMMARY_COMPACT_PX = 260  # the same with 64 px slots
+const COLUMN_GAP = 16
+const CHEVRON_PX = 22
+# "180 / 180" (the command centre, the most hp in data) with room for a veteran's more,
+# so the health bar beside it keeps one length from unit to unit
+const HP_LABEL_PX = 96
 const TIP_WIDTH = 300
 const TIP_OFFSET = Vector2(18, 20)
 
 var hovered = null  # unit under the cursor
 var shown = null  # unit the card shows
 
-var _details_folded = false
 var _since_refresh_s = 0.0
 var _tip = null
 var _tip_title = null
@@ -36,9 +47,18 @@ var _card = null
 var _card_icon = null
 var _card_title = null
 var _card_role = null
-var _card_fold = null
+var _card_rank = null
+var _card_tile = null  # the icon's slot, a disabled button that names the unit on hover
+var _card_chevrons = null
+var _card_health_row = null
+var _card_health = null
+var _card_health_fill = StyleBoxFlat.new()
+var _card_hp = null
+var _card_queue_row = null
+var _card_queue = null
 var _card_details = null
 var _card_body = null
+var _in_bar = false  # the card sits in the bottom bar, not floating
 var _routes = null
 
 @onready var _match = find_parent("Match")
@@ -165,13 +185,16 @@ func _refresh_card():
 		return
 	var own = _is_own(shown)
 	var entry = Text.entry_of(shown)
-	_card_icon.texture = (
-		load(entry["icon"]) if ResourceLoader.exists(entry.get("icon", "")) else null
-	)
+	_card_icon.texture = HudStyle.unit_icon(entry)
 	_card_icon.modulate = Color(entry.get("icon_tint", "#ffffff"))
 	_card_title.text = HaulerLinks.display_name(shown) if own else tr(entry["name"])
+	_card_tile.tooltip_text = _card_title.text
 	_card_role.text = Text.role_text(shown) + ("" if own else "  ·  " + _owner_text(shown))
-	var details = [Text.info_text(shown)]
+	_refresh_rank()
+	_refresh_health()
+	_refresh_queue_row()
+	# the explanation in the muted tone, so the facts and the live lines read first
+	var details = [_muted(Text.info_text(shown))]
 	var classes = Text.classes_for(entry)
 	if classes != "":
 		details.append(classes)
@@ -182,9 +205,8 @@ func _refresh_card():
 	if shown is Structure or makes != tr("INFO_NOTHING"):
 		details.append(_section("INFO_MAKES") + makes)
 	_card_details.text = "\n".join(details)
-	_card_details.visible = not _details_folded
 	var body = []
-	var status = Text.status_lines(shown, own)
+	var status = Text.status_lines(shown, own, false)  # the health bar shows hp
 	if shown is Hauler and own:
 		status.append(Text.cargo_line(shown))
 	if not status.is_empty():
@@ -193,8 +215,52 @@ func _refresh_card():
 		body.append(_section("INFO_HAULERS") + "\n" + "\n".join(Text.truck_lines(shown)))
 	_card_body.text = "\n".join(body)
 	_card_body.visible = not body.is_empty()
-	_card.reset_size()
-	_place_card()
+	if not _in_bar:
+		_card.reset_size()
+		_place_card()
+
+
+func _refresh_queue_row():
+	"""the QUEUE caption only over something queued, not over an idle factory"""
+	var elements = _card_queue.find_child("QueueElements", false, false)
+	var queued = (
+		elements.get_children().filter(func(node): return not node.is_queued_for_deletion())
+		if elements != null
+		else []
+	)
+	_card_queue_row.visible = _card_queue.visible and not queued.is_empty()
+
+
+func _muted(text):
+	return "[color={0}]{1}[/color]".format([HudStyle.MUTED.to_html(false), text])
+
+
+func _refresh_rank():
+	var rank = Veterancy.rank_of(shown)
+	var veterancy = Veterancy.of(get_tree())
+	var ranks = veterancy.config.get("ranks", []) if veterancy != null else []
+	var ranked = rank > 0 and rank <= ranks.size()
+	_card_rank.visible = ranked
+	_card_chevrons.visible = ranked
+	if not ranked:
+		return
+	var color = Color(ranks[rank - 1].get("color", "#ffffff"))
+	_card_rank.text = veterancy.rank_name(rank)
+	_card_rank.add_theme_color_override("font_color", color)
+	_card_chevrons.texture = Veterancy.chevron_texture(rank)
+	_card_chevrons.modulate = color
+
+
+func _refresh_health():
+	var hp = shown.get("hp")
+	var hp_max = shown.get("hp_max")
+	_card_health_row.visible = hp != null and hp_max != null and hp_max > 0
+	if not _card_health_row.visible:
+		return
+	var fraction = clamp(float(hp) / float(hp_max), 0.0, 1.0)
+	_card_health.value = fraction
+	_card_health_fill.bg_color = HudStyle.health_color(fraction)
+	_card_hp.text = "{0} / {1}".format([int(ceil(hp)), int(hp_max)])
 
 
 func _place_card():
@@ -251,12 +317,6 @@ func _on_link_clicked(meta):
 		camera.set_position_safely(unit.global_position)
 
 
-func _on_fold_pressed():
-	_details_folded = not _details_folded
-	HudStyle.set_folded_icon(_card_fold, _details_folded)
-	_refresh()
-
-
 func _build_tip():
 	_tip = PanelContainer.new()
 	_tip.name = "HoverTip"
@@ -279,21 +339,91 @@ func _build_tip():
 
 
 func _build_card():
+	"""in the bar: the icon tile, titles, health and queue on the left, the text scrolling on
+	the right; floating (a match scene without the bar): the same stacked in one column"""
+	var host = _match.get_node_or_null("HUD/BottomBar/SelectionPanel/Single") if _match else null
+	_in_bar = host != null
+	var height = get_viewport_rect().size.y
+	var slot = HudStyle.slot_px(height)
 	_card = PanelContainer.new()
 	_card.name = "BuildingCard"
-	_card.custom_minimum_size = Vector2(CARD_WIDTH, 0)
-	add_child(_card)
-	var box = VBoxContainer.new()
-	box.add_theme_constant_override("separation", 6)
-	HudStyle.margin(_card, 12, 10).add_child(box)
+	if _in_bar:
+		_card.theme_type_variation = "ClearPanel"  # the bar is the glass
+		_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_card.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		host.add_child(_card)
+	else:
+		_card.custom_minimum_size = Vector2(CARD_WIDTH, 0)
+		add_child(_card)
+	var row = HBoxContainer.new() if _in_bar else VBoxContainer.new()
+	row.add_theme_constant_override("separation", COLUMN_GAP if _in_bar else 6)
+	HudStyle.margin(_card, 0 if _in_bar else 12, 0 if _in_bar else 10).add_child(row)
+	var summary = VBoxContainer.new()
+	summary.name = "Summary"
+	summary.add_theme_constant_override("separation", 6)
+	if _in_bar:
+		summary.custom_minimum_size.x = (
+			SUMMARY_FULL_PX if slot >= HudStyle.SLOT_FULL_PX else SUMMARY_COMPACT_PX
+		)
+	row.add_child(summary)
+	summary.add_child(_build_header(slot if _in_bar else 48))
+	# the slot's resting look, not the dimmed look of a disabled order
+	_card_tile.add_theme_stylebox_override("disabled", _card_tile.get_theme_stylebox("normal"))
+	summary.add_child(_build_health_row())
+	summary.add_child(_build_queue_row())
+	var text = VBoxContainer.new()
+	text.add_theme_constant_override("separation", 6)
+	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	if _in_bar:
+		var scroll = ScrollContainer.new()
+		scroll.name = "Details"  # SelectionPanel.gd sets its width from the cell
+		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		row.add_child(scroll)
+		scroll.add_child(text)
+	else:
+		text.name = "Details"
+		row.add_child(text)
+	# the live state (status, cargo, trucks) first, so a long explanation never scrolls it
+	# out of sight in the bar; then what the unit is, costs and makes
+	_card_body = _rich_text()
+	_card_body.meta_clicked.connect(_on_link_clicked)
+	text.add_child(_card_body)
+	_card_details = _rich_text()
+	text.add_child(_card_details)
+	_card.hide()
+
+
+func _build_header(tile_px):
 	var header = HBoxContainer.new()
 	header.add_theme_constant_override("separation", 8)
-	box.add_child(header)
-	_card_icon = HudStyle.icon_rect(null, 32)
-	header.add_child(_card_icon)
+	_card_tile = Button.new()
+	_card_tile.name = "IconTile"
+	_card_tile.theme_type_variation = "SlotButton"
+	_card_tile.disabled = true  # a picture, not an order
+	_card_tile.focus_mode = Control.FOCUS_NONE
+	_card_tile.mouse_filter = Control.MOUSE_FILTER_PASS  # for the tooltip
+	_card_tile.custom_minimum_size = Vector2(tile_px, tile_px)
+	header.add_child(_card_tile)
+	var inset = round(tile_px * 0.15)
+	_card_icon = HudStyle.icon_rect(null, tile_px - 2 * inset)
+	_card_icon.set_anchors_preset(Control.PRESET_FULL_RECT)
+	for side in [SIDE_LEFT, SIDE_TOP]:
+		_card_icon.set_offset(side, inset)
+	for side in [SIDE_RIGHT, SIDE_BOTTOM]:
+		_card_icon.set_offset(side, -inset)
+	_card_tile.add_child(_card_icon)
+	_card_chevrons = HudStyle.icon_rect(null, CHEVRON_PX)
+	_card_chevrons.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_card_chevrons.offset_left = -4 - CHEVRON_PX
+	_card_chevrons.offset_top = -4 - CHEVRON_PX
+	_card_chevrons.offset_right = -4
+	_card_chevrons.offset_bottom = -4
+	_card_chevrons.hide()
+	_card_tile.add_child(_card_chevrons)
 	var titles = VBoxContainer.new()
 	titles.add_theme_constant_override("separation", -2)
 	titles.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	titles.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	header.add_child(titles)
 	_card_title = Label.new()
 	_card_title.theme_type_variation = "HeaderLabel"
@@ -303,18 +433,53 @@ func _build_card():
 	_card_role = Label.new()
 	HudStyle.small(_card_role, 12, true)
 	_card_role.uppercase = true
+	_card_role.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # a rival's owner wraps
 	titles.add_child(_card_role)
-	_card_fold = Button.new()
-	HudStyle.style_fold_button(_card_fold)
-	HudStyle.set_folded_icon(_card_fold, false)
-	_card_fold.pressed.connect(_on_fold_pressed)
-	header.add_child(_card_fold)
-	_card_details = _rich_text()
-	box.add_child(_card_details)
-	_card_body = _rich_text()
-	_card_body.meta_clicked.connect(_on_link_clicked)
-	box.add_child(_card_body)
-	_card.hide()
+	_card_rank = HudStyle.small(Label.new(), 12)
+	_card_rank.hide()
+	titles.add_child(_card_rank)
+	return header
+
+
+func _build_health_row():
+	_card_health_row = HBoxContainer.new()
+	_card_health_row.add_theme_constant_override("separation", 8)
+	_card_health = ProgressBar.new()
+	_card_health.max_value = 1.0
+	_card_health.show_percentage = false
+	_card_health.custom_minimum_size = Vector2(0, 12)
+	_card_health.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_card_health.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_card_health.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_card_health_fill.set_corner_radius_all(3)
+	_card_health_fill.bg_color = HudStyle.GOOD
+	_card_health.add_theme_stylebox_override("fill", _card_health_fill)
+	_card_health_row.add_child(_card_health)
+	_card_hp = Label.new()
+	_card_hp.theme_type_variation = "NumberLabel"
+	_card_hp.add_theme_font_size_override("font_size", 15)
+	_card_hp.custom_minimum_size = Vector2(HP_LABEL_PX, 0)
+	_card_hp.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_card_health_row.add_child(_card_hp)
+	return _card_health_row
+
+
+func _build_queue_row():
+	_card_queue_row = VBoxContainer.new()
+	_card_queue_row.add_theme_constant_override("separation", 2)
+	var caption = HudStyle.small(Label.new(), 11, true)
+	caption.text = tr("QUEUE_CAPTION")
+	caption.uppercase = true
+	_card_queue_row.add_child(caption)
+	_card_queue = ProductionQueueScene.instantiate()
+	_card_queue.name = "ProductionQueue"
+	_card_queue_row.add_child(_card_queue)
+	# shown or hidden as soon as a unit is queued or leaves the queue, not at the next refresh
+	var elements = _card_queue.find_child("QueueElements", false, false)
+	elements.child_entered_tree.connect(func(_node): _refresh_queue_row.call_deferred())
+	elements.child_exiting_tree.connect(func(_node): _refresh_queue_row.call_deferred())
+	_card_queue_row.hide()
+	return _card_queue_row
 
 
 func _rich_text():
@@ -323,7 +488,10 @@ func _rich_text():
 	label.fit_content = true
 	label.scroll_active = false
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.custom_minimum_size = Vector2(CARD_WIDTH - 24, 0)
+	if _in_bar:
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	else:
+		label.custom_minimum_size = Vector2(CARD_WIDTH - 24, 0)
 	label.add_theme_font_size_override("normal_font_size", 13)
 	label.add_theme_font_size_override("bold_font_size", 12)
 	label.add_theme_color_override("default_color", HudStyle.FG)

@@ -1,6 +1,11 @@
 extends MarginContainer
 
+# The selected factory's queue on the selection card in the bottom bar (BuildingInfo.gd puts
+# it there): one button per unit waiting, the one in production first, on the left. It shows
+# while exactly one own producer is selected.
+
 const ProductionQueueElement = preload("res://source/match/hud/ProductionQueueElement.tscn")
+const HudStyle = preload("res://source/match/hud/HudStyle.gd")
 
 var _production_queue = null
 
@@ -68,8 +73,9 @@ func _add_queue_element_node(queue_element):
 	var queue_element_node = ProductionQueueElement.instantiate()
 	queue_element_node.queue = _production_queue
 	queue_element_node.queue_element = queue_element
+	var side = HudStyle.queue_px(get_viewport().get_visible_rect().size.y)
+	queue_element_node.custom_minimum_size = Vector2(side, side)
 	_queue_elements.add_child(queue_element_node)
-	_queue_elements.move_child(queue_element_node, 0)
 
 
 func _on_production_queue_element_enqueued(element):

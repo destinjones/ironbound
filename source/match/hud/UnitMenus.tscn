@@ -8,82 +8,15 @@
 [ext_resource type="PackedScene" uid="uid://dk3no87nfpp8i" path="res://source/match/hud/unit-menus/AircraftFactoryMenu.tscn" id="5_jocca"]
 
 [node name="UnitMenus" type="PanelContainer"]
+theme_type_variation = &"ClearPanel"
 script = ExtResource("1_hugbq")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 2
-theme_override_constants/margin_left = 5
-theme_override_constants/margin_top = 5
-theme_override_constants/margin_right = 5
-theme_override_constants/margin_bottom = 5
-
-[node name="BackgroundGrid" type="GridContainer" parent="MarginContainer"]
-layout_mode = 2
-columns = 4
-
-[node name="Panel" type="Panel" parent="MarginContainer/BackgroundGrid"]
-custom_minimum_size = Vector2(80, 80)
-layout_mode = 2
-
-[node name="Panel2" type="Panel" parent="MarginContainer/BackgroundGrid"]
-custom_minimum_size = Vector2(80, 80)
-layout_mode = 2
-
-[node name="Panel3" type="Panel" parent="MarginContainer/BackgroundGrid"]
-custom_minimum_size = Vector2(80, 80)
-layout_mode = 2
-
-[node name="Panel4" type="Panel" parent="MarginContainer/BackgroundGrid"]
-custom_minimum_size = Vector2(80, 80)
-layout_mode = 2
-
-[node name="Panel5" type="Panel" parent="MarginContainer/BackgroundGrid"]
-custom_minimum_size = Vector2(80, 80)
-layout_mode = 2
-
-[node name="Panel6" type="Panel" parent="MarginContainer/BackgroundGrid"]
-custom_minimum_size = Vector2(80, 80)
-layout_mode = 2
-
-[node name="Panel7" type="Panel" parent="MarginContainer/BackgroundGrid"]
-custom_minimum_size = Vector2(80, 80)
-layout_mode = 2
-
-[node name="Panel8" type="Panel" parent="MarginContainer/BackgroundGrid"]
-custom_minimum_size = Vector2(80, 80)
-layout_mode = 2
-
-[node name="Panel9" type="Panel" parent="MarginContainer/BackgroundGrid"]
-custom_minimum_size = Vector2(80, 80)
-layout_mode = 2
-
-[node name="Panel10" type="Panel" parent="MarginContainer/BackgroundGrid"]
-custom_minimum_size = Vector2(80, 80)
-layout_mode = 2
-
-[node name="Panel11" type="Panel" parent="MarginContainer/BackgroundGrid"]
-custom_minimum_size = Vector2(80, 80)
-layout_mode = 2
-
-[node name="Panel12" type="Panel" parent="MarginContainer/BackgroundGrid"]
-custom_minimum_size = Vector2(80, 80)
-layout_mode = 2
-
-[node name="Panel13" type="Panel" parent="MarginContainer/BackgroundGrid"]
-custom_minimum_size = Vector2(80, 80)
-layout_mode = 2
-
-[node name="Panel14" type="Panel" parent="MarginContainer/BackgroundGrid"]
-custom_minimum_size = Vector2(80, 80)
-layout_mode = 2
-
-[node name="Panel15" type="Panel" parent="MarginContainer/BackgroundGrid"]
-custom_minimum_size = Vector2(80, 80)
-layout_mode = 2
-
-[node name="Panel16" type="Panel" parent="MarginContainer/BackgroundGrid"]
-custom_minimum_size = Vector2(80, 80)
-layout_mode = 2
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
 
 [node name="GenericMenu" parent="MarginContainer" instance=ExtResource("1_4ci70")]
 layout_mode = 2

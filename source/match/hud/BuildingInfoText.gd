@@ -176,10 +176,11 @@ static func _and_list(words):
 	return _tr("INFO_LIST_AND").format([head, words[words.size() - 1]])
 
 
-static func status_lines(unit, own):
-	"""the live state: health, construction, power, yard or production"""
+static func status_lines(unit, own, with_hp = true):
+	"""the live state: health (unless the card draws it as a bar), construction, power, yard
+	or production"""
 	var lines = []
-	if unit.get("hp") != null and unit.get("hp_max") != null:
+	if with_hp and unit.get("hp") != null and unit.get("hp_max") != null:
 		lines.append(_tr("INFO_HP").format([int(ceil(unit.hp)), int(unit.hp_max)]))
 	if not unit is Structure:
 		if unit is Hauler and own:

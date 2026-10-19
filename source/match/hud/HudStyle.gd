@@ -2,7 +2,8 @@ extends RefCounted
 
 # Shared look of the in-match HUD: the brand palette (see assets/ui/theme/ironbound.tres,
 # built by tools/ui/BuildTheme.gd), resource icons and colours, and small builders for
-# the folding panel headers and the stat cells used by several panels.
+# the folding panel headers, the stat cells used by several panels and the command card's
+# slots (their size, hotkey tag and caption), and the sizes of the bottom bar.
 
 const ICONS = "res://assets/ui/icons/hud/"
 const BG = Color("#14110d")
@@ -20,6 +21,17 @@ const BAD = Color("#e0603f")
 # health reads in thirds (StarCraft II's steps): GOOD at or above 2/3, WARN down to 1/3, BAD below
 const HEALTH_WARN_BELOW = 2.0 / 3.0
 const HEALTH_BAD_BELOW = 1.0 / 3.0
+# the command card: square slots, 80 px on a HUD 900 px tall or more, 64 below, 4 px apart
+const SLOT_FULL_PX = 80
+const SLOT_COMPACT_PX = 64
+const COMPACT_BELOW_PX = 900
+const SLOT_GAP = 4
+const BAR_MARGIN = 8
+const CARD_ROWS = 3
+const CARD_COLUMNS = 4
+# a unit waiting in a factory's queue, on the selection card in the bottom bar
+const QUEUE_FULL_PX = 56
+const QUEUE_COMPACT_PX = 44
 # brand colours of the commodities; data/resources.json colours paint the 3D deposits
 # (oil there is almost black, unreadable on a dark bar)
 const RESOURCE_COLORS = {
@@ -52,6 +64,74 @@ static func health_color(fraction):
 	if fraction < HEALTH_WARN_BELOW:
 		return WARN
 	return GOOD
+
+
+static func slot_px(viewport_height):
+	"""the side of a command card slot for a HUD this tall (after ui_scale), read at _ready"""
+	return SLOT_FULL_PX if viewport_height >= COMPACT_BELOW_PX else SLOT_COMPACT_PX
+
+
+static func bar_height(viewport_height):
+	"""the bottom bar: three slot rows, the gaps between them and a margin above and below"""
+	return CARD_ROWS * slot_px(viewport_height) + (CARD_ROWS - 1) * SLOT_GAP + 2 * BAR_MARGIN
+
+
+static func card_width(viewport_height, columns = CARD_COLUMNS):
+	"""the command card's width: `columns` slots and the gaps between them"""
+	return columns * slot_px(viewport_height) + (columns - 1) * SLOT_GAP
+
+
+static func queue_px(viewport_height):
+	"""the side of a production queue element for a HUD this tall, read as each element is added"""
+	return QUEUE_FULL_PX if viewport_height >= COMPACT_BELOW_PX else QUEUE_COMPACT_PX
+
+
+static func unit_icon(entry):
+	"""a unit's picture from its data entry: its own icon, else the generic vehicle or block"""
+	var path = entry.get("icon", "")
+	if path is String and path != "" and ResourceLoader.exists(path):
+		return load(path)
+	return icon("structure_generic" if entry.get("category") == "structure" else "unit_generic")
+
+
+static func hotkey_tag(text):
+	"""the key of a slot, small and amber in its top left corner"""
+	var label = Label.new()
+	label.name = "Hotkey"
+	label.text = text
+	label.theme_type_variation = "NumberLabel"
+	label.add_theme_font_size_override("font_size", 11)
+	label.add_theme_color_override("font_color", ACCENT)
+	# the outline keeps the amber letter readable on a lit (amber) slot
+	label.add_theme_constant_override("outline_size", 3)
+	label.add_theme_color_override("font_outline_color", Color.BLACK)
+	label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	label.offset_left = 5
+	label.offset_top = 1
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return label
+
+
+static func caption(text, slot = SLOT_FULL_PX):
+	"""the name along the bottom of a slot, outlined so it reads over any icon; a point
+	smaller in a 64 px slot, where "Hold position" fits at 10 px and not at 11"""
+	var label = Label.new()
+	label.name = "Caption"
+	label.text = text
+	label.add_theme_font_size_override("font_size", 11 if slot >= SLOT_FULL_PX else 10)
+	label.add_theme_color_override("font_color", FG)
+	label.add_theme_constant_override("outline_size", 4)
+	label.add_theme_color_override("font_outline_color", Color.BLACK)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	label.clip_text = true
+	label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	label.offset_left = 1
+	label.offset_right = -1
+	label.offset_bottom = -1
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return label
 
 
 static func icon_rect(texture, size = 20):
@@ -110,7 +190,7 @@ static func set_folded_icon(button, folded):
 	button.tooltip_text = TranslationServer.translate("HUD_EXPAND" if folded else "HUD_COLLAPSE")
 
 
-static func stat_cell(caption, value_label, tooltip = ""):
+static func stat_cell(caption_text, value_label, tooltip = ""):
 	"""a small caption over a number, for the stat grids"""
 	var cell = VBoxContainer.new()
 	cell.add_theme_constant_override("separation", -2)
@@ -118,7 +198,7 @@ static func stat_cell(caption, value_label, tooltip = ""):
 	cell.tooltip_text = tooltip
 	cell.mouse_filter = Control.MOUSE_FILTER_PASS
 	var caption_label = Label.new()
-	caption_label.text = caption
+	caption_label.text = caption_text
 	caption_label.theme_type_variation = "MutedLabel"
 	caption_label.add_theme_font_size_override("font_size", 11)
 	caption_label.uppercase = true

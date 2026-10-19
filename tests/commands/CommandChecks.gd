@@ -193,6 +193,8 @@ func _check_fight():
 		"then they carry on to the fight point (%s)" % ", ".join(report)
 	)
 	# fight line: F, then a left-drag
+	camera_on(goal, 28.0)  # the line 4 m past the goal is under the bottom bar at 720p
+	await _frames(10)
 	await _key(KEY_F)
 	await _drag(MOUSE_BUTTON_LEFT, goal + Vector3(-6, 0, 4), goal + Vector3(6, 0, 4))
 	_expect(

@@ -1051,6 +1051,336 @@ item stays open: ShotEffects.rocket_impact shakes the camera for rockets of 3 da
 more, so a truck stack in a ground fight now shakes the camera on its hits, as the technical
 and artillery do; nobody has watched six trucks in a window yet.
 
+## 2026-10-18: the command card is 4 x 3 with icons and captions, the constructor's menu 6 columns and never paged
+The command card is 4 x 3 with icons and captions; the worker's menu is 6 columns, never paged.
+Why: PlaytestChecks.gd:64 and TooltipsCheck.gd:80-89 pin the width and the visible vehicle
+factory, and page 2 would hide the defences at 6:00. Row 1 is Fight F, Patrol P, Guard V and
+Stop X, row 2 Patrol base B, Retreat Z, Fire stance L and Hold position K, and row 3 is free:
+the truck buttons (recycle, line and the fleet status) sit there, where on main the status ran
+over the top row next to the X. Every slot is an icon with its caption under it and its key in
+the top left corner, read from Keybinds so a controls.cfg rebind shows. The fire stance slot
+changes icon and caption with the stance. Hold position is a toggle: its caption names the order
+("Hold position") and the slot lights up and says "Holding" while the units hold, as SC2 and
+Generals name a toggle's action and let the lit frame show that it is on; "Free to chase" under
+a pin said the opposite of the icon, so COMMAND_HOLD_SHORT_OFF is gone. With one construction
+site selected the stop slot becomes Cancel build, with no key: the stop key goes through
+UnitCommands.stop, which skips structures, so an X tag promised a key that did nothing (making X
+cancel a site would change UnitCommandHandler, which this PR leaves alone). HudStyle.slot_px
+gives 80 px slots on a HUD 900 px tall or more and 64 below, read once at _ready; the command
+card is 332 x 248 or 268 x 200 and the constructor's 500 x 248 or 404 x 200 (346 x 262, 282 x
+214, 514 x 262 and 418 x 214 with the panel). A faction's constructor has 15 structures, which
+fill rows of 6, 6 and 3 from the top left, where main had four rows of four in the bottom right
+corner (a 342 x 342 panel, 47 % of a 720 px screen). With no faction there are 20: main's 16
+slots cut Trading post, Flak tower, Foundry and SAM site, and the 18 slots now cut Foundry and
+SAM site, the last two in the menu's order. No faction means the harness, the tests and the
+first-match tutorial (data/tutorial/first_match.json names none, and TutorialScript.gd:88 passes
+""). The slot builders (hotkey tag, caption, unit icon) moved to HudStyle, so the build menus
+and the card share them; the hotkey tag has a 3 px black outline, because the amber letter faded
+into a lit (amber) slot. UnitMenus' BackgroundGrid and the card's four dead placeholders are
+gone; the fleet and extractor menus take their slot size from HudStyle.
+
+Where it differs from the spec, and why. The icons were redrawn after shots at 32 px. Fire at
+will is three upright cartridges fanned from below (fanning from one corner read as crumbs);
+the cartridges are two-tone (the casing in MUTED, the head in FG), the spec's fallback. Return
+fire is an incoming arrow over the stances' own cartridge going back out, not a shield with a
+shell: the shield read as a spade, was mostly MUTED so the slot looked half disabled, and
+repeated Guard's shield two slots away. Hold fire is the cartridge in a MUTED no-entry ring and
+slash: in FG it was the same cream ring with a mark as Stop, diagonally next to it. Fight is a
+whole ring with three ticks outside it and the arrow coming in level from the left to its
+centre: ticks across the ring cut it into dashes, and an arrow at 45 degrees at the lower left
+made a magnifier ("search"). Patrol's arrowheads sit at the ends of its two arcs, next to the
+posts: in the middle of the loop they broke it into beads that looked like Patrol base's ring.
+Retreat's pennant is FG and half again as big, because at 32 px the flag vanished and left an
+undo arrow. Cancel build is a crate (frame, planks, brace) with the X in its corner: an X over
+hatching did not say crate. The 13 SVGs import at svg/scale 2.0 (64 px textures): at 1.0 the 32
+px raster was stretched to 40 px in a full slot and went soft next to the text. In a 64 px slot
+the captions are 10 px, not 11: "Hold position" is wider than the 62 px a caption has at 11 px,
+and the build menu's cost row uses 9 px icons and numbers, because three amounts ran out of the
+slot and the command centre's copper price was cut off. The 6-column card is 500 px wide, not
+492 (6 x 80 + 5 x 4). COMMAND_STOP and COMMAND_CANCEL_BUILD are in guide.csv in English only:
+guide.csv has no Polish column, like every other COMMAND_ string. The key on each slot and in
+its tooltip is read every frame and set when it changes: Match applies controls.cfg after the
+HUD's _ready, so a tag set at _ready showed the default key (the tooltips on main had that bug).
+With nothing movable selected, a structure, the card is the stop slot alone; showing the third
+row's spacers there would put Stop in the top left of a two-row card. A train is not movable to
+the card either (it runs on rails), so with only trains selected the fleet menu hides its second
+row of spacers and its buttons sit on row 2 under Stop, not on row 3 under two empty rows. The
+fleet status is one slot wide in the grid and its text runs over the next slot (a 160 px cell
+would have made its column 160 px), and it grows upwards from its slot: a train's line of four
+lines or more ran below the card and off a 720 px screen. unit_generic and structure_generic
+draw nothing in today's data: a unit with a "base" inherits the base's icon, so every entry has
+a PNG, and they are the fallback for a unit with none.
+
+One change outside the menus. At 1280 x 720 the constructor's wider menu left the auto-expand
+switch (Guide.gd) no room beside the unit card, and it was laid over the card's text. When the
+switch would reach into the BuildingInfo card it now sits above the menu at the right edge
+instead; at 1920 x 1080 it stays left of the menu as before.
+
+Evidence: tools/harness/scenarios/hud-card.json passes 22/22 (8 orders, 14 checks) at a true
+1920 x 1080 (12.1 game seconds in 53.5 real seconds) and at a true 1280 x 720 (27.4 real
+seconds), with six shots: card-orders, card-return-fire, card-hold-fire (Hold fire, Holding
+lit), card-build (18 slots in three rows of 6, nothing over the unit card), card-fleet (orders
+on rows 1 and 2, Recycle and "4 vehicles selected" on row 3) and card-cancel-build (one slot,
+crate and X, Cancel build, no key). Its checks read the card, not only the selection: Patrol
+base is the fifth slot with B, the captions say Fire at will, Hold position, Return fire, Hold
+fire and Holding in turn, Hold position is lit only while held and its caption fits its slot,
+the build menu has 6 columns and 18 slots, the fleet buttons sit below the order rows, and the
+site's slot says Cancel build with no key. The same json run on main from /home/claude/ironbound
+passes 13/22: the 8 card checks fail there (main's slots have no caption or key nodes, its
+build menu is 4 wide), and so does no_errors, with 69 errors from that checkout's import cache
+(alert_attack.svg and the new hauler, constructor and militia models missing from
+.godot/imported), not from code. Main's shots show the text card with an empty top row and the
+X alone in its corner, the 4 x 4 build menu without Trading post and Flak tower, and for the
+site a wide empty card with an X squeezed to a sliver at its right edge. A probe at 1280 x 720
+with a train selected: the fleet card is 268 x 132, Stop on row 1 and Recycle, Auto line and
+the status on row 2; a five-line status grows up to 621..708 inside the card (ends at 715).
+CommandChecks at 1280 x 720: 38 PASS and "command checks: 0 failure(s)", including "the Patrol
+base button is in the unit menu", "clicking it sends the units on the base loop" and "X stops
+them". PlaytestChecks: 20 PASS, 0 failure(s), "worker menu is 4 x 80 px wide or more (is
+500)". TooltipsCheck: 76 PASS, all checks passed, "every visible HUD button has a tooltip" in
+both shots and 21 menu cards complete. BuildingInfoCheck: 23 PASS, 0 failure(s), the site card
+beside the Cancel build slot. smoke 10/10 and hud-alert 3/3 still pass, the data validator
+reports 0 errors and 0 warnings, and gdformat and gdlint are clean.
+
+Known and left for later. In a 64 px slot the long structure names end in an ellipsis
+(Anti-ground..., Command c..., Vehicle fact..., Aircraft fac...) and the 9 px commodity marks
+are mostly told apart by the colour of their numbers; the hover card has the full name and
+cost. The first-match tutorial's constructor does not list Foundry or SAM site; giving
+first_match.json a faction is a data change for its own PR. With orders only, the card's third
+row is an empty dark strip, as the first row was on main; PR 4's bar gives the card its frame.
+The icons are 40 / 32 px as section 1 of the spec sets, which leaves about 16 px between icon
+and caption in a full slot; 44 / 35 would fill it if play says the icons are small. The fleet
+menu's Recycle and line buttons are still words, not icons.
+
+## 2026-10-18: god mode stays out of release builds
+
+Debug god mode shipped switched on: FeatureFlags.tscn sets god_mode = true, so in every
+build F2 showed the GodModeHUD (fog toggle, visible player, time scale) and Delete set hp
+to 0 on every selected unit. A player can select an enemy unit with a click, so in the
+downloads and the public web build Delete killed enemy units. Globals._toggle_god_mode now
+also needs OS.is_debug_build(), which Godot documents as false on a release export
+template, and the makefile, tools/release/export.sh and the web build all use
+--export-release. Release and web players no longer get the debug panel or
+Delete-to-kill, and F2 and Delete are bound to nothing else by default, so both keys
+simply do nothing there. Running from the editor or the editor binary (the play harness,
+the tests) and a debug export keep F2 as before, which is why the flag stays true.
+Evidence: a scratch harness scenario in a debug run turned god mode on with the
+toggle_god_mode action, showed the HUD, killed a click-selected enemy tank with Delete
+(Delete did nothing before F2), and turned it off again with the real F2 key.
+
+## 2026-10-18: a cannon shot draws one muzzle effect, ShotEffects'
+
+CannonShell.tscn still carried the upstream OriginParticles, a GPUParticles3D of 32 particles
+under a DetachTransform node, which every shot emitted at the muzzle next to ShotEffects'
+flash, smoke and recoil, and a Timer kept the shell node alive for the particles' one second
+lifetime. The spray was a cost, not a second visible effect: each particle was a 0.05 m quad
+scaled by 0.05, 2.5 mm across, 0.18 px at the default zoom. With the game paused on a tank
+shot and the particles hidden for one frame, no pixel changed at the default zoom, 1 at a 6 m
+view and 17 faint specks at a 2 m view. The particles, their scene-local materials and the
+Timer are gone. The shell still deals its damage in _ready, still calls ShotEffects.cannon_shot
+a physics frame later with the same transform, and then frees itself; nothing ShotEffects draws
+is parented to it.
+
+Evidence: a scratch probe in a fight of one tank against three raiders counted, per shot, one
+GPUParticles3D plus ShotEffects' 2 flash quads, 1 smoke and 1 tracer before (46 of 50 shots,
+the shell living 60 to 65 physics frames) and no GPUParticles3D with the same quads after (45
+of 48, the shell living 1 frame). In counters-triangle, two runs each side, every fight takes
+the same number of shots with the same damage per hit, and the kill times differ between two
+runs of the same code as much as between before and after. smoke 10/10, counters-triangle
+33/33, hud-health-bars 4/4 and die-once 3/3 pass, the validator reports 0 errors and 0
+warnings, gdformat and gdlint are clean. Screenshots: game/direction/feel/muzzle-flash.
+
+Known and left for later. The killing shot draws no muzzle effect, before as after: the target
+is freed in the frame the damage lands, so a physics frame later the shell finds it gone and
+skips cannon_shot (3 of 50 shots in the probe; before, only the invisible particles fired).
+And the tank's flash and smoke are drawn inside its hull, at the unit's own origin: the shell
+looks the marker up with find_child("ProjectileOrigin"), whose default owned = true skips
+nodes added at run time (the data model, UnitMotion's pivot), and UnitMotion and TurretAim have
+moved the marker under them, onto the barrel tip (1.35 m ahead, 0.79 m up). The lookup finds
+nothing, so the shot leaves from the unit's 0, 0, 0 and only the tracer shows, coming out of
+the lower hull. Rocket.gd makes the same lookup.
+
+## 2026-10-18: upstream files nothing uses are deleted
+
+The repo and the exported game carried upstream leftovers that no scene, script, data
+file, test or tool loads. 237 files (1.58 MB) are gone: 114 of the 153 Kenney Space Kit
+models in assets/models/kenney-spacekit/ with their .import files, the unused
+source/match/players/Player.tscn and source/utils/IconOverview.tscn, the icon render booth
+(source/utils/IconRenderBooth.tscn and IconRenderBooth.gd, a dev scene that wrote PNGs into
+assets/ui/icons/) and the three files only the booth used: resource_a.material.tres and
+resource_b.material.tres in source/match/resources/materials/ and
+assets/ui/icons/texture_01.png. The 39 Kenney models that unit, structure and deposit scenes
+still use stay, and so does their line in ASSET_CREDITS.md. The Ironbound models nothing
+uses yet (research_lab, tanker_truck, ore_coal, rifleman, timber_stack) stay for the art
+work. Method: for each candidate, every tracked text file was searched for its res:// path,
+its file name and its uid (from its .uid file, its .import file or its scene header), and
+the search was repeated with the deleted files left out until nothing new fell out. The
+string-built paths (StartPicker, GameData, DepositLook, MatchConstants) and the folder scans
+in source/ and tests/ were read by hand; none reach these files. Evidence: a clean
+re-import, the validator at 0 errors and 0 warnings, every scene, resource, model and
+texture in the project loading headless (563 loaded, 0 failed), and smoke,
+factions-foundry, tutorial-first-match, ending, UnitModelCompare, ArtGallery and
+PlacementSurvey (every map) passing with no missing-file errors.
+
+## 2026-10-19: one bottom bar: the minimap, the selected unit's card and the command card in one strip
+One bottom bar is painted under the kept minimap and UnitMenus containers. Why: Match.tscn binds
+a ViewportTexture to HUD/MarginContainer/Minimap/MarginContainer/MinimapViewport and five
+read-only tests/manual scenes override that subtree by path and child index, so the bar cannot
+own the minimap node. HUD/BottomBar is the HUD's first child (it paints under everything) and
+spans the screen's width, 264 px tall at 900 px of height and above and 216 below: three slot
+rows of HudStyle.slot_px, the gaps between them and an 8 px margin above and below, so its top
+is at 816 at 1080p, 636 at 900p and 504 at 720p. BottomBar.gd applies the compact preset at
+_ready (Match.tscn holds the full one), sizes the minimap holder to bar x bar with 8 px margins
+and gives UnitMenus a fixed 332 x 248 or 268 x 200 (the constructor's 6-column menu widens it to
+500 or 404), and answers BottomBar.of(tree) and top() for the panels that keep above it: CityHud
+clamps its bottom to the bar's top minus 6 (and to the auto-expand switch's top minus 6 while
+the switch shows under it) and drops its lookups of UnitMenus and the HUD ProductionQueue, and
+Guide keeps the auto-expand panel above the alert row over the bar and puts the auto-expand
+switch above the bar at the right edge. The bar keeps mouse_filter STOP, so a click on it goes
+nowhere and a right click there never orders a move. BottomBar.gd sets STOP on the minimap
+holder and the command card holder too: a container lets clicks through by default, their 8 px
+margins lie on the bar, and a review probe at 720p found a left click there deselecting and a
+right click ordering a move. The look is two new theme variations from tools/ui/BuildTheme.gd:
+BottomBar (BG at 0.88 so the terrain reads through, square, a 1 px LINE along the top and an
+upward shadow, like the top strip) and MinimapFrame (SURFACE_2 with a 1 px LINE border, radius
+4); UnitMenus is a ClearPanel with no inner margins.
+
+The middle cell, HUD/BottomBar/SelectionPanel, runs from the minimap holder's right edge to 8 px
+left of the command card, so the constructor's wider menu narrows it (risk 2b of the spec: the
+cell's right edge moves 168 px at 1080p and 136 px at 720p when a constructor is selected). It
+holds Single (BuildingInfo's card) and Groups (empty until the next slice). BuildingInfo moves
+its BuildingCard into Single when that path exists and keeps today's floating card otherwise.
+Every match scene today, the tests' and tests/manual's included, inherits Match.tscn and has the
+bar, so the floating card, Guide's placement for no bar and AlertBanner's look-up of
+BuildingInfo/BuildingCard (which PR 2's entry expected to stop by itself) do not run; they are
+kept because the spec asks for the fallback, for a scene without the bar. In the bar the card
+has two columns. The left one (300 px, 260 compact) is the unit's icon on a slot-sized tile that
+names it on hover, the name, the role, the rank in its colour with the chevrons on the tile's
+corner for a veteran, a health bar coloured by thirds with "hp / max" in a 96 px label (the
+spec's 72 px is narrower than the command centre's "180 / 180", so the bar changed length from
+unit to unit), and for a producer the QUEUE caption over the ProductionQueue, which moved here
+from above the command card. The right one scrolls and takes what the cell leaves, up to 640 px,
+so a line never runs across the whole bar at 1080p. It has no floor: the spec's 200 px floor
+made the constructor's card wider than its cell at 1024 x 768 (a 388 px cell, a 476 px card), so
+the bar grew past both screen edges and the card slid under the minimap and the build menu.
+SelectionPanel also lays the cell out again when the window or the UI scale changes, floors the
+column's width, and changes the column before the margins when the cell narrows and after them
+when it widens. A probe at 1366 x 768 with the scale raised to 1.25 mid-match found the bar
+still 1366 px wide in a 1093 px view, because the card's width held the bar, so the panel was
+never resized and never told; and on reselecting, the new margins and the old column added up to
+more than the screen for a moment, after which the bar stayed too wide. Health left the status
+lines (BuildingInfoText.status_lines takes with_hp, false for the card) because the bar shows
+it. The fold button is gone: folding shrank a floating card, and in a fixed bar it did nothing.
+ProductionQueue.tscn lost its five placeholder ColorRects; its elements are HudStyle.queue_px
+(56 or 44 px), so five fit in the left column.
+
+Where it differs from the spec, and why. The self-critique pass changed three things. The live
+state (status, cargo, the trucks working for a building) comes before the explanation, not
+after: at 720p the command centre's explanation alone is seven lines and pushed its status and
+haulers below the scroll fold. The explanation is in the muted tone, so the facts (armour,
+needs, makes) and the live lines read first. The QUEUE caption and the queue show only while
+something is queued, not over an idle producer, and they appear as soon as a unit is queued (the
+queue's element list signals it), not at the card's next 0.25 s refresh. So
+tests/hud/BuildingInfoCheck's 5-factory-card, which queues nothing, has no queue row; hud-bar's
+e-factory-queue shows it. Other differences: the queue lists the unit in production first, on
+the left (main put each new element at the front of a right-aligned row, so the newest sat on
+the left and the one in production at the right end, which reads backwards in a left-aligned
+row); its elements are 4 px apart, the spacing the spec's 296 px sum assumes. MinimapTextureRect
+gets expand_mode IGNORE_SIZE: the minimap viewport is 2 px per metre (200 px on the 100 m maps,
+400 on Four Oases), and a texture rect that keeps its texture's size would hold the compact
+panel at 210 px or more and push the minimap out of the 216 px bar. It is a property of an
+existing node, so the subtree's paths and child order do not change. SelectionPanel reads the
+cell's width from the screen, not from its own size: read from its own size, a text column set
+for a wide cell (the command centre's at 720p) would widen the bar when a constructor's narrower
+cell came next, and every later pass would read the wider bar and keep it. BottomBar sets
+UnitMenus' minimum width as well as its height, from a new HudStyle.card_width. The icon tile's
+disabled look is its normal slot look, not the dimmed look of an order you cannot give. A
+rival's role line wraps instead of widening the column. The card's text column is a
+ScrollContainer named Details and its left column Summary, the names SelectionPanel looks for.
+The spec's line numbers are from main b8f10e8; since then PR 3 made the 6-column card 500 px
+wide (so the cell is 264..1404 at 1920, not 264..1412), the 4-column card 332 x 248 and 268 x
+200, removed BackgroundGrid and the GenericMenu paddings and had Guide._layout move the switch
+above the menu at 720p, which this PR replaces with the spec's rule at every size.
+ironbound.tres differs from main by the two variations only, but the generator numbers its
+sub-resources in order, so inserting two renumbers the ids after them (200 lines in, 168 out;
+the same resources with the ids resolved).
+
+Evidence: tools/harness/scenarios/hud-bar.json passes 24/24 (7 orders, 17 checks) at a true 1920
+x 1080 (10.5 game seconds in 51.5 real seconds), at a true 1280 x 720 (27.7 real seconds) and at
+1024 x 768 (25.7 real seconds), with five shots: a-nothing-selected, b-constructor,
+c-three-tanks, d-command-centre and e-factory-queue. Its checks read the layout: the bar's top
+(816, 504, 552), the bar and both holders stopping clicks, the minimap inside the bar's left
+cell, the card in SelectionPanel/Single for the constructor and the command centre, the build
+menu and the order card inside the bar right of the middle cell, the bar from screen edge to
+screen edge beside the constructor's menu, the auto-expand switch above the bar and clear of the
+city panel, the card clear of the minimap and the command card, no queue row while the command
+centre has nothing queued, and the factory's two queued tanks inside the card. The json as first
+written (20 entries, before the queue-row check) run on main from /home/claude/ironbound passes
+11/20 at both sizes: the 8 layout checks fail (main has no bar), and so does no_errors, with 78
+errors from that checkout's import cache, not from code. The critique's first pass passed its 20
+checks too; its d-command-centre at 720p shows the status and the haulers below the scroll fold
+and a QUEUE caption over an empty row. Two scratch probes from the review (not committed) cover
+the review's fixes. The click probe selects the three tanks and sends a right click and then a
+left click to nine points of the bar (its empty middle, the minimap holder's top, right, left
+and bottom margins, the command card's empty third row, that holder's right and bottom margins,
+and the gap between two of its slots), then cancels a queued tank from the card and releases a
+box drag deep in the bar: 28/28 checks ok at 1280 x 720 and at 1920 x 1080, no click there
+orders a move or drops the selection, and the box still selects. The layout probe at 1366 x 768
+passes 34/34: the bar spans the screen exactly for a constructor, a rival command centre and a
+factory with five queued, every hp label is 96 px and every health bar 156 px; with the trade
+panel open and a constructor selected the city panel ends at y 443 and the auto-expand switch
+starts at 449; and after the scale goes to 1.25 mid-match the bar is 1092.8 px wide in a 1092.8
+px view, for the constructor (a 180 px text column) and the factory. SelectionChecks at 1280 x
+720, the gate of risk 2a: 15 PASS and "selection checks: 0 failure(s)", before and after the
+critique fixes and again after the review fixes; the box over the tanks and the base ends at
+about y 492, above the bar's top at 504, and its release lands on the battlefield, so the
+RectangularSelection3D fallback was not needed. BuildingInfoCheck at 1280 x 720: 23 PASS, 0
+failure(s). UiShots --only=hud: 0 problem(s) at 1280 x 720 and at 1920 x 1080. PlaytestChecks:
+20 PASS, 0 failure(s), "worker menu is 4 x 80 px wide or more (is 500)". CameraChecks: 12 PASS,
+0 failure(s). TooltipsCheck: 76 PASS, all checks passed. Playthrough (plain_and_simple, balanced
+and raider, 8 minutes, at 1920 x 1080): time limit after 494 s, exit 0, 0 errors, and no "sticks
+out" or "overlaps" finding; its notes are two missed clicks at 27 s on a constructor above the
+bar (the run before the review had one too) and no free copper deposit for the menu-placed mine
+at 39 s, a search in the world that does not involve the HUD. smoke 10/10, hud-alert 3/3 and
+hud-card 22/22 still pass, the data validator reports 0 errors and 0 warnings, and gdformat and
+gdlint are clean on source/. A scratch run at 1280 x 720 (not committed) with a tank promoted to
+Elite and hurt to 30 % passes 7/7: the card shows ELITE in the rank's colour, the chevrons on
+the tile's corner and a red health bar at 13 / 39.
+
+CommandChecks at 1280 x 720 fails 2 of 38 checks (36 PASS, "command checks: 2 failure(s)", the
+same two after the review fixes), where PR 3 had 38 PASS: "F + left-drag gives each unit a fight
+order to its spot on the line" and "they form the fighting line". CommandChecks._check_fight
+keeps the camera at size 28 on a point 10 m short of the fight goal and draws the line 4 m past
+the goal: at 720p the click lands at y 489 and both ends of the line at y 540, inside the bar
+(top 504). The bar takes that press, as it should for a click on it. A scratch scenario at 1280
+x 720 (not committed) passes 17/17: after F, a left-drag across the bar at y 600 gives no order
+and the fight mode still waits, and the same drag at y 430 gives every tank a fight order. Tests
+are read-only without Destin's approval. Framing the camera on the goal before
+the line (camera_on(goal, 28.0) and ten frames before the F press in _check_fight) puts both
+ends at y 411: a scratch subclass of CommandChecks with that change and only the fight check
+(not committed) passes 8 PASS, 0 failure(s), with the line's ends at (485.7, 411.4) and (794.3,
+411.4). Destin approved that two-line change to the test, and this PR carries it.
+
+Known and left for later. With nothing selected everything right of the minimap is empty bar
+(about 1650 x 248 px at 1080p, 1050 x 200 at 720p), and with several units selected the middle
+stays empty until the Groups slice; these are the shots a-nothing-selected and c-three-tanks for
+Destin to judge (risk 1); BG 0.88 is kept and no frame art is added. The auto-expand switch now
+sits above the bar at the right edge at every size, over the battlefield (at 1080p main had it
+in the bottom band beside the menu). With orders only the command card's third row is empty bar.
+At 720p the command centre's card scrolls: its needs and makes lines are below the fold. CityHud
+now always stops above the bar, where on main it reached the screen's bottom while nothing was
+selected, so at 720p the open trade panel scrolls to reach Propose trade (UiShots
+hud-city-trade). A construction site's health bar starts red, because a site's hp grows as it is
+built; its status line says how far along it is. With all the left panels open at 720p the
+tutorial runs down over the minimap, as it did on main. Below about 920 px of width after the UI
+scale (1024 x 768 at 1.15 or more, 1280 x 720 at 1.4 or more, 1366 x 768 at 1.5), the minimap's
+216 px cell, the card's 260 px column with its gap and the constructor's 420 px menu cell do not
+fit side by side, so the bar grows past both screen edges: the review's layout probe at 1024 x
+768 with the scale at 1.25 (an 819 px view) has the bar at x -50 and 919 px wide, and the
+constructor's card, its text column down to 7 px, runs 42 px under the minimap and 42 px under
+the build menu. The 4-column card fits down to about 783 px. A narrower left column at that
+size, or a card that clips, is for Destin to choose.
+
 ## 2026-10-19: the helper saves for its faction's main battle unit
 
 The helper's army bought the costliest unit the bank covered above the keep

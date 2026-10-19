@@ -281,6 +281,21 @@ func _variations(display, mono, bold):
 	bar.shadow_color = Color(0, 0, 0, 0.35)
 	bar.shadow_size = 6
 	theme.set_stylebox("panel", "TopBar", bar)
+	# the HUD's bottom bar under the minimap, the selection and the command card: square,
+	# flush with the screen, a line along its top and see-through enough for the terrain
+	theme.add_type("BottomBar")
+	theme.set_type_variation("BottomBar", "PanelContainer")
+	var bottom = _box(Color(BG, 0.88), Color.TRANSPARENT, 0, 0)
+	bottom.border_color = LINE
+	bottom.border_width_top = 1
+	bottom.shadow_color = Color(0, 0, 0, 0.35)
+	bottom.shadow_size = 8
+	bottom.shadow_offset = Vector2(0, -4)
+	theme.set_stylebox("panel", "BottomBar", bottom)
+	# the minimap's frame in the bottom bar
+	theme.add_type("MinimapFrame")
+	theme.set_type_variation("MinimapFrame", "PanelContainer")
+	theme.set_stylebox("panel", "MinimapFrame", _box(SURFACE_2, LINE, 1, 4))
 	# panels with no frame (the build grid holder)
 	theme.add_type("ClearPanel")
 	theme.set_type_variation("ClearPanel", "PanelContainer")
