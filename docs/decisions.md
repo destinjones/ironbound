@@ -1435,8 +1435,12 @@ no room for. The pick lives in HelperArmyPick.gd because Helper.gd was at 999 of
 
 The scout: the save held iron at 12 to 14, above the scout buggy's floor (iron 12 with the
 keep) and below the tank's, so in review the first version rebuilt its scout within half a
-minute of each loss and built 13 in the probe where main built 3. The helper now waits 90 s
-(Helper.SCOUT_REPLACE_S) after losing a scout before it orders another. Main's check for a
+minute of each loss and built 13 in the probe where main built 3. While the army saves, the
+helper now waits 90 s (Helper.SCOUT_REPLACE_S) after losing a scout before it orders another,
+and the panel counts the wait down ("Scouting: the next scout buggy in 42 s, after the army's
+save"). With the army full or not saving it replaces the scout at once, as on main: in
+review a hold that always applied left HelperChecks, whose army is full, without a scout for
+its hold-fire check whenever the scout died in the last 90 s before it. Main's check for a
 lost scout never fired: in Godot 4.7 a freed object compares equal to null, so
 `_scout != null and not is_instance_valid(_scout)` is false once the scout is freed. It now
 tests `typeof(_scout) == TYPE_OBJECT`. A Foundry helper still never scouts: the Foundry's scout

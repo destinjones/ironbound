@@ -789,7 +789,9 @@ func _manage_scout():
 			var cost = Constants.Match.Units.PRODUCTION_COSTS.get(scene, {})
 			if spare(cost) and _produce_somewhere(scene, func(unit): return unit in _factories()):
 				_scout_pending = true
-		_status["scout"] = tr("HELPER_STATUS_SCOUT_WAITING")
+		var key = "HELPER_STATUS_SCOUT_WAITING" if waited else "HELPER_STATUS_SCOUT_NEXT"
+		var left = ceili(maxf(_scout_lost_s + SCOUT_REPLACE_S - _clock_s, 0.0))  # -INF: none lost
+		_status["scout"] = tr(key).format([left])
 		return
 	_status["scout"] = tr("HELPER_STATUS_SCOUT").format(
 		[int(round(_scout_map.seen_share(_match().map.size) * 100.0))]

@@ -120,6 +120,7 @@ HELPER_STATUS_ARMY_NO_FACTORY,"Army: {0} of {1}, waiting for a vehicle factory"
 HELPER_ARMY_SAVING,Saving for a {0}.
 HELPER_STATUS_SCOUT,Scouting: {0}% of the map seen
 HELPER_STATUS_SCOUT_WAITING,Scouting: waiting for a scout buggy (needs a vehicle factory)
+HELPER_STATUS_SCOUT_NEXT,"Scouting: the next scout buggy in {0} s, after the army's save"
 HELPER_STATUS_SCOUT_OFF,Scouting: off
 HELPER_KEEP,Keep in bank:
 HELPER_KEEP_TOOLTIP,"The helper (and auto-expand while the helper is on) never spends a commodity below this amount."
