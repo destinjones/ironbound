@@ -1,4 +1,4 @@
-[gd_scene load_steps=50 format=3 uid="uid://camns8fqod8d4"]
+[gd_scene load_steps=51 format=3 uid="uid://camns8fqod8d4"]
 
 [ext_resource type="Script" path="res://source/match/environment/Soundscape.gd" id="36_sound"]
 [ext_resource type="Script" path="res://source/match/environment/RoadVisuals.gd" id="35_roads"]
@@ -15,7 +15,6 @@
 [ext_resource type="PackedScene" uid="uid://cwefaix6rye6k" path="res://source/match/hud/ResourcesBar.tscn" id="12_r13sk"]
 [ext_resource type="PackedScene" uid="uid://cwcedr6jj7yty" path="res://source/match/hud/UnitMenus.tscn" id="13_6cypl"]
 [ext_resource type="Shader" path="res://source/shaders/3d/simple_fog_of_war.gdshader" id="13_jo8b7"]
-[ext_resource type="PackedScene" uid="uid://nnsih72ih7qr" path="res://source/match/hud/ProductionQueue.tscn" id="13_qv3xn"]
 [ext_resource type="PackedScene" uid="uid://dk7sa3fkyxks5" path="res://source/generic-scenes-and-nodes/control/RectangularSelection2D.tscn" id="16_ccb0o"]
 [ext_resource type="Script" path="res://source/match/AirNavigation.gd" id="16_ravsv"]
 [ext_resource type="Script" path="res://source/match/hud/Resources.gd" id="16_vjwpn"]
@@ -35,6 +34,8 @@
 [ext_resource type="PackedScene" path="res://source/match/environment/Atmosphere.tscn" id="34_atmo"]
 [ext_resource type="Script" path="res://source/match/hud/ControlGroupBar.gd" id="35_groupbar"]
 [ext_resource type="Script" path="res://source/match/handlers/CursorHandler.gd" id="36_cursor"]
+[ext_resource type="Script" path="res://source/match/hud/BottomBar.gd" id="37_bottombar"]
+[ext_resource type="Script" path="res://source/match/hud/SelectionPanel.gd" id="38_selection"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_ysb0j"]
 sky_top_color = Color(0.3, 0.5, 0.78, 1)
@@ -304,18 +305,52 @@ navigation_mesh = SubResource("NavigationMesh_exfwj")
 
 [node name="HUD" type="CanvasLayer" parent="."]
 
+[node name="BottomBar" type="PanelContainer" parent="HUD"]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -264.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_type_variation = &"BottomBar"
+script = ExtResource("37_bottombar")
+
+[node name="SelectionPanel" type="MarginContainer" parent="HUD/BottomBar"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 264
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 348
+theme_override_constants/margin_bottom = 8
+script = ExtResource("38_selection")
+
+[node name="Single" type="HBoxContainer" parent="HUD/BottomBar/SelectionPanel"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="Groups" type="VBoxContainer" parent="HUD/BottomBar/SelectionPanel"]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
 [node name="MarginContainer" type="MarginContainer" parent="HUD"]
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_top = -215.0
-offset_right = 215.0
+offset_top = -264.0
+offset_right = 264.0
 grow_vertical = 0
-theme_override_constants/margin_left = 5
-theme_override_constants/margin_bottom = 5
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
 
 [node name="Minimap" type="PanelContainer" parent="HUD/MarginContainer"]
 layout_mode = 2
+theme_type_variation = &"MinimapFrame"
 script = ExtResource("17_0bfte")
 
 [node name="MarginContainer" type="MarginContainer" parent="HUD/MarginContainer/Minimap"]
@@ -380,6 +415,7 @@ antialiased = true
 [node name="MinimapTextureRect" type="TextureRect" parent="HUD/MarginContainer/Minimap/MarginContainer"]
 layout_mode = 2
 texture = SubResource("ViewportTexture_8q44e")
+expand_mode = 1
 stretch_mode = 5
 
 [node name="MarginContainer2" type="MarginContainer" parent="HUD"]
@@ -427,17 +463,15 @@ offset_left = -40.0
 offset_top = -40.0
 grow_horizontal = 0
 grow_vertical = 0
-theme_override_constants/margin_right = 5
-theme_override_constants/margin_bottom = 5
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
 
 [node name="VBoxContainer" type="VBoxContainer" parent="HUD/MarginContainer3"]
 layout_mode = 2
-theme_override_constants/separation = 5
-
-[node name="ProductionQueue" parent="HUD/MarginContainer3/VBoxContainer" instance=ExtResource("13_qv3xn")]
-layout_mode = 2
+theme_override_constants/separation = 0
 
 [node name="UnitMenus" parent="HUD/MarginContainer3/VBoxContainer" instance=ExtResource("13_6cypl")]
+custom_minimum_size = Vector2(332, 248)
 layout_mode = 2
 size_flags_horizontal = 8
 
