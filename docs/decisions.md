@@ -1199,3 +1199,25 @@ nodes added at run time (the data model, UnitMotion's pivot), and UnitMotion and
 moved the marker under them, onto the barrel tip (1.35 m ahead, 0.79 m up). The lookup finds
 nothing, so the shot leaves from the unit's 0, 0, 0 and only the tracer shows, coming out of
 the lower hull. Rocket.gd makes the same lookup.
+
+## 2026-10-18: upstream files nothing uses are deleted
+
+The repo and the exported game carried upstream leftovers that no scene, script, data
+file, test or tool loads. 237 files (1.58 MB) are gone: 114 of the 153 Kenney Space Kit
+models in assets/models/kenney-spacekit/ with their .import files, the unused
+source/match/players/Player.tscn and source/utils/IconOverview.tscn, the icon render booth
+(source/utils/IconRenderBooth.tscn and IconRenderBooth.gd, a dev scene that wrote PNGs into
+assets/ui/icons/) and the three files only the booth used: resource_a.material.tres and
+resource_b.material.tres in source/match/resources/materials/ and
+assets/ui/icons/texture_01.png. The 39 Kenney models that unit, structure and deposit scenes
+still use stay, and so does their line in ASSET_CREDITS.md. The Ironbound models nothing
+uses yet (research_lab, tanker_truck, ore_coal, rifleman, timber_stack) stay for the art
+work. Method: for each candidate, every tracked text file was searched for its res:// path,
+its file name and its uid (from its .uid file, its .import file or its scene header), and
+the search was repeated with the deleted files left out until nothing new fell out. The
+string-built paths (StartPicker, GameData, DepositLook, MatchConstants) and the folder scans
+in source/ and tests/ were read by hand; none reach these files. Evidence: a clean
+re-import, the validator at 0 errors and 0 warnings, every scene, resource, model and
+texture in the project loading headless (563 loaded, 0 failed), and smoke,
+factions-foundry, tutorial-first-match, ending, UnitModelCompare, ArtGallery and
+PlacementSurvey (every map) passing with no missing-file errors.
