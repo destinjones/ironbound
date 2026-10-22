@@ -1534,3 +1534,51 @@ CapsChecks 41 PASS and 0 failures, the validator 0 errors and 0 warnings. Helper
 full runs: 20 PASS and 2 failures, then 23 PASS and 4; "the scout never attacks an enemy tank
 next to it at war" passes in both, and every failure is a constructor guard check that fails
 on main too.
+
+## 2026-10-19: shots leave from the muzzle marker, and the killing shot is drawn
+
+The shells and rockets looked their marker up with find_child("ProjectileOrigin"), whose
+default owned = true skips nodes added at run time (UnitMotion's MotionPivot, the data model)
+and everything under them, which is where UnitMotion and TurretAim keep the marker. So every
+flash, smoke puff, tracer and rocket started at the unit's own origin, on the ground; only the
+bunker, gun_nest, flak_tower and sam_site, whose marker stays in their scene, found theirs.
+ShotEffects.muzzle() now looks it up with owned = false for both projectiles and keeps it in
+the shooter's "_muzzle" meta.
+
+The killing shot drew nothing: the shell draws a physics frame after its damage, and by then
+the target is freed. A killing shot is now drawn at once, in the frame its damage lands, while
+the dying target is still in the tree. Its tracer takes the shortest flight, 0.08 s, to land as
+close to the death explosion as it can, and ends without sparks, which the explosion stands in
+for. Other shots still draw a physics frame later, into the aim point taken before the damage.
+The damage still lands in _ready, in the same frame, for the same amount.
+
+TurretAim put the marker at the middle of the turret's front face, above the barrel: 0.19 m on
+the heavy tank, 0.085 m on the tank. When the frontmost 5 % of the turret mesh is under half
+its width and height, TurretAim now takes it for a barrel, or a pair, and puts the marker at
+its middle, 1.5 barrel heights ahead of its end; a launcher keeps the middle of its face. This
+is a heuristic tuned on the current models, and a muzzle field in data/units would replace it.
+The militia used the tank's marker, scaled down, between its front riflemen; Militia.tscn now
+puts it on the front right rifleman's muzzle.
+
+Still wrong, each for want of a per-unit muzzle in data/units, as one marker in a shared base
+scene serves several models. The AG and AA turrets this change fixes are hidden in both
+factions: the defenses players build are the bunker and flak_tower (Foundry) and the gun_nest
+and sam_site (Syndicate). Their marker sits on the hidden kenney turret of
+AntiGroundTurret.tscn or AntiAirTurret.tscn, about 0.4 m from the centre on the side facing the
+target and 0.5 m up, while their gun is part of one mesh that does not turn. The bunker's and
+flak_tower's flash is inside the model and only the tracer shows. The gun_nest's flash shows
+over its sandbags, and is on its barrel only when the target is in front of the model. The
+sam_site's flash and rocket start beside its rack, at half its height. The marker also turns
+with the idle scan, so the first shot after idling can leave 0.8 m from where the next ones do.
+The rocket_technical, the Syndicate's main tier 2 and tier 3 unit, launches from its hood, not
+the rack on its bed, and the patrol_boat fires from its bow waterline. A rocket already in
+flight when its target dies still vanishes with it (Rocket.gd frees itself on the target's
+tree_exited), so the killing-shot fix covers shells only.
+
+Evidence: a scratch probe of 20 armed units over 25 s counted on HEAD 1382 flash quads, 372
+tracers and 319 rockets starting at the unit's origin, and 0 of 359 killing shots drawn; with
+this change, in two runs, none at the origin and every killing shot drawn (382 and 364), each
+with its flash at the marker. In counters-triangle, every unit that died took the same hits for
+the same damage per hit in two runs on HEAD and three with this change. smoke, die-once and
+hud-health-bars pass, the validator reports 0 errors and 0 warnings, gdformat and gdlint are
+clean, and the stress-40v40 frame time is the same within the noise between runs.
