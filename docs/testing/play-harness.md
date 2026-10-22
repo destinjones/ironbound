@@ -186,6 +186,7 @@ and an `"error"` when something did not work.
 | `end` | `reason` | ends the match |
 | `spawn` | `player`, `unit`, `count`, `spot`, `spacing` | test setup, like the sandbox panel |
 | `give` | `player`, `resources` | test setup |
+| `tier` | `player`, `tier` | test setup: the player's city reaches that tier at once (`City.science` set to each next tier's mark) |
 | `declare_war` | `player`, `on` | diplomacy |
 | `weather` | `set` | the map's atmosphere |
 | `reveal` | | lifts the fog |
