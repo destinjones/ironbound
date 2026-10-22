@@ -31,13 +31,22 @@ static var _live_effects = 0
 static var _resources = null
 
 
-static func cannon_shot(shooter, origin_transform, target):
+static func cannon_shot(shooter, origin_transform, target, aim_point_before_hit = null):
 	"""muzzle flash, smoke, recoil and a tracer that ends in sparks and dust on the target;
-	sized by the shooter's damage so rifles look smaller than tank guns"""
-	var target_position = _aim_point(target)
+	sized by the shooter's damage so rifles look smaller than tank guns. A killed target
+	(dying in this frame, or already gone, then aim_point_before_hit is where it was) gets
+	the shortest tracer and no sparks: its death explosion has started and stands in for them"""
+	var target_alive = is_instance_valid(target) and target.is_inside_tree()
+	if not target_alive and aim_point_before_hit == null:
+		return
+	var killed = not target_alive or target.is_queued_for_deletion()
+	var target_position = aim_point(target) if target_alive else aim_point_before_hit
 	var flight_s = shell_flight_s(origin_transform.origin.distance_to(target_position))
-	# a turret leads a moving target (TurretAim): the tracer flies to where it will be
-	target_position += shooter.get_meta("_aim_velocity", Vector3.ZERO) * flight_s
+	if killed:
+		flight_s = TRACER_MIN_S
+	else:
+		# a turret leads a moving target (TurretAim): the tracer flies to where it will be
+		target_position += shooter.get_meta("_aim_velocity", Vector3.ZERO) * flight_s
 	var size = clampf(0.45 + 0.22 * float(shooter.attack_damage), 0.55, 1.4)
 	var shooter_seen = _is_seen(shooter, origin_transform.origin)
 	var target_seen = _is_seen(target, target_position)
@@ -49,7 +58,7 @@ static func cannon_shot(shooter, origin_transform, target):
 	if not shooter_seen and not target_seen:
 		return
 	_tracer(shooter, origin_transform.origin, target_position, 0.05 * size + 0.02, flight_s)
-	if target_seen:
+	if target_seen and not killed:
 		var timer = shooter.get_tree().create_timer(flight_s, false)
 		timer.timeout.connect(_cannon_impact.bind(target, target_position, size))
 
@@ -133,7 +142,7 @@ static func recoil(shooter, distance):
 
 
 static func _cannon_impact(target, fallback_position, size):
-	var position = _aim_point(target) if is_instance_valid(target) else fallback_position
+	var position = aim_point(target) if is_instance_valid(target) else fallback_position
 	if not _is_seen(target, position):
 		return
 	var anchor = target if is_instance_valid(target) and target.is_inside_tree() else null
@@ -150,13 +159,28 @@ static func _cannon_impact(target, fallback_position, size):
 	hit_flash(target)
 
 
-static func _aim_point(unit):
+static func aim_point(unit):
+	"""where shots at the unit go: the middle of its collision shape"""
 	if not is_instance_valid(unit):
 		return Vector3.ZERO
 	var shape = unit.find_child("CollisionShape3D", false, false)
 	if shape != null:
 		return shape.global_position
 	return unit.global_position + Vector3(0, 0.3, 0)
+
+
+static func muzzle(shooter):
+	"""the global transform shots leave from: the shooter's ProjectileOrigin marker, or the
+	shooter itself when it has none. UnitMotion and TurretAim move the marker under nodes
+	added at run time (the motion pivot, the turret of the data model), which find_child
+	skips by default (owned = true), so it is looked up with owned = false, once"""
+	var marker = shooter.get_meta("_muzzle") if shooter.has_meta("_muzzle") else null
+	if marker == null or not is_instance_valid(marker):
+		marker = shooter.find_child("ProjectileOrigin", true, false)
+		if marker == null:
+			marker = shooter
+		shooter.set_meta("_muzzle", marker)
+	return marker.global_transform
 
 
 static func _is_seen(unit, position):
