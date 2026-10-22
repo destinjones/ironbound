@@ -14,7 +14,8 @@ extends Node
 # - constructor guard: remembers enemies any of the player's units has seen, and keeps
 #   constructors away from them: it pulls them back when enemies come close, reroutes
 #   them around enemies on their way, holds them back when the destination itself is
-#   threatened (resuming the order once it is clear), and tells the player.
+#   threatened (resuming the order once it is clear), and tells the player. A neighbour's
+#   units inside our own yard do not count while we are at peace (HelperYard).
 # It never spends below what the player keeps in the bank per commodity, and it never
 # orders an attack: it does not start wars and leaves pacts and alliances alone.
 # A match whose rules turn AI assist off (MatchRules, "Raw") never lets it switch on.
@@ -32,6 +33,7 @@ const AutoExpand = preload("res://source/match/units/traits/AutoExpand.gd")
 const Constructing = preload("res://source/match/units/actions/Constructing.gd")
 const Moving = preload("res://source/match/units/actions/Moving.gd")
 const Diplomacy = preload("res://source/match/diplomacy/Diplomacy.gd")
+const HelperYard = preload("res://source/match/players/human/HelperYard.gd")
 const GameData = preload("res://source/data-model/GameData.gd")
 const Factions = preload("res://source/data-model/Factions.gd")
 const MatchRules = preload("res://source/data-model/MatchRules.gd")
@@ -92,6 +94,7 @@ var _clock_s = 0.0
 var _since_think_s = THINK_INTERVAL_S
 var _since_guard_s = GUARD_INTERVAL_S
 var _threats = {}  # enemy unit -> {"position", "seen_s", "static"}
+var _yard = []  # our finished command centres' positions, same tick (HelperYard)
 var _guards = {}  # constructor -> {"kind", "action", "resume", "since_s", ...}
 var _path_checked_s = {}  # constructor -> clock of its last path check
 var _scout = null
@@ -278,6 +281,7 @@ func _gather_units():
 			_mine.append(unit)
 		else:
 			_others.append(unit)
+	_yard = HelperYard.centres_of(_mine)
 
 
 func _scan_threats():
@@ -331,19 +335,14 @@ static func _danger_radius_of(enemy):
 
 
 func _threat_near(position, extra):
-	"""[distance, position, enemy, danger radius] of the closest threat whose danger
-	radius plus 'extra' covers 'position', or null"""
-	var spot = position * Vector3(1, 0, 1)
-	var best = null
-	for enemy in _threats:
-		var record = _threats[enemy]
-		var distance = record["position"].distance_to(spot)
-		if distance <= record["danger"] + extra and (best == null or distance < best[0]):
-			best = [distance, record["position"], enemy, record["danger"]]
-	return best
+	"""[distance, position, enemy, danger radius] of the closest threat whose danger radius
+	plus 'extra' covers 'position', or null (HelperYard: our yard is safe from neutrals)"""
+	return HelperYard.threat_near(self, position, extra)
 
 
 func _threats_around(position, extra):
+	"""for the alerts: every known threat around 'position', a neutral's units inside our
+	yard among them, since the one that caused the alert stood outside it"""
 	var spot = position * Vector3(1, 0, 1)
 	var count = 0
 	for enemy in _threats:
