@@ -1,0 +1,17 @@
+{
+  "name": "helper-factory-early",
+  "description": "The helper's vehicle factory goes up early, every time. As helper-never-attacks (plain_and_simple, seed 1, the helper runs the economy and army against a Normal raider while the player does nothing), cut to 4 minutes: the factory must stand by 2:00 and the helper must have ordered a unit by 4:00, with no war started and no attack order. On plain_and_simple the rival city's militia wander through our base at peace, and the helper's constructor guard held every constructor back from the factory site they stood near, so the site stood at 0% for the whole match in some runs.",
+  "map": "plain_and_simple",
+  "seed": 1,
+  "minutes": 4,
+  "speed": 4,
+  "players": [{"type": "human", "helper": true, "faction": ""}, {"type": "ai", "personality": "raider"}],
+  "shots_every": 120,
+  "checks": [
+    {"always": true, "name": "the player's side never starts a war", "expect": "no_war_started_by", "player": "own"},
+    {"always": true, "name": "the helper never gives an attack order", "expect": "helper", "stat": "attack_orders", "max": 0},
+    {"at": 120, "name": "the vehicle factory stands by 2:00", "expect": "built", "units": "own:vehicle_factory", "min": 1},
+    {"at": 240, "name": "the helper ordered a unit by 4:00", "expect": "helper", "stat": "units_ordered", "min": 1},
+    {"end": true, "expect": "no_errors"}
+  ]
+}

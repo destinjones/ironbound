@@ -126,7 +126,7 @@ HELPER_STATUS_SCOUT_OFF,Scouting: off
 HELPER_KEEP,Keep in bank:
 HELPER_KEEP_TOOLTIP,"The helper (and auto-expand while the helper is on) never spends a commodity below this amount."
 HELPER_ARMY,Army size:
-HELPER_ARMY_TOOLTIP,"The helper keeps this many combat units, not counting its scout. They wait at the factory rally point and only fight back; sending them to attack is up to you."
+HELPER_ARMY_TOOLTIP,"The helper keeps this many combat units, not counting its scout or the city's militia. They wait at the factory rally point and only fight back; sending them to attack is up to you."
 HELPER_SCOUT,Scout the map
 HELPER_SCOUT_TOOLTIP,"Keeps one scout buggy driving to the parts of the map nobody has seen lately. It holds fire and turns back from enemies, and what it sees warns your constructors."
 HELPER_ALERT_ON,"Helper on: running the economy, guarding constructors"
