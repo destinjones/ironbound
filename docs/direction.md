@@ -81,11 +81,14 @@ One concern per PR, main stays releasable, every PR carries its evidence.
 2. Done, #100: the AI refills and grows its waves, so matches end.
 3. Done, #103 and #105: the idle army defends the base: units within reach answer a hit
    on our structures or units, instead of standing at the rally point.
-4. Partly done, #102: Economy pace: copper reachable from the start and home extractors
-   inside the grid (done), helper reserves that build an army (open). Target: a tank every
-   20 to 30 s by minute 5. Found while proving 3: in three of four helper-run matches the
-   helper never got a vehicle factory up and had no army when the raider came; the helper
-   must build one early, every time.
+4. In progress, #102 and #123: Economy pace: copper reachable from the start and home
+   extractors inside the grid (done, #102); the helper saves for its faction's main battle
+   unit (done, #123: 9 to 15 tanks by 5:00 where it built 0 and 21 hover skimmers). Target:
+   a tank every 20 to 30 s by minute 5; the longest gap is still 41 to 104 s while
+   auto-expand spends the first iron. Found while proving 3: in three of four helper-run
+   matches the helper never got a vehicle factory up and had no army when the raider came;
+   the helper must build one early, every time (its own PR, in progress), then stop
+   counting the city's militia as its army and keep units that hit what it has seen.
 5. Done, #111: armour and weapon classes (one multiply in Unit.take_damage plus data),
    structures that hold a few tanks, artillery that sees what it shoots. #116 made the
    missile truck the Foundry's rocket corner: its rockets hit ground targets, as its card
