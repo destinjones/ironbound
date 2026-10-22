@@ -7,9 +7,9 @@ extends Node
 #   it orders a freight train when far extractors call for one and recycles trucks
 #   that have had nothing to do for a while (auto-expand builds the storage yards),
 # - army: queues combat units at the player's factories up to the army size the player
-#   set, saving for the faction's main battle unit first (HelperArmyPick); they wait at the
-#   factory's rally point and, like every idle unit, answer a hit nearby (HomeGuard) and
-#   fight back, but are never sent to attack,
+#   set, saving for the faction's main battle unit, or one that hits what it has seen
+#   (HelperArmyPick); they wait at the factory's rally point and, like every idle unit,
+#   answer a hit nearby (HomeGuard) and fight back, but are never sent to attack,
 # - scouting: keeps one scout buggy driving to the least recently seen parts of the map,
 #   holding fire and turning back from enemies,
 # - constructor guard: remembers enemies any of the player's units has seen, and keeps
@@ -306,6 +306,7 @@ func _scan_threats():
 		var position = enemy.global_position_yless
 		if eyes.sees(position):
 			seen[enemy] = true
+			_army_pick.saw(enemy, _clock_s)  # the army's tally of enemy fighters
 			_threats[enemy] = {
 				"position": position,
 				"seen_s": _clock_s,
@@ -697,15 +698,15 @@ func _is_soldier(unit):
 
 
 func _manage_army():
-	var soldiers = _own(_is_soldier).size()
-	var queued = 0
+	var army = _own(_is_soldier).map(func(unit): return unit._scene_path())  # and the queued
+	var soldiers = army.size()
 	for factory in _factories():
 		for element in factory.production_queue.get_elements():
 			var path = element.unit_prototype.resource_path
 			var entry = GameData.unit_by_scene(path)
 			if HelperArmyPick.is_combat_entry(entry) and not _is_scout_scene(path):
-				queued += 1
-	var total = soldiers + queued
+				army.append(path)
+	var total = army.size()
 	if army_target <= 0:
 		_army_pick.reset()
 		_status["army"] = tr("HELPER_STATUS_ARMY_OFF").format([soldiers])
@@ -735,7 +736,7 @@ func _manage_army():
 			break
 		var choice = null
 		if plan[2] > 0:
-			var picked = _army_pick.choose(plan, _clock_s, spare)
+			var picked = _army_pick.choose(plan, _clock_s, spare, army)
 			choice = picked[0]
 			saving_for = picked[1]
 			if choice == null:
@@ -746,13 +747,12 @@ func _manage_army():
 			continue  # an order at another factory this think took the last slots
 		if plan[0].production_queue.produce(load(choice)) != null:
 			total += 1
+			army.append(choice)
 			stats["units_ordered"] += 1
 			if plan[2] > 0:
 				_army_pick.bought(choice, plan)
 	_status["army"] = tr("HELPER_STATUS_ARMY").format([soldiers, total - soldiers, army_target])
-	if saving_for != null:
-		var unit_name = HelperArmyPick.unit_name(saving_for)
-		_status["army"] += ". " + tr("HELPER_ARMY_SAVING").format([unit_name])
+	_status["army"] += _army_pick.note(saving_for)  # the save and the cover pick
 
 
 func _factories():

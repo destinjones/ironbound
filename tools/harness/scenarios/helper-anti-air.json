@@ -1,0 +1,34 @@
+{
+  "name": "helper-anti-air",
+  "description": "The helper keeps units that can hit what it has seen. A Foundry player at tier 2 with 300 of each commodity, a vehicle factory 9 m from the command centre (which stands at 10, 30) and the helper on (army 8, no scouting). Four enemy helicopters and four enemy tanks stand 25 m from the base, outside the city's 16 m threat radius, on hold fire and hold position; a drone of ours beside them is the spotter (it is unarmed, so it takes no hold order and loiters where it was spawned). By hit points the enemy seen is 48 % aircraft, and the heavy tank, the Foundry's tier 2 main unit, cannot hit aircraft. So the helper must buy missile trucks for about half that share of its army (2 of 8) and heavy tanks for the rest, and no hover skimmer. The AI is a Very Easy Foundry turtle in the far corner, as in counters-triangle. Before the cover step the helper built only heavy tanks here. The city's two militia count in the helper's army until the PR that leaves them out (Helper._is_soldier) lands, and they hit aircraft, so this scenario needs that PR too.",
+  "map": "big_arena",
+  "minutes": 3,
+  "speed": 2,
+  "fog": false,
+  "shots_every": 60,
+  "players": [
+    {"type": "human", "faction": "foundry", "start_zone": 0},
+    {"type": "ai", "personality": "turtle", "difficulty": "very_easy", "faction": "foundry", "start_zone": 4}
+  ],
+  "setup": [
+    {"do": "tier", "player": "own", "tier": 2, "expect_ok": true},
+    {"do": "give", "player": "own", "resources": {"timber": 300, "iron": 300, "copper": 300, "oil": 300}, "expect_ok": true},
+    {"do": "spawn", "player": "own", "unit": "vehicle_factory", "spot": [19, 30], "expect_ok": true},
+    {"do": "helper", "on": true, "army": 8, "scouting": false, "expect_ok": true},
+    {"do": "spawn", "player": "p1", "unit": "helicopter", "count": 4, "spot": [7, 55], "spacing": 2.5, "expect_ok": true},
+    {"do": "spawn", "player": "p1", "unit": "tank", "count": 4, "spot": [13, 55], "spacing": 2.5, "expect_ok": true},
+    {"do": "stance", "units": "p1:combat", "near": [10, 55], "radius": 8, "stance": "hold", "expect_ok": true},
+    {"do": "hold_position", "units": "p1:combat", "near": [10, 55], "radius": 8, "on": true, "expect_ok": true},
+    {"do": "spawn", "player": "own", "unit": "drone", "spot": [10, 50], "expect_ok": true},
+    {"do": "declare_war", "player": "p1", "on": "p0", "expect_ok": true}
+  ],
+  "events": [
+    {"at": 1, "do": "camera", "spot": [14, 44]}
+  ],
+  "checks": [
+    {"at": 150, "name": "missile trucks against the aircraft seen: two by 2:30", "expect": "timeline", "kind": "produced", "contains": "p0 (you) produced missile_truck", "min": 2},
+    {"at": 150, "name": "heavy tanks, the main unit, for the rest: four or more by 2:30", "expect": "timeline", "kind": "produced", "contains": "p0 (you) produced heavy_tank", "min": 4},
+    {"at": 150, "name": "no hover skimmer", "expect": "timeline", "kind": "produced", "contains": "p0 (you) produced hover_skimmer", "max": 0},
+    {"end": true, "expect": "no_errors"}
+  ]
+}

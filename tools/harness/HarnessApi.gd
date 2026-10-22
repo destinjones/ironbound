@@ -58,6 +58,7 @@ const COMMANDS = [
 	"key",
 	"option",
 	"give",
+	"tier",
 	"spawn",
 	"declare_war",
 	"weather",
@@ -957,6 +958,19 @@ func _do_give(order):
 		return {"ok": false, "error": "no such player"}
 	player.add_resources(order.get("resources", {}))
 	return {"ok": true, "stock": player.get_stock()}
+
+
+func _do_tier(order):
+	"""test setup only: the player's city reaches that tier at once, as its science would"""
+	var player = _player_for(str(order.get("player", "own")))
+	if player == null or player.city == null:
+		return {"ok": false, "error": "tier needs a player with a city"}
+	var city = player.city
+	var wanted = int(order.get("tier", 2))
+	while city.tier < wanted and city.get_next_tier_science() != null:
+		city.science = city.get_next_tier_science()
+		city._try_reaching_next_tier()
+	return {"ok": player.get_tier() >= wanted, "tier": player.get_tier()}
 
 
 func _do_spawn(order):
