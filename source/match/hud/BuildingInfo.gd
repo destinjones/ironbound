@@ -120,11 +120,19 @@ func _on_unit_died(unit):
 		hovered = null
 	if shown == unit:
 		shown = null
+	# a death is not a selection change, so pick again: when it leaves one of two selected
+	# units, that one's card shows (the dead unit is out of the group by the deferred call)
+	if is_instance_valid(unit) and unit.is_in_group("selected_units"):
+		_on_selection_changed.call_deferred()
 	_refresh()
 
 
 func _on_selection_changed():
-	var selected = get_tree().get_nodes_in_group("selected_units")
+	# a deposit can be selected too (its Selection trait) and is not a unit: no card for it,
+	# and it does not stop the card of the one unit selected with it
+	var selected = get_tree().get_nodes_in_group("selected_units").filter(
+		func(node): return node.is_in_group("units")
+	)
 	shown = selected[0] if selected.size() == 1 else null
 	_refresh()
 

@@ -95,10 +95,13 @@ One concern per PR, main stays releasable, every PR carries its evidence.
    20-minute skirmish above, Hard and Brutal that hit harder, not just fatter.
 7. Done, #109: the ending: a hold with the camera on the last structure, kills and losses,
    Continue.
-8. In progress, slices 1 to 4 of 5 done (#110, health bars by thirds with Alt and an
-   option; #112, the under-attack banner with Space to go there; #118, the command card as
-   a 4 x 3 grid of icons with captions and keys; the next PR, the bottom bar holding the
-   minimap, the selected unit's card and the command card). The HUD: one bottom bar
+8. Done, five slices (#110, health bars by thirds with Alt and an option; #112, the
+   under-attack banner with Space to go there; #118, the command card as a 4 x 3 grid of
+   icons with captions and keys; #122, the bottom bar holding the minimap, the selected
+   unit's card and the command card; the fifth PR, the selection panel for several units,
+   a tile per unit type with its count and each unit's health, the dying ones counted in
+   red, idle units counted under the tiles, a click to keep the type and Shift-click to
+   drop it). The HUD: one bottom bar
    (minimap, selection with counts and health, icon command card), an under-attack banner
    with a jump key, health bars that can stay on.
 9. Done (PR #108): CI runs the smoke harness and the validator, not only the formatter.

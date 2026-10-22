@@ -1380,3 +1380,175 @@ fit side by side, so the bar grows past both screen edges: the review's layout p
 constructor's card, its text column down to 7 px, runs 42 px under the minimap and 42 px under
 the build menu. The 4-column card fits down to about 783 px. A narrower left column at that
 size, or a card that clips, is for Destin to choose.
+
+## 2026-10-19: several units selected show one tile per unit type with its count and each unit's health
+With two or more units selected, the bar's middle cell (HUD/BottomBar/SelectionPanel) shows
+Groups and hides Single; one unit keeps BuildingInfo's card in Single, unchanged, and nothing
+selected hides both, as the spec has it (PR 4 left Single shown and empty). SelectionPanel.gd
+builds Groups in code: the tiles and a totals line under them. Each tile is a Button named
+Type_<data id> (Type_tank, Type_artillery, Type_worker) with the SlotButton look, slot x slot
+(80 px at 900 px of height and above, 64 below), in an HFlowContainer named Tiles, the most
+numerous type first and then by id. It holds the unit's icon, the count in the accent colour at
+the top right, a health strip under the icon and the name along the bottom (HudStyle.caption,
+as on the command card). The strip has one segment per unit coloured by thirds, healthiest
+first, so the red ones gather at the right end. A type with a unit in the red gets a red frame
+(SlotButton's resting and hover looks with the BAD border) and a red count of those units in
+its top left corner, where a command slot carries its key (HudStyle.hotkey_tag), so "how many
+are dying" is a number the eye finds before it reads the strip. The totals line (the HBox named
+Header) says how many units ("14 units"), their hit points together in the muted tone ("370 /
+408 HP") and how many of yours stand idle, in amber and in the same face and size as the unit
+count ("12 idle", hidden at 0). The group key is the data entry's id (GameData.unit_by_scene,
+as ControlGroupBar finds a group's icon), falling back to unit.type, so battle_tank stays apart
+from tank. Only units count: a deposit Shift-clicked into the selection (deposits carry the
+Selection trait) gets no tile and is not in the totals; BuildingInfo shows no card for a
+deposit and keeps the card of the one unit selected with it, and Guide's army-orders hint skips
+it (both read unit.player and threw an error per selection, on main as well, BuildingInfo's
+every 0.25 s while a deposit stayed selected). A click on a tile keeps only that type
+selected (Utils.Match.select_units); a Shift-click drops it (Selection.deselect on each unit).
+The tooltip names the type and the count, says how many are healthy, hurt and critical, and
+says what a click and a Shift-click do. Why: the measured problem is fifteen idle tanks nobody
+noticed (docs/direction.md); a line that counts the idle ones and a strip that shows which are
+dying answer "how many of what, and which are dying" in one row, where a portrait per unit
+(SC2) is twenty identical squares for twenty tanks and overflows the cell at 720p with forty.
+
+The tiles are kept. A refresh groups the selection and compares its [id, count] list with the
+one last drawn; only when it differs does it add the tile of a new type, free the tile of a type
+that left and reorder, so a death changes a number and frees nothing. The order is by count only
+when the player changed the selection (unit_selected or unit_deselected) or a type is new to it;
+between those a death keeps every tile where it is, as Generals and SC2 never reorder a live
+selection, so the tile the eye is on in a fight never moves under the pointer. A strip is
+redrawn only when one of its units crosses a step of 1/30 of its health. Refreshes come every
+0.25 s while Groups shows and once at the end of the frame after unit_selected, unit_deselected
+or the death of a selected unit, however many units changed. When a death leaves one of two
+selected units, BuildingInfo picks that unit again (one line in BuildingInfo._on_unit_died,
+deferred so the dead unit is out of the group by then): its card shows in Single instead of an
+empty middle; BuildingInfo's rule for one unit does not change. The first time two types or more
+show, Guide.show_hint("HINT_SELECTION_TILES") says what a click and a Shift-click do; its manual
+topic is Basics, which gains one sentence on the tiles. Five strings: SELECTION_UNITS,
+SELECTION_HP, SELECTION_IDLE and SELECTION_TILE_TOOLTIP in match.csv (English and Polish) and
+HINT_SELECTION_TILES in guide.csv (English only: guide.csv has no Polish column). The command
+card does not change, as the spec asks: with several of your units selected UnitMenus shows
+GenericMenu, the 4 x 3 orders, for all of them (and FleetMenu with it when every selected unit
+is a truck or a train); the constructor's build menu and a producer's menu need exactly one
+unit, so a second one hides them; with only rival units selected the card hides. The harness's
+click order takes control (a node's name; it clicks the centre of the node's rect), which the
+spec put in PR 1 and PR 1 did not add.
+
+Where it differs from the spec, and why. The self-critique pass (the first shots against
+Generals' and SC2's multi-selection) and the review changed these. The tiles come first and the
+totals line sits under them, where the spec puts the header row first: with the header on top
+the tiles started 26 px below the command card's first row and the one-unit card's icon tile,
+so the bar read as two rhythms and a slot-sized tile hopped 26 px when the selection went from
+one unit to two; now the tiles start at the cell's top (y 512 at 720, 824 at 1080), level with
+the card's rows, and the line ends level with the card's last row. The idle count is a
+NumberLabel at 15 px in WARN, not a MutedLabel at 13: it was the smallest item of the line in a
+different face from the two numbers beside it, and it is the number the line exists for. The
+strip is 8 px tall in an 80 px tile and 7 in a 64 px one (the spec's 6) and spans the tile less
+4 px a side (the spec's 8): at 6 px a segment was a chip the eye had to hunt for. Past the
+segments the strip has room for (more than 24 units at 80 px, 19 at 64) it shows one run per
+colour, as wide as its share of the units, red at the right end and never thinner than 4 px,
+where the spec drew one bar at the mean: in a 28-tank group with one tank dying the mean is
+green and hides it, and at 1 px the run was a hair; two rounded shares can add up to more than
+the strip, so the hurt run gives way and the green one is never negative. The red frame and the
+red count in the corner are additions: in a mixed fight half the tiles carry the frame, so the
+frame alone no longer points, and the count says how many. A count in a 64 px tile is 13 px and
+3 px from the right edge (15 px and 5 px in an 80 px tile): at 15 px two digits ran over the
+icon's corner. Idle is no action, or a WaitingForTargets that is_idle(), and never a unit
+holding position: a tank's resting action is WaitingForTargets and never null, so the spec's
+rule would count no tank as idle; a unit holding position (K) was posted there by the player,
+where a fire stance (L) only says how it fights, so a tank holding fire with no order still
+counts, as HomeGuard sends neither; only your own units count, never a structure. Health is
+floored to steps of 1/30, not snapped to 0.05, so the thirds where the colour changes fall on
+step edges. The name is HudStyle.caption (11 px in an 80 px tile, 10 in a 64 px one, PR 3's
+rule), not 11 px at both sizes. The tiles sit in a ScrollContainer named TileScroll, so more
+types than two rows hold scroll instead of growing the bar. The hint fires the first time two
+types or more show, not the first time Groups shows: with one type a click on its tile changes
+nothing. The hit point sum rounds each unit's hp up, so a unit with 0.4 hp left still counts.
+The spec groups a mixed selection whole; a rival unit still groups, a deposit does not, because
+a deposit has no type and no hit points and the first version threw an error every 0.25 s with
+one selected and kept a broken tile list for the rest of the match. BuildingInfo.gd is outside
+the spec's file list for this PR; its two changes are the death re-pick above and the pick
+among units only. hud-selection.json
+differs from the spec's: with the enemy at [60, 40] the fight changed the counts under the
+checks, so three enemy tanks start at [50, 40], the player's tanks and artillery hold fire, the
+enemy drives off at 5.3 s and the constructors walk away so they are not idle; the selections
+take the units near the fight (own:* also holds the command centre); the Shift-click holds
+shift_selecting around the click (the virtual mouse's shift flag does not press the action, a
+player's Shift key does); "select own:nothing" clears the selection (the harness has no deselect
+order, so the report lists that order as failed, and it carries no expect_ok); a fourth shot
+selects 28 tanks for the runs; and the review's cases follow: a Shift-click on the timber stand
+at [4, 42] with the 28 tanks selected, the two constructors selected after it, two tanks and the
+two constructors with one tank killed by a check that sets its hp to 0, and two tanks with one
+killed.
+
+Evidence. hud-selection.json at a true 1920 x 1080 (80 px tiles) and a true 1280 x 720 (64 px
+tiles): 47 of 47 orders and checks at both sizes, 0 script errors, the two deaths the checks cause
+and no other loss. a-three-types shows 14 units, 370 / 408 HP, 12 idle under three tiles, the tank
+tile first with a red frame, a red 1 in its corner and a strip of six green, one amber and one red
+segment, then artillery 4 and constructor 2, the tiles level with the Fight slot; b-tanks-only one
+tile after a click, the red frame still on it under the pointer (8 selected); c-artillery-dropped
+two tiles after a Shift-click (10 selected); d-twenty-eight-tanks one tile counting 28 with a red
+1, a long green run with the amber and red runs, 4 px each, at its right end (886 / 924 HP);
+e-deposit-in-selection the same tile and "28 units" with the timber stand's circle lit and 29
+nodes selected; f-one-left-by-death the survivor's card. The checks also read the layout: Groups
+shown and Single hidden with several selected, Single with its card and Groups hidden with one,
+both hidden with none, the tiles slot-sized, inside the selection panel, level with the command
+card's first row and clear of the minimap and the command card, the totals line under the tiles
+inside the panel; and the review's cases: no tile and no count for the deposit, the constructors'
+tile after it, the tank tile first with 1 after the death that made it the smaller group, and the
+card after the death that left one. The same json on the PR 4 base fails its Groups checks at both
+sizes: the middle of the bar is empty with fourteen selected (hud5-before-1080 and
+hud5-before-720, shot with the version before the review's cases). The review's own deposit
+scenario (deposit-sticky-2, a Shift-click on the timber stand between two selections) now passes
+15 of 15 with 0 script errors, where the first version threw 43, and its edges scenario (a death
+that leaves one of two, a rival in the selection, 24 types at 720, a deposit Shift-clicked in and
+a deposit clicked alone) 22 of 22 with 0 errors. TooltipsCheck 76 PASS, all checks passed. UiShots
+--only=hud 0 problem(s) at 1280 x 720 and at 1920 x 1080. BuildingInfoCheck at 1280 x 720 23 PASS,
+0 failure(s). SelectionChecks at 1280 x 720 (box drags and control groups) 15 PASS, 0 failure(s).
+PlaytestChecks 20 PASS, 0 failure(s). CommandChecks at 1280 x 720 38 PASS, "command checks: 0
+failure(s)" (with main's camera fix for the fight line). smoke 10/10, hud-alert 3/3, hud-card
+22/22 and hud-bar 24/24 still pass. stress-40v40 with select p0:* at 2.1 s (the player's whole
+side selected while the armies fight; a scratch copy, the repo's file unchanged): frame_ms_p95
+125.39, 126.07 and 113.06 ms on this branch, 129.36, 119.23, 116.97 and 118.94 on the PR 4 base,
+so no measurable cost (this container renders in software, so both miss the 50 ms budget, as every
+run here does; p50 was 80 to 87 ms in every run; a fourth run on the branch, 188.57, overlapped
+another worker's Godot on the shared box and is not counted; before the review the pairs were
+125.61 and 129.57 against 125.57 and 133.41). The spec compares with PR 1's baseline; main has
+moved since, so the comparison is with the PR 4 base on the same day and box, at 2.1 s so the
+selection comes after the fight orders at 2 s. The data validator reports 0 errors and 0 warnings;
+gdformat and gdlint are clean on source/.
+
+Playthrough (plain_and_simple, balanced and raider, 8 minutes, at the project's 1920 x 1080):
+three runs on this branch and one of a scratch copy of the bot with logging added, 0 script errors
+and no "sticks out" or "overlaps" finding in any. The third (time limit after 499 s, exit 0) and
+the copy found nothing; the first two reported one bug each, a different one, and neither is the
+HUD's. "clicking Hauler.tscn did not queue it" (152 s): the click reached the command centre's
+Hauler button (its pressed signal fired), and the bot counts that queue before its click and three
+frames after it, while the constructor it put on auto-expand orders a Hauler there whenever the
+queue is empty (AutoExpand._order_hauler_if_short). The logging run measured 4.8 to 5.2 s of the
+bot's clock from the count to the check, and six Haulers the bot never clicked; one started at
+236.8 s was built by 240.8 s. An auto-expand Hauler that finishes inside that window cancels out
+the one the click queued. "OilDerrick (menu OilDerrick.tscn) could not be placed:
+COLLIDES_WITH_OBJECT" (199 s): the shot shows the blueprint in the middle of the screen, red over
+the player's own finished Oil derrick 2, a deposit the bot took for free. Both are the bot's races
+and guesses in the world, in code older than PR 4 that this PR does not touch, and tests/ is
+read-only. Two runs on main in the same session (the PR 4 head, the same tree): one found nothing,
+exit 0; the other reported two bugs of the same kind, "VehicleFactory (menu VehicleFactory.tscn)
+was valid but clicking did not lay out a site" (125 s) and "Worker of P0 sits still for 45s while
+Constructing" (210 s), exit 1. The bot's world findings come and go without this PR as well. One
+run after the review's fixes: time limit after 509 s, exit 0, 0 script errors, no bug, two missed
+clicks noted (a constructor at 59 s, an aircraft factory at 424 s).
+
+Known and left for later. The tiles do not mark an active subgroup (SC2's Tab): the command card
+gives every order to every selected unit. The idle count is for the whole selection, not per
+type. The artillery's icon is the anti-ground turret's (data/units/artillery.json), dark at 32
+px, and tank, heavy_tank, battle_tank and militia share Tank.png with different tints, so at 32
+px the captions tell them apart, not the icons: one icon per type is an art pass. Names longer
+than a tile clip with an ellipsis ("Trade carav...", "Rocket tech..."); shorter display names
+are a data pass. With few types the cell is mostly empty glass, as PR 4's risk 1 says, and with
+nothing selected the middle of the bar stays empty (the spec's open question 5, the whole army
+as tiles, would be PR 6). More than two rows of tiles (23 types or more at 720, 31 at 1080,
+reached only by Shift-adding structures to a big army) scroll inside TileScroll, the third row
+cut at the bar's edge with only the scroll bar to say so. The tiles' hint waits behind the army
+orders hint, which fires on the same first selection, so it shows up to 12 s later. No native
+speaker has checked the Polish strings.
