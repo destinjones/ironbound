@@ -100,14 +100,19 @@ One concern per PR, main stays releasable, every PR carries its evidence.
    Continue.
 8. In progress, slices 1 to 4 of 5 done (#110, health bars by thirds with Alt and an
    option; #112, the under-attack banner with Space to go there; #118, the command card as
-   a 4 x 3 grid of icons with captions and keys; the next PR, the bottom bar holding the
-   minimap, the selected unit's card and the command card). The HUD: one bottom bar
+   a 4 x 3 grid of icons with captions and keys; #122, the bottom bar holding the
+   minimap, the selected unit's card and the command card; next, the Groups view of a
+   mixed selection, with type tiles, counts and health strips). The HUD: one bottom bar
    (minimap, selection with counts and health, icon command card), an under-attack banner
    with a jump key, health bars that can stay on.
 9. Done (PR #108): CI runs the smoke harness and the validator, not only the formatter.
 10. Art: every unit through the one textured pipeline at the tank's quality (bake, do not
-    decimate), one explosion look, wrecks that keep their texture, recorded sound.
-11. Dead branches, dead scenes and the second explosion system go.
+    decimate), one explosion look, wrecks that keep their texture, recorded sound. The
+    feel of a shot is in: #120, one muzzle effect per shot instead of two systems; #125,
+    every flash, puff, tracer and rocket leaves from the barrel, and the shot that kills
+    is drawn. What is still wrong there (structure turrets, the rocket_technical, the
+    patrol_boat) waits on a per-unit muzzle field in data/units.
+11. In progress, #121: dead branches, dead scenes and the second explosion system go.
 
 ## Numbers we aim at
 
