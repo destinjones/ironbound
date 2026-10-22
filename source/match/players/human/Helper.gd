@@ -685,6 +685,7 @@ func _manage_fleet():
 
 
 func _is_soldier(unit):
+	# the city's militia (group city_defense) belong to the player but are not the helper's army
 	return (
 		unit.player == _player
 		and unit.attack_damage != null
@@ -693,6 +694,7 @@ func _is_soldier(unit):
 		and not unit is Hauler
 		and unit != _scout
 		and not unit.get_meta("helper_scout", false)
+		and not unit.is_in_group("city_defense")
 	)
 
 
