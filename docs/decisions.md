@@ -1969,3 +1969,22 @@ and 1.0) went from no end to 20:49 on seed 3 but from 19:27 to 24:33 on seed 5. 
 levers move the outcome less than the seed does, so no data change ships. The next step is
 the AI's opening (when it buys its first battle unit against more economy), which is AI code,
 not data, and needs more than one seed per side to judge.
+
+## 2026-10-22: tried and dropped, the AI buying its first army past a waiting structure
+Why Hard's first tank comes late: the AI serves resource requests in strict order (economy,
+then defence, then units), and the economy always has its next structure in the queue, so
+while it saves for that structure no unit is bought. Hard thinks twice as often and queues
+the next structure sooner. The tried change let units past an unaffordable economy request
+while the home extractors stood and the army was under one first wave. Helper-run player,
+24-unit army, Desert Expanse, balanced AI, match end before and after:
+
+| Match | main | tried |
+| --- | --- | --- |
+| Hard seeds 3, 5, 7 | 21:12, 18:56, 19:04 | 23:16, 22:34, no end in 30:00 |
+| Normal seeds 3, 5 | 25:54, 18:34 | 17:16, 17:23 |
+| Passive player vs Normal | 11:11 | 14:47 |
+
+The AI's first tank on Hard came earlier on seeds 3 and 5 (4:45 to 3:29, 3:46 to 3:31) but
+its first wave did not, and Hard ended later on every seed while a passive player lived
+longer against Normal. Dropped: it does not make Hard hit harder, and the seed spread is
+as large as the effect. Judging difficulty needs 3 or more seeds per side.
