@@ -893,6 +893,8 @@ func _do_camera(order):
 
 func _do_click(order):
 	var at = _screen_point(order)
+	if at == null:
+		return {"ok": false, "error": "no visible control named '%s'" % order.get("control")}
 	var button = {"left": MOUSE_BUTTON_LEFT, "right": MOUSE_BUTTON_RIGHT}.get(
 		order.get("button", "left"), MOUSE_BUTTON_LEFT
 	)
@@ -917,6 +919,17 @@ func _screen_point(order):
 	if order.has("world"):
 		var camera = get_viewport().get_camera_3d()
 		return camera.unproject_position(ground(order["world"]))
+	if order.has("control"):
+		# a control of the match by its node name (a selection tile "Type_tank", a command
+		# button "Command_stop"): the centre of its rect, or null when it is not on screen
+		var control = (
+			match_node.find_child(str(order["control"]), true, false)
+			if match_node != null
+			else null
+		)
+		if control is Control and control.is_visible_in_tree():
+			return control.get_global_rect().get_center()
+		return null
 	return _vec2(order.get("screen", [0, 0]))
 
 

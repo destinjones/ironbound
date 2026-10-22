@@ -177,7 +177,7 @@ and an `"error"` when something did not work.
 | `auto_expand` | `units`, `on` | `AutoExpand.set_enabled_on` |
 | `speed` | `x` | time scale |
 | `camera` | `spot` or `follow` | the match camera |
-| `click`, `drag` | `screen: [x, y]` or `world: [x, z]`, `button`, `shift` | the virtual mouse |
+| `click`, `drag` | `screen: [x, y]` or `world: [x, z]` (a `click` also takes `control`, a HUD node's name such as `"Type_tank"`, and clicks its centre), `button`, `shift` | the virtual mouse |
 | `key` | `key` ("G") or `action` ("command_patrol"); with an `action`, `"hold": true` keeps it pressed until a later order with `"release": true` | input events; a hold and a release are `Input.action_press` and `Input.action_release` |
 | `option` | `set` (a property of `Globals.options`, such as "show_health_bars"), `value` | the player's options, for this run only (nothing is saved) |
 | `screenshot` | `name` | |
