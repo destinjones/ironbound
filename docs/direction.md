@@ -87,15 +87,18 @@ One concern per PR, main stays releasable, every PR carries its evidence.
    a tank every 20 to 30 s by minute 5; the longest gap is still 41 to 104 s while
    auto-expand spends the first iron. Found while proving 3: in three of four helper-run
    matches the helper never got a vehicle factory up and had no army when the raider came;
-   the helper must build one early, every time (its own PR, in progress), then stop
-   counting the city's militia as its army and keep units that hit what it has seen.
+   the helper now builds one early (#127), leaves the city's militia out of its army (#129)
+   and builds counters to the enemy units it has seen (#130).
 5. Done, #111: armour and weapon classes (one multiply in Unit.take_damage plus data),
    structures that hold a few tanks, artillery that sees what it shoots. #116 made the
    missile truck the Foundry's rocket corner: its rockets hit ground targets, as its card
    says. Units get roles: the class line on every card is the first half; the
    one-word role label on the card is the follow-up.
 6. Difficulty retune in data once 3 to 5 are in: Easy for the first match, Normal for the
-   20-minute skirmish above, Hard and Brutal that hit harder, not just fatter.
+   20-minute skirmish above, Hard and Brutal that hit harder, not just fatter. Measured on
+   22 October (decisions.md): Normal is near target; scaling Hard's and Brutal's wave size
+   and turrets moves the outcome less than seed-to-seed spread, so the next lever is how
+   the AI spends its opening (Hard's first tank came 2 minutes after Normal's), not data.
 7. Done, #109: the ending: a hold with the camera on the last structure, kills and losses,
    Continue.
 8. Done, five slices (#110, health bars by thirds with Alt and an option; #112, the

@@ -1954,3 +1954,18 @@ Risk: the counter only reads armour classes, so it does not weigh range or speed
 rival that shows a few aircraft early still pulls build slots away from tanks. The
 army-mix shape probe across longer matches was skipped to save usage; the pace check
 guards that the army still fills on time.
+
+## 2026-10-22: difficulty data left as it is, for now (item 6 measured)
+Probe matches on main, Desert Expanse, the helper-run player with a 24-unit army against the
+balanced AI, seed 3 unless named: Normal ends the match at 25:54 (the player loses), Hard at
+21:12 (seed 5: 18:56), Brutal not within 30 minutes (seed 5: 19:27). A passive player falls
+to Normal at 11:11 and survives Easy for 25 minutes; the helper-run player survives Easy for
+30. On Hard the first tank came at 4:45 against Normal's 2:20: Hard thinks twice as often and
+spends its opening on extra derricks and power plants.
+
+Tried and dropped: Hard with turrets x1.0 and waves x1.25 (was 1.5 and 1.0) lasted longer, not
+shorter, on both seeds (24:21 and 24:57). Brutal with turrets x1.25 and waves x1.5 (was 2.0
+and 1.0) went from no end to 20:49 on seed 3 but from 19:27 to 24:33 on seed 5. The data
+levers move the outcome less than the seed does, so no data change ships. The next step is
+the AI's opening (when it buys its first battle unit against more economy), which is AI code,
+not data, and needs more than one seed per side to judge.
