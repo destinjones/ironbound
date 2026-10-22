@@ -1758,3 +1758,27 @@ detours 2 and holds 1, detours 2 and holds 0) and on the base (detours 2, holds 
 change cannot reach those scenarios: the test match counts 4 of 4 soldiers with 4 units
 ordered on both sides, so no militia enter the helper's count there, on the base or on the
 branch.
+
+## Helper: build counters to the enemy units it has seen (PR 4)
+
+The helper's army pick ignored what the enemy fielded. In a 3-minute big_arena match at
+tier 2 where the rival flies 4 helicopters next to 4 tanks, main built 8 heavy tanks and 0
+missile trucks in both before runs, so nothing in its army could hit the air.
+
+The pick now remembers enemy units its side has seen for 180 s (HelperArmyPick.saw, fed
+from _scan_threats). Once it has seen at least 3, it scores each unit it can build by the
+damage it deals to the seen mix (damage_vs over each enemy's armour, floored at 0.05) and,
+when a seen armour class makes up at least 10 % of the mix and the army has nothing that
+hits it, builds the best counter next. The status line says so: "Missile Truck against the
+Helicopter seen." A new harness verb, tier, starts a scenario at a tech tier.
+
+New scenario helper-anti-air (big_arena, 3:00, speed 2, tier 2, p1 has 4 helicopters and 4
+tanks, p0 has a drone spotter). On the branch, seeds 1, 2 and 3 each pass 14 of 14 checks
+and build 6 heavy tanks and 2 missile trucks, with no hover skimmers. Unchanged: validator 0
+errors and 0 warnings, helper-army-pace seed 3 10 of 10, helper-never-attacks 5 of 5,
+counters-triangle 46 of 46, smoke 10 of 10.
+
+Risk: the counter only reads armour classes, so it does not weigh range or speed, and a
+rival that shows a single unit type early still pulls 1 slot in 10 away from tanks. The
+army-mix shape probe across longer matches was skipped to save usage; the pace check
+guards that the army still fills on time.
