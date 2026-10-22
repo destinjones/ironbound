@@ -1,0 +1,28 @@
+{
+  "name": "helper-army-pace",
+  "description": "The helper saves for its faction's main battle unit. A Foundry player with the helper on (army 24, scouting) against a very easy Foundry turtle on Desert Expanse, whose first attack comes at 12:00, so nothing interrupts the build-up. The helper must make tanks at a steady pace instead of the hover skimmers the bank covers first, and auto-expand must keep building. The power plant needs iron 20 with the keep and the tank 15; auto-expand builds its first plant when the grid runs short, in runs of seeds 3, 5 and 7 from 6:38 to 9:41 on main and from 4:06 to 8:31 with this change. A Foundry helper does not scout here: its scout is the drone, which needs an aircraft factory. Run seeds 3, 5 and 7.",
+  "map": "desert_expanse",
+  "seed": 3,
+  "minutes": 10,
+  "speed": 4,
+  "fog": true,
+  "sample_every": 10,
+  "shots_every": 150,
+  "players": [
+    {"type": "human", "helper": true, "faction": "foundry"},
+    {"type": "ai", "personality": "turtle", "difficulty": "very_easy", "faction": "foundry"}
+  ],
+  "setup": [
+    {"do": "helper", "on": true, "army": 24, "scouting": true}
+  ],
+  "checks": [
+    {"at": 240, "name": "six tanks by 4:00", "expect": "timeline", "kind": "produced", "contains": "p0 (you) produced tank", "min": 6},
+    {"at": 300, "name": "eight tanks by 5:00 (a tank every 30 s from 1:00)", "expect": "timeline", "kind": "produced", "contains": "p0 (you) produced tank", "min": 8},
+    {"at": 300, "name": "at most two hover skimmers by 5:00", "expect": "timeline", "kind": "produced", "contains": "p0 (you) produced hover_skimmer", "max": 2},
+    {"at": 300, "name": "auto-expand is not starved: ten structures by 5:00", "expect": "built", "units": "own:structures", "min": 10},
+    {"at": 480, "name": "an army of 12 by 8:00, city militia left out", "expect": "expr", "code": "api.find_units(\"own:combat\").size() - api.find_units(\"own:militia\").size() >= 12"},
+    {"at": 480, "name": "nothing came to the base", "expect": "timeline", "kind": "attack_wave", "contains": "p1", "max": 0},
+    {"at": 540, "name": "the tank's iron does not hold up the power plant: one by 9:00", "expect": "built", "units": "own:power_plant", "min": 1},
+    {"end": true, "expect": "no_errors"}
+  ]
+}

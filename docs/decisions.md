@@ -1381,6 +1381,208 @@ constructor's card, its text column down to 7 px, runs 42 px under the minimap a
 the build menu. The 4-column card fits down to about 783 px. A narrower left column at that
 size, or a card that clips, is for Destin to choose.
 
+## 2026-10-19: the helper saves for its faction's main battle unit
+
+The helper's army bought the costliest unit the bank covered above the keep
+(Helper._best_unit_for). Iron is the scarce commodity on Desert Expanse and arrives a few
+units at a time, so each climb crossed the hover skimmer's floor (iron 13) before the tank's
+(15), and "costliest affordable" in practice meant "cheapest in iron": on main the helper
+made 0 to 1 tanks and 15 to 21 skimmers by 5:00 in the runs below, and the AI's tanks deal
+double damage to the skimmer's light armour. With a full bank the rule was wrong too: the
+Foundry's costliest T1 unit is the amphibious APC, not the tank. Now each factory's first
+choice is the faction's main battle unit from data/factions (main_t3, then main_t2, then
+main_t1, the roles the AI builds from), and the helper saves for it for up to 60 s
+(HelperArmyPick.SAVE_FOR_S). While it saves nothing cheaper is bought at any factory, and
+the helper panel adds "Saving for a Tank." to the army line. When the window runs out the
+helper saves for the next tier's main unit instead, still buying the higher one whenever the
+bank covers it, and goes back to the top unit when it buys it or a new tier changes it.
+After the lowest main unit's window it buys the first unit the bank covers: the other combat
+units by cost, file order on a tie. The role table rather than a fight model, because it is
+data the AI already reads, so a retune of roles in item 6 moves both sides, and "the helper
+builds your faction's main unit" reads on screen. The lead kept the role table at tier 2:
+the Foundry helper and a helper without a faction save for the heavy tank there, as the AI
+builds it, and the heavy tank's value is fixed in the item 6 difficulty retune. The in-game
+help (HELP_HELPER_BODY, item 2) now says what the army builds.
+
+Why the step-down: saving is not a reservation. Auto-expand's own floors (pylon 12, mine 14)
+keep the bank's iron at 10 to 17, under the heavy tank's floor (iron 20 with the keep). With
+one window and then a fallback, every unit after tier 2 waited out the full window first: in
+review, the first version of this change made 9 army units (41 iron) in the five minutes
+after tier 2 of the 1v1 probe, where main made 21 (84 iron). With the step-down the heavy
+tank gets a window, and once it has run out the tank keeps its tier 1 pace and a heavy tank
+is bought whenever the bank covers one (each heavy tank bought starts a new window for it).
+Pinning the helper to main_t1 until item 6 (MAIN_ROLES = ["main_t1"]) was the other option;
+it was not taken because the lead kept the role table at tier 2.
+
+Why 60 s and not the design's 30 s: the design raises SAVE_FOR_S to 60 s if the skimmer
+check fails. At 30 s it failed in two of six helper-army-pace runs of this change and in one
+of two of its first version, all seed 5 with 3 skimmers by 5:00, each bought by the fallback
+after a window ran out (at tier 1 the tank ranks first, so the fallback is the only way to a
+skimmer). At 60 s it passes on every run: 0, 0 and 1 skimmers by 5:00 on seeds 3, 5 and 7,
+and 0 in two more runs of seed 5.
+
+The save clock restarts when an order goes in at the main unit's factory, when the first
+choice changes (a new tier, or the unit cap dropping it), when the main unit's factory drops
+out of the plans (its queue full, the factory gone, or the main unit not fitting under the
+cap), on every early return (army off or full, no factory, unit cap) and when the helper is
+switched off. Units with no room under the cap drop out of the ranking, so a smaller one
+still fills the last slots. The free slots are counted once per think, because
+MatchLimits.has_room_for walks every unit in the match and the saving helper reaches the
+pick on more thinks than before; has_room_for is asked once more right before each order, so
+a second factory cannot order a unit that the first factory's order in the same think left
+no room for. The pick lives in HelperArmyPick.gd because Helper.gd was at 999 of gdlint's
+1000 lines (994 now).
+
+The scout: the save held iron at 12 to 14, above the scout buggy's floor (iron 12 with the
+keep) and below the tank's, so in review the first version rebuilt its scout within half a
+minute of each loss and built 13 in the probe where main built 3. While the army saves, the
+helper now waits 90 s (Helper.SCOUT_REPLACE_S) after losing a scout before it orders another,
+and the panel counts the wait down ("Scouting: the next scout buggy in 42 s, after the army's
+save"). With the army full or not saving it replaces the scout at once, as on main: in
+review a hold that always applied left HelperChecks, whose army is full, without a scout for
+its hold-fire check whenever the scout died in the last 90 s before it. Main's check for a
+lost scout never fired: in Godot 4.7 a freed object compares equal to null, so
+`_scout != null and not is_instance_valid(_scout)` is false once the scout is freed. It now
+tests `typeof(_scout) == TYPE_OBJECT`. A Foundry helper still never scouts: the Foundry's scout
+role is the drone, which needs an aircraft factory the helper never asks for, and the panel
+says it waits for a scout buggy and a vehicle factory that already stands. That predates
+this change and is a follow-up ticket; helper-army-pace's scouting flag does nothing for its
+Foundry player, and its description says so.
+
+Evidence: new scenario helper-army-pace (a Foundry player with the helper, army 24, against
+a very easy Foundry turtle on Desert Expanse whose first attack comes at 12:00), seeds 3, 5
+and 7 on main 1a3a96e and on the branch, read with the helper-design probe_numbers.py. Main
+passes 5, 3 and 5 of 8 checks; the branch passes 8 of 8 on all three. By 4:00 main made 0, 0
+and 1 tanks, the branch 10, 8 and 8; by 5:00 main 0, 0 and 1, the branch 15, 12 and 15.
+Skimmers by 5:00: main 21, 20 and 15, the branch 0, 0 and 1. The longest stretch from 1:00
+to 5:00 with no tank: main 240 s on all three, the branch 43, 55 and 82 s. Structures by
+5:00: main 10, 6 and 12, the branch 15, 16 and 15; the first power plant came at 8:31, 9:41
+and 7:52 on main and at 6:50, 4:34 and 6:04 on the branch, so main's seed 5 fails both
+auto-expand guards. Made by 8:00: main 21 skimmers and an APC twice, then 19 skimmers and 2
+tanks; the branch 21 tanks, 21 tanks, and 20 tanks and a skimmer. A fourth main run of seed
+5 made 0 tanks and 21 skimmers by 5:00 and failed 4 checks.
+
+Think time: the helper's think time per think (think_usec_total / thinks) was 1447, 1531 and
+1479 us on the branch against 1356, 1292 and 1412 on main, 7%, 18% and 5% above, but it
+moves with the box's load from hour to hour (main alone read 1259 to 1494). Run back to back
+on seed 5, main, the first version of this change and this one read 1437, 1604 and 1549 us,
+then 1494, 1705 and 1678: this version 8% and 12% above main and 3% and 2% below the first
+version. Both versions save, so the step-down, the room check and the scout hold add nothing
+that shows; what costs is common to both, and HelperChecks' bound of 2 ms per half-second
+tick passes.
+
+The checks differ from the design's numbers where the runs said so. The design asked for 4
+tanks by 2:00, but main made 2 or 3 by 2:00 in three of thirteen runs, so the first check
+asks for 6 by 4:00: over twenty-two runs of either version of this change the branch made 6
+to 10 by 4:00, and main made 0 to 4. The design's 10 by 5:00 became 8 (a tank every 30 s
+from 1:00): the branch made 9 to 16, main at most 4. The power plant guard moved from 3:00
+to 9:00: the design's 2:26 came from the Normal AI probe, but here auto-expand builds its
+first plant when the grid runs short, from 6:38 to 9:41 over twelve main runs and from 4:06
+to 8:31 over twenty branch runs. It guards against the branch starving the plant and does
+not pass on every main run. The design's target of no stretch over 30 s without a tank is
+not met (43 to 82 s, while auto-expand spends the iron on its first mines and pylons).
+
+Shape check: the direction probe probe-1v1-normal as it is (no faction, a Normal balanced
+AI, seed 3) on main (the review's run) and on the branch. Tanks by 5:00 went from 6 to 11,
+skimmers by 5:00 from 12 to 1, skimmers lost by 8:00 from 11 to 1, missile trucks by 8:00
+from 4 to 0, and the helper-made army alive at 8:00 from 18 to 16. The longest stretch from
+1:00 to 5:00 with no tank went from 102.5 s to 36.0 s. Tier 2 came at 6:49 on main and 7:13
+on the branch. In the three minutes after tier 2 main made 14 army units (8 skimmers, 5
+missile trucks and an artillery, 57 iron) and the branch 10 tanks (50 iron); in five minutes
+21 (84 iron) against 15 tanks (75 iron). The branch's first minute after tier 2 is the heavy
+tank's window, with iron at 10 to 17, then a tank came every 9 to 39 s. It built no heavy
+tank all match (35 tanks and 2 skimmers) and lost at 17:39, main at 16:46. It built 4 scouts
+(at 0:27, then 94 to 102 s after each loss), main 3 (from 3:15).
+
+A tier 2 diagnostic, a scratch copy of the pace scenario that forces tier 2 at 4:00 with
+army 40 (seed 3): in the three and four minutes after tier 2 main made 14 units (12 skimmers
+and 2 missile trucks) and 16, the first version of this change 7 and 9, and the branch 9 and
+15 (13 tanks and 2 heavy tanks). Each heavy tank bought starts a new heavy tank window: one
+bought at 4:52 was followed by 67 s with no unit. The Syndicate, the same diagnostic with a
+Syndicate player: 18 raiders by 4:00, then 14 rocket technicals and 2 raiders in the three
+minutes after tier 2, a scout buggy at 0:16 and no script errors.
+
+Unchanged on the branch: helper-never-attacks passes 5 of 5 and smoke 10 of 10; CapsChecks
+has 0 failures (the helper fills the army to the cap, 10 of 10 slots, and the panel says the
+cap stops it); validate_data reports 0 errors and 0 warnings; gdformat and gdlint are clean.
+HelperChecks passes its army checks on every run on both sides (4 of 4 units and a scout, it
+stops at the army size, no attack orders, under 2 ms a tick) but fails its constructor guard
+scenarios on main too. Run alone (--only=detour,hold,retreat), main failed 2 checks in both
+runs ("and reached the site behind the squad", "and gets away from where it was"); the
+branch failed the same 2, then 1 ("gets away") in a run where the test stopped the detour
+scenario on a freed constructor (the script error at HelperChecks.gd:191 that a full main
+run also hit). In full runs, where the peace scenario's army is still on the map, main
+failed 3 and 2 checks, the first version of this change 3 (cut short), 1 and 2, and this
+version 4 and 4. Both 4s add "it never came within 12 m of the squad" and "it went around
+the squad": the test's constructor was held back instead of rerouted, with the same guard
+log line ("no detour around ..., first leg 30, second leg 6", then a hold) as in main's
+first full run, which passed "it went around the squad" only because another constructor
+took a detour.
+
+Missile trucks no longer come by accident: the tank, which ranks first, needs the same iron
+and oil as the truck and less copper, so whenever the bank covers a truck it covers the
+tank, and the helper fields no mobile anti-air until PR 4 (the counters PR) brings the truck
+back on purpose. PR 1 and PR 4 ship back to back, with no release between them. A Syndicate
+helper now fields raiders, which tanks shred, until the PR that vetoes units the enemy hits
+at double damage.
+
+Re-run after the scout change, merged with main ef2c11a: helper-army-pace passes 8 of 8 on
+seeds 3 and 5 (9 and 10 tanks by 5:00, 1 and 0 skimmers, the longest stretch with no tank
+103.7 and 41.0 s; the Foundry helper never scouts, so the scout change does not touch this
+scenario and the spread is run to run), smoke 10 of 10, helper-never-attacks 5 of 5,
+CapsChecks 41 PASS and 0 failures, the validator 0 errors and 0 warnings. HelperChecks, two
+full runs: 20 PASS and 2 failures, then 23 PASS and 4; "the scout never attacks an enemy tank
+next to it at war" passes in both, and every failure is a constructor guard check that fails
+on main too.
+
+## 2026-10-19: shots leave from the muzzle marker, and the killing shot is drawn
+
+The shells and rockets looked their marker up with find_child("ProjectileOrigin"), whose
+default owned = true skips nodes added at run time (UnitMotion's MotionPivot, the data model)
+and everything under them, which is where UnitMotion and TurretAim keep the marker. So every
+flash, smoke puff, tracer and rocket started at the unit's own origin, on the ground; only the
+bunker, gun_nest, flak_tower and sam_site, whose marker stays in their scene, found theirs.
+ShotEffects.muzzle() now looks it up with owned = false for both projectiles and keeps it in
+the shooter's "_muzzle" meta.
+
+The killing shot drew nothing: the shell draws a physics frame after its damage, and by then
+the target is freed. A killing shot is now drawn at once, in the frame its damage lands, while
+the dying target is still in the tree. Its tracer takes the shortest flight, 0.08 s, to land as
+close to the death explosion as it can, and ends without sparks, which the explosion stands in
+for. Other shots still draw a physics frame later, into the aim point taken before the damage.
+The damage still lands in _ready, in the same frame, for the same amount.
+
+TurretAim put the marker at the middle of the turret's front face, above the barrel: 0.19 m on
+the heavy tank, 0.085 m on the tank. When the frontmost 5 % of the turret mesh is under half
+its width and height, TurretAim now takes it for a barrel, or a pair, and puts the marker at
+its middle, 1.5 barrel heights ahead of its end; a launcher keeps the middle of its face. This
+is a heuristic tuned on the current models, and a muzzle field in data/units would replace it.
+The militia used the tank's marker, scaled down, between its front riflemen; Militia.tscn now
+puts it on the front right rifleman's muzzle.
+
+Still wrong, each for want of a per-unit muzzle in data/units, as one marker in a shared base
+scene serves several models. The AG and AA turrets this change fixes are hidden in both
+factions: the defenses players build are the bunker and flak_tower (Foundry) and the gun_nest
+and sam_site (Syndicate). Their marker sits on the hidden kenney turret of
+AntiGroundTurret.tscn or AntiAirTurret.tscn, about 0.4 m from the centre on the side facing the
+target and 0.5 m up, while their gun is part of one mesh that does not turn. The bunker's and
+flak_tower's flash is inside the model and only the tracer shows. The gun_nest's flash shows
+over its sandbags, and is on its barrel only when the target is in front of the model. The
+sam_site's flash and rocket start beside its rack, at half its height. The marker also turns
+with the idle scan, so the first shot after idling can leave 0.8 m from where the next ones do.
+The rocket_technical, the Syndicate's main tier 2 and tier 3 unit, launches from its hood, not
+the rack on its bed, and the patrol_boat fires from its bow waterline. A rocket already in
+flight when its target dies still vanishes with it (Rocket.gd frees itself on the target's
+tree_exited), so the killing-shot fix covers shells only.
+
+Evidence: a scratch probe of 20 armed units over 25 s counted on HEAD 1382 flash quads, 372
+tracers and 319 rockets starting at the unit's origin, and 0 of 359 killing shots drawn; with
+this change, in two runs, none at the origin and every killing shot drawn (382 and 364), each
+with its flash at the marker. In counters-triangle, every unit that died took the same hits for
+the same damage per hit in two runs on HEAD and three with this change. smoke, die-once and
+hud-health-bars pass, the validator reports 0 errors and 0 warnings, gdformat and gdlint are
+clean, and the stress-40v40 frame time is the same within the noise between runs.
+
 ## 2026-10-19: several units selected show one tile per unit type with its count and each unit's health
 With two or more units selected, the bar's middle cell (HUD/BottomBar/SelectionPanel) shows
 Groups and hides Single; one unit keeps BuildingInfo's card in Single, unchanged, and nothing
