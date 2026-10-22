@@ -69,6 +69,7 @@ const HINT_TOPICS = {
 	"HINT_EXTRACTORS_FULL": "DELIVERY_JOBS",
 	"HINT_NOT_ENOUGH_FOR_CONSTRUCTION": "RESOURCES",
 	"HINT_NOT_ENOUGH_FOR_PRODUCTION": "RESOURCES",
+	"HINT_SELECTION_TILES": "BASICS",
 	"HINT_SITE_NEEDS_CONSTRUCTOR": "CONSTRUCTORS",
 	"HINT_SITE_OUTSIDE_YARD": "STORAGE",
 	"HINT_TIER_REACHED": "CITY_TIERS",
@@ -666,7 +667,10 @@ func _on_unit_production_finished(unit, _producer):
 
 
 func _on_unit_selected(unit):
-	if player == null or unit.player != player or unit.attack_range == null:
+	# a deposit can be selected too (its Selection trait); it has no player and no weapon
+	if player == null or not unit.is_in_group("units"):
+		return
+	if unit.player != player or unit.attack_range == null:
 		return
 	if unit is Structure or unit.movement_speed <= 0.0:
 		return

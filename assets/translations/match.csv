@@ -350,3 +350,7 @@ ALERT_BASE_UNDER_ATTACK,Base under attack: {0},Baza atakowana: {0}
 ALERT_UNITS_UNDER_ATTACK,Units under attack: {0},Jednostki atakowane: {0}
 ALERT_JUMP_HINT,go there,przejdź tam
 ALERT_JUMP_TOOLTIP,Go to the alert ({0}),Przejdź do miejsca alarmu ({0})
+SELECTION_UNITS,{0} units,Jednostki: {0}
+SELECTION_HP,{0} / {1} HP,{0} / {1} PŻ
+SELECTION_IDLE,{0} idle,Bezczynne: {0}
+SELECTION_TILE_TOOLTIP,"{0} x{1}: {2} healthy, {3} hurt, {4} critical. Click: select only these. Shift-click: drop them.","{0} x{1}: sprawne {2}, uszkodzone {3}, w stanie krytycznym {4}. Kliknij: zaznacz tylko te. Shift + klik: odznacz je."
