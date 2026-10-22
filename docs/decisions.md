@@ -1699,3 +1699,62 @@ within flee reach of the command centre where the test parks it, with the crashe
 scenario's four tanks still on the map. The scenarios run at war, where the own-yard rule does
 not apply, the two --only=hold,retreat runs on the draft passed the hold checks, and the final
 run passes them with the same crash in place, so that failure was the sample, not the rule.
+
+## 2026-10-22: city militia are not the helper's army
+
+The helper counted the city's militia as its own soldiers. Helper._is_soldier took every
+armed mobile unit of the player, and the militia belong to the city's player with only the
+city_defense group to tell them apart (CivilDefense._spawn_militia; SaveGame puts a loaded
+one back in the same group). So the helper panel read "Army: 2 of 24, waiting for a vehicle
+factory" before any factory stood, and the army stopped 2 to 4 units short of its target
+(MILITIA_BASE 2 to MILITIA_MAX 4 as the city grows). Now _is_soldier also leaves out every
+unit in the city_defense group, and the army tooltip (HELPER_ARMY_TOOLTIP) says the count
+leaves out the scout and the city's militia. The militia still fight and still answer hits
+through the city's defence; the helper only stops counting them. HelperChecks reads the army
+through the same function (its _soldiers() calls _is_soldier), so test and helper agree. The
+harness's own:combat still counts the militia, so helper-army-pace subtracts own:militia in
+its army checks and gains two checks: at 4 s the helper's own army line must read "Army: 0
+of 24, waiting for a vehicle factory" (the factory stands at 7 to 11 s on its seeds, and the
+base reads "2 of 24" there), and at 10:00 the full army of 24, militia left out. The 10:00
+check sits at the time limit; the scenario's description says so.
+
+Numbers, helper-army-pace on seeds 3, 5 and 7 (Desert Expanse, a Foundry helper with army 24
+against a very easy Foundry turtle whose first attack comes at 12:00), the final runs of
+this change. On the base (PR 1, 08a86b4) the helper ordered 21 units on every seed and had
+21 at 10:00, 24 minus the 3 militia the city had by then (21 tanks on seeds 3 and 7, 20
+tanks and a skimmer on seed 5), so the 4 s check and the 10:00 check fail on all three seeds
+while the 8:00 check (12 or more) passes. On the branch it ordered 24, held 24 from 7:43,
+7:16 and 7:34, and had 24 at 10:00 (23 tanks and a heavy tank twice, 21 tanks and 3 heavy
+tanks on seed 7): 10 of 10 checks on every seed. Earlier runs of the same change agree: 24
+held from 7:02 and 6:53 on seeds 3 and 5, and from 6:58 and 6:19 in two seed 7 runs, 24 at
+10:00 in all four, against 21 ordered and 21 at 10:00 in the three base runs they were
+paired with. The rest is run-to-run spread, as in the PR 1 re-runs: tanks by 5:00 14, 12 and
+12 on the base, 12, 14 and 10 on the branch (16, 14 and 11 against 13, 13 and 15 in the
+earlier runs); the longest stretch with no tank from 1:00 to 5:00 45.0, 93.4 and 67.7 s on
+the base, 45.8, 38.9 and 57.0 s on the branch; 0 or 1 skimmers and no losses in every run; a
+think 1.34 to 1.43 ms on the base and 1.33 to 1.55 ms on the branch (1.11 to 1.34 against
+1.23 to 1.40 earlier), on a shared box where the two sides' ranges overlap. A first base
+seed 7 run sat on a loaded box (9.5 fps in the other runs, 5.2 in this one) and made 5 tanks
+by 4:00 and 7 by 5:00, failing PR 1's two pace checks as well; run again at 10 fps it read 8
+and 12 with the same army outcome, 21 ordered and 21 at 10:00, so the seed 7 base numbers
+above are the re-run's. A scratch run of the same match read the helper's army line at 4 and
+9 s with 2 militia alive on both sides, seeds 3 and 7: "Army: 2 of 24, waiting for a vehicle
+factory" on the base, "Army: 0 of 24, waiting for a vehicle factory" on the branch, which
+the 4 s check now pins.
+
+Unchanged on the branch: smoke 10 of 10, helper-never-attacks 5 of 5, CapsChecks 41 PASS
+and 0 failures (the helper fills the army to the cap, 10 of 10 slots, and the panel says the
+cap stops it), the validator 0 errors and 0 warnings, gdformat and gdlint clean, Helper.gd
+at 998 lines. HelperChecks passes its army checks in every run on both sides (4 of 4 units
+and a scout, it stops at the army size, no attack orders, under 2 ms a tick); its
+constructor guard checks fail on the base too. Four branch runs read 23 PASS and 4
+failures, 25 and 2, 25 and 2, then 23 and 4; the base run 24 and 3. Every failure is in the
+guard family that fails on main and on PR 1 ("it never came within 12 m of the squad", "and
+reached the site behind the squad", "it resumes the order once the spot is seen empty", "and
+gets away from where it was"), except "the order through the squad was rerouted or held
+back", which failed once in the first branch run (detours 1, holds 0: the detour came after
+the test's window) and passed in the three branch runs after it (detours 1 and holds 0,
+detours 2 and holds 1, detours 2 and holds 0) and on the base (detours 2, holds 2). The
+change cannot reach those scenarios: the test match counts 4 of 4 soldiers with 4 units
+ordered on both sides, so no militia enter the helper's count there, on the base or on the
+branch.
