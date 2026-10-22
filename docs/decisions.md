@@ -1583,6 +1583,123 @@ the same damage per hit in two runs on HEAD and three with this change. smoke, d
 hud-health-bars pass, the validator reports 0 errors and 0 warnings, gdformat and gdlint are
 clean, and the stress-40v40 frame time is the same within the noise between runs.
 
+## 2026-10-22: the helper's factory goes where its constructors may go (the own-yard rule)
+Helper PR 2 of the helper army spec. On plain_and_simple the helper's vehicle factory stood at
+0% for the whole match in four of the nine helper-never-attacks runs on record (seed 1, Normal
+raider), and those four ordered no units. The spec offered two fixes and asked for one
+diagnostic run before either: a safe-slot placement with a cancel of a held site after 20 s if
+the holder stood where another slot around the command centre was outside its hold radius, or,
+if the holder stood inside our own 16 m yard at peace, the contingency, since no slot near the
+centre is safe then. The diagnostic (a scratch copy of helper-never-attacks cut to four minutes
+that writes the helper's last events, its known threats, the factory site's state and every
+unit's position into the timeline at 2:00, 2:30 and 3:00, run on a scratch copy of main
+ef2c11a) needed six runs: the factory stood by 2:00 in three (0:41, 1:13, 1:30), by 3:00 in two
+(2:09 and 2:26, the site at 60% and 69% at 2:00) and never in the sixth, where it stood at 78%
+from 2:00 to the end and no unit was ordered. The holders were never the rival's posts: the
+only static threat on record is the rival's post at (46, 3), 37 m from the site. At 1:58 of the
+second run the guard logged "hold ... -> (12, 19)", the site 12 m from our command centre at
+(10, 7), with the two known threats the rival city's militia at (18.6, 10.1) and (18.2, 3.8), 9
+m from our centre, both "Moving" through our base while the two sides were at peace (the
+raider's war came at 4:00 in every run that reached it). Their hold radius is 17.5 m (sight 9.5
+plus the 4 m margin plus the 4 m destination extra), so every slot around the centre was inside
+it: the first ring stands 8 m out and the far side of the second is off the map. In the sixth
+run the militia stood at (16.9, 10.0) and (11.9, 4.0) at 2:00, 3.5 m from our centre, and by
+3:00 the rival's first tanks and raiders stood at (10.7, 4.2), (2.9, 11.2), (13.7, 23.5) and
+(14.5, 25.1), 3 m from our centre and 5 m from the site, all at peace and "WaitingForTargets";
+the three constructors were 22 to 30 m away, one building, one moving and one idle. That is the
+contingency case, and the main fix's premise (a safe slot elsewhere) does not hold, so the
+safe-slot placement and the site cancel were not shipped. The spec's diagnostic checks as
+written (an expr whose value is str(...)) do not work: the harness turns an expr's value into a
+bool, which a String cannot become, so the check errors and nothing is recorded; the copy used
+api.recorder.note(...) == null, which writes the text into the timeline and holds.
+
+The rule: a neutral's units do not count for a spot inside our own yard
+(Constants.Match.Logistics.YARD_RADIUS_M, 16 m, around one of our finished command centres)
+while we are at peace with them; an enemy at war counts everywhere, and so does a neutral's
+unit for any spot outside the yard, because a neighbour willing to start a war is still a
+threat on the way out. The spec put the rule in Helper._check_order alone (the hold). The log
+shows that the hold is only one of three ways the guard kept constructors from the site: the
+retreat (a militia unit within 13.5 m of the builder pulls it back; "97.6 retreat Worker at
+(14, 20) -> (23, 11)" in the sixth run is the site's builder pulled off it, and main made 30 to
+304 retreats in four minutes) and is_unsafe, which AutoExpand._abandoned_site asks before it
+sends anyone back to a site, so the 78% site was nobody's job. All three go through
+Helper._threat_near, so the rule lives there (HelperYard.threat_near, with in_own_yard), and
+the hold, the resume, the retreat, the detour, the scout and auto-expand's safety question
+agree without a change of their own. A scratch copy of main with the rule in the hold alone,
+the spec's wording, had the factory at 1:17, 1:24 and 0:51 in three runs, with 23 to 54
+retreats and 15 to 19 holds, where the whole rule has it at 0:08 to 0:09 in nine runs of ten.
+The alert counts (_threats_around) are not filtered: they count the group around the threat
+that caused the alert, which stood outside the yard, so filtering them gave "pulled back: 0
+enemy units". AutoExpand's own checks (an armed unit of any other player within 10 m makes a
+constructor flee, within 14 m makes a site unsafe) are untouched: they are every player's
+auto-build and know no diplomacy, so a militia unit parked within 14 m of a site still keeps
+auto-expand from sending a builder back to it. Helper.gd sits at gdlint's 1000-line limit (999
+lines on ef2c11a), so the rule lives in source/match/players/human/HelperYard.gd as static
+functions on the helper, as HelperArmyPick does for the army's pick. Two review findings
+changed the draft. The yard test reads the finished command centres' positions that
+_gather_units stores once per tick (_yard) instead of filtering the helper's units on every
+call: a detour at peace asks _threat_near hundreds of times in one guard tick
+(_first_threat_on_path samples every 2 m and _detour tries up to 36 candidates with two legs
+each), and the review's instrumented copy of the draft counted 10054 _threat_near and 7569
+yard lookups over 357 guard ticks of helper-factory-early, 20.9 us each, 158 ms of the
+helper's 679 ms. The peace test reads Diplomacy.state_between, which treats a match without
+diplomacy as war, as _is_hostile and the rest of the helper do; the draft read
+Diplomacy.at_war, which is false without a Diplomacy instance and would have exempted every
+enemy inside the yard there (no match runs without one, so nothing observable changed).
+HelperChecks' detour, hold and retreat scenarios run at war and keep their holds; its peace
+scenario parks a rival that does not attack neutrals, which was never a threat. Not shipped
+either: the spec's HELPER_ALERT_SITE_MOVED alert and the sites_moved stat, which belong to the
+site cancel, so there is no "moved site" event to count. AutoExpand's diplomacy-blind checks
+are the known gap: if a seed ever shows a neutral parked within 14 m of the site stalling the
+build, the follow-up is a skip in AutoExpand._closest_enemy of units whose player is not at
+war with ours when the spot is inside our yard, reusing HelperYard.in_own_yard.
+
+Measured with the new scenario tools/harness/scenarios/helper-factory-early.json
+(helper-never-attacks cut to four minutes: the factory by 2:00, a unit ordered by 4:00, no war
+started, no attack order), five runs each on the scratch copy of main ef2c11a and on the
+branch, the same file. Main: the factory stood by 2:00 in four of five (0:52, 1:20, 0:50, 1:21)
+and at 2:40 in the fifth, every run ordered 6 units by 4:00, retreats 38 to 79, holds 11 to 27.
+An earlier five on main, with the same checks, read 0:48, 0:50, 0:52, 1:44 and never, 6 units
+ordered in four and 0 in the fifth, retreats 30 to 304 and holds 12 to 24. The review added seeds 2
+and 7, since the holders depend on where the rival's militia spawn: on main, seed 2 never built
+the factory and ordered no unit (holds 22, retreats 51) and seed 7 had it at 0:09 (9.0 s) with
+6 units. Branch, the final code, nine runs with the same file: seed 1 five times, the factory
+at 0:09, 0:08, 0:08, 0:09 and 0:09 (8.9 to 9.3 s), seed 2 twice at 0:09 and 0:09 (9.3 s both),
+seed 7 twice at 0:09 and 0:09 (9.0 and 9.9 s); 6 units ordered by 4:00 in all nine, holds 4 to
+17, retreats 2 to 12, no script error. The draft before the review's two changes read the
+same: on seed 1 five times 0:09, 0:09, 0:44, 0:09 and 0:08 (the 0:44 run built a mine and the
+lumber mill first) and an earlier five 0:09, 0:08, 0:08, 0:09 and 0:09, on seeds 2 and 7 once
+each 0:09 and 0:09 (9.3 and 9.5 s), 6 units every time. The helper's think time on the nine
+final runs reads 1232 to 1668 us per guard tick (think_usec_total over thinks, the economy
+think included), against the review's 1279 and 1851 on the draft and 1171 and 1139 on main
+run back to back; the box is shared, so these move with the load more than with the code.
+The review's counters on a scratch copy of the final code read the change directly: 5580 yard
+lookups over 331 guard ticks, 1.4 us each, 7.8 ms of the helper's 545 ms (1.4 percent),
+against 20.9 us each and 158 ms of 679 ms (23 percent) on the draft.
+
+Unchanged on the final code: helper-never-attacks keeps its checks (5 of 5; the factory at
+0:09, 19 units ordered, 38 holds and 67 retreats in the full match; the draft read 0:09, 14, 53
+and 70). helper-army-pace seed 3 (the scenario from the PR 1 branch, run by path) has the
+factory at 0:07 (7.6 s; the draft 7.7 s); its tank checks fail here, as expected without PR 1's
+army code (0 tanks and 21 skimmers by 5:00). smoke passes 10 of 10, the data validator reports
+0 errors and 0 warnings, gdformat and gdlint are clean on source/. helper-factory-early joins
+tools/harness/batches/quick.json after helper-never-attacks (65 s real at 4x), so the batch run
+before a push guards the factory time; helper-never-attacks never checked it. HelperChecks,
+the full run on the final code: 21 PASS and 1 failure, "and gets away from where it was", the
+same as the scratch copy of main ef2c11a (21 and 1, the same check). Both lost the detour
+scenario's constructor to the squad and stopped that scenario on the script error at
+HelperChecks.gd:191, as the PR 1 entry records for main, so the detour's own checks did not
+run; the hold scenario passed all three of its checks (held back, does not go there, resumes
+once the spot is seen empty) and the frame-time check reads 1.566 ms per half-second tick
+against the 2 ms bound (main 1.28 ms on another load). The draft's two full runs on the branch
+had failed "an order to a site next to enemies is held back" and "it resumes the order once the
+spot is seen empty" as well (19 PASS, 3 failures): there the hold scenario's constructor was
+pulled back twice instead of held (retreats 1 to 3, holds 1 to 1), so a known enemy stood
+within flee reach of the command centre where the test parks it, with the crashed detour
+scenario's four tanks still on the map. The scenarios run at war, where the own-yard rule does
+not apply, the two --only=hold,retreat runs on the draft passed the hold checks, and the final
+run passes them with the same crash in place, so that failure was the sample, not the rule.
+
 ## 2026-10-19: several units selected show one tile per unit type with its count and each unit's health
 With two or more units selected, the bar's middle cell (HUD/BottomBar/SelectionPanel) shows
 Groups and hides Single; one unit keeps BuildingInfo's card in Single, unchanged, and nothing
