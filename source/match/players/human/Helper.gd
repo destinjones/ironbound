@@ -7,8 +7,9 @@ extends Node
 #   it orders a freight train when far extractors call for one and recycles trucks
 #   that have had nothing to do for a while (auto-expand builds the storage yards),
 # - army: queues combat units at the player's factories up to the army size the player
-#   set; they wait at the factory's rally point and, like every idle unit, answer a hit
-#   nearby (HomeGuard) and fight back, but are never sent to attack,
+#   set, saving for the faction's main battle unit first (HelperArmyPick); they wait at the
+#   factory's rally point and, like every idle unit, answer a hit nearby (HomeGuard) and
+#   fight back, but are never sent to attack,
 # - scouting: keeps one scout buggy driving to the least recently seen parts of the map,
 #   holding fire and turning back from enemies,
 # - constructor guard: remembers enemies any of the player's units has seen, and keeps
@@ -25,6 +26,7 @@ signal alert_raised(kind)  # the same alert by kind ("on", "retreat", ...), for 
 
 const Worker = preload("res://source/match/units/Worker.gd")
 const HelperScoutMap = preload("res://source/match/players/human/HelperScoutMap.gd")
+const HelperArmyPick = preload("res://source/match/players/human/HelperArmyPick.gd")
 const MatchLimits = preload("res://source/match/MatchLimits.gd")
 const Hauler = preload("res://source/match/units/Hauler.gd")
 const Structure = preload("res://source/match/units/Structure.gd")
@@ -40,7 +42,7 @@ const MatchRules = preload("res://source/data-model/MatchRules.gd")
 
 const NODE_NAME = "Helper"
 const WORKER_SCENE = "res://source/match/units/Worker.tscn"
-const SCOUT_UNIT_ID = "scout_buggy"
+const SCOUT_UNIT_ID = HelperArmyPick.SCOUT_UNIT_ID
 const ARMY_FACTORY_ID = "vehicle_factory"
 const DEFAULT_KEEP = 10
 const DEFAULT_ARMY_TARGET = 8
@@ -67,6 +69,7 @@ const SCOUT_CELL_M = 20.0
 const SCOUT_AVOID_S = 90.0
 const ALERT_COOLDOWN_S = 12.0
 const MAX_ALERTS = 4
+const SCOUT_REPLACE_S = 90.0  # while the army saves, a lost scout waits this long to be replaced
 
 var enabled = false:
 	set = set_enabled
@@ -106,6 +109,8 @@ var _blocked = []  # [position, until clock] of destinations held back for a blo
 var _status = {"economy": "", "army": "", "scout": "", "guard": ""}
 var _mine = []  # own units, gathered once per tick
 var _others = []  # everybody else's units, same tick
+var _army_pick = HelperArmyPick.new()  # what the army saves for, and since when
+var _scout_lost_s = -INF  # clock when the last scout was lost
 
 @onready var _player = get_parent()
 
@@ -696,37 +701,57 @@ func _manage_army():
 	for factory in _factories():
 		for element in factory.production_queue.get_elements():
 			var path = element.unit_prototype.resource_path
-			if _is_combat_entry(GameData.unit_by_scene(path)) and not _is_scout_scene(path):
+			var entry = GameData.unit_by_scene(path)
+			if HelperArmyPick.is_combat_entry(entry) and not _is_scout_scene(path):
 				queued += 1
 	var total = soldiers + queued
 	if army_target <= 0:
+		_army_pick.reset()
 		_status["army"] = tr("HELPER_STATUS_ARMY_OFF").format([soldiers])
 		return
 	if total >= army_target:
+		_army_pick.reset()
 		_status["army"] = tr("HELPER_STATUS_ARMY_FULL").format([soldiers, army_target])
 		return
 	var factories = _factories()
 	if factories.is_empty():
+		_army_pick.reset()
 		_status["army"] = tr("HELPER_STATUS_ARMY_NO_FACTORY").format([soldiers, army_target])
 		return
 	var limits = MatchLimits.of(get_tree())
 	if limits != null and limits.slots_used(_player) >= limits.slots_cap():
+		_army_pick.reset()
 		_status["army"] = tr("HELPER_STATUS_ARMY_CAP").format(
 			[soldiers, limits.slots_used(_player), limits.slots_cap()]
 		)
 		return
-	for factory in factories:
+	var saving_for = null
+	var plans = HelperArmyPick.plans(_player, factories, limits)  # the main unit's factory first
+	if plans.is_empty() or plans[0][2] == 0:
+		_army_pick.reset()  # its factory is busy or gone, or the main unit does not fit
+	for plan in plans:
 		if total >= army_target:
 			break
-		if factory.production_queue.size() >= 2:
-			continue
-		var choice = _best_unit_for(factory)
-		if choice == null:
-			continue
-		if factory.production_queue.produce(load(choice)) != null:
+		var choice = null
+		if plan[2] > 0:
+			var picked = _army_pick.choose(plan, _clock_s, spare)
+			choice = picked[0]
+			saving_for = picked[1]
+			if choice == null:
+				break  # nothing cheaper jumps the queue, here or at another factory
+		else:  # another factory: the costliest unit the bank covers, as before
+			choice = HelperArmyPick.first_affordable(plan[1], spare)
+		if choice == null or (limits != null and not limits.has_room_for(_player, choice)):
+			continue  # an order at another factory this think took the last slots
+		if plan[0].production_queue.produce(load(choice)) != null:
 			total += 1
 			stats["units_ordered"] += 1
+			if plan[2] > 0:
+				_army_pick.bought(choice, plan)
 	_status["army"] = tr("HELPER_STATUS_ARMY").format([soldiers, total - soldiers, army_target])
+	if saving_for != null:
+		var unit_name = HelperArmyPick.unit_name(saving_for)
+		_status["army"] += ". " + tr("HELPER_ARMY_SAVING").format([unit_name])
 
 
 func _factories():
@@ -741,39 +766,6 @@ func _factories():
 	)
 
 
-func _best_unit_for(factory):
-	"""the strongest unlocked combat unit the bank can spare, by cost"""
-	var producer = GameData.unit_by_scene(factory._scene_path())
-	if producer == null:
-		return null
-	var best = null
-	for entry in GameData.producible_by(producer["id"], _player.faction):
-		if not _is_combat_entry(entry) or entry["id"] == SCOUT_UNIT_ID:
-			continue
-		if not _player.can_produce(entry["scene"]):
-			continue
-		var limits = MatchLimits.of(get_tree())
-		if limits != null and not limits.has_room_for(_player, entry["scene"]):
-			continue  # a smaller unit may still fit under the unit cap
-		var cost = Constants.Match.Units.PRODUCTION_COSTS.get(entry["scene"], {})
-		if not spare(cost):
-			continue
-		var worth = Utils.Dict.sum(cost)
-		if best == null or worth > best[0]:
-			best = [worth, entry["scene"]]
-	return best[1] if best != null else null
-
-
-static func _is_combat_entry(entry):
-	return (
-		entry != null
-		and entry.get("category", "unit") == "unit"
-		and entry.get("properties", {}).get("attack_damage") != null
-		and entry["id"] != "hauler"
-		and entry["id"] != "caravan"
-	)
-
-
 # --- scouting
 
 
@@ -782,19 +774,23 @@ func _manage_scout():
 		_release_scout()
 		_status["scout"] = tr("HELPER_STATUS_SCOUT_OFF")
 		return
-	if _scout != null and not is_instance_valid(_scout):
+	if typeof(_scout) == TYPE_OBJECT and not is_instance_valid(_scout):  # freed == null is true
 		_scout = null
+		_scout_lost_s = _clock_s
 	if _scout == null:
 		var spare_scouts = _own(func(unit): return unit.get_meta("helper_scout", false))
 		if not spare_scouts.is_empty():
 			_take_scout(spare_scouts[0])
 	if _scout == null:
 		var scene = _scout_scene()
-		if scene != null and not _scout_pending and _queued(scene) == 0:
+		var waited = _army_pick.saving_since_s < 0.0 or _clock_s - _scout_lost_s >= SCOUT_REPLACE_S
+		if scene != null and not _scout_pending and _queued(scene) == 0 and waited:
 			var cost = Constants.Match.Units.PRODUCTION_COSTS.get(scene, {})
 			if spare(cost) and _produce_somewhere(scene, func(unit): return unit in _factories()):
 				_scout_pending = true
-		_status["scout"] = tr("HELPER_STATUS_SCOUT_WAITING")
+		var key = "HELPER_STATUS_SCOUT_WAITING" if waited else "HELPER_STATUS_SCOUT_NEXT"
+		var left = ceili(maxf(_scout_lost_s + SCOUT_REPLACE_S - _clock_s, 0.0))  # -INF: none lost
+		_status["scout"] = tr(key).format([left])
 		return
 	_status["scout"] = tr("HELPER_STATUS_SCOUT").format(
 		[int(round(_scout_map.seen_share(_match().map.size) * 100.0))]
@@ -896,6 +892,7 @@ func _hand_back():
 			_resume(constructor, _guards[constructor].duplicate())
 	_guards.clear()
 	_release_scout()
+	_army_pick.reset()
 	_say("HELPER_ALERT_OFF", "off")
 
 

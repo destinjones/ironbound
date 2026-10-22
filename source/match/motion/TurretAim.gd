@@ -42,6 +42,10 @@ const CLASS_DEFAULTS = {
 	"hull_rock": 0.6,
 }
 
+# mesh -> where on it shots leave, see _muzzle_on(). Never cleared: it keeps each turret mesh
+# (about ten) alive for the whole run, a small cost next to scanning its vertices per unit
+static var _muzzles = {}
+
 var unit = null
 var part = null  # the Node3D that turns
 var config = {}
@@ -123,12 +127,37 @@ func _setup(a_unit, a_part, settings):
 func _move_projectile_origin():
 	"""puts the unit's muzzle marker on the barrel tip so shots leave where it points"""
 	var origin = unit.find_child("ProjectileOrigin", true, false)
-	if origin == null or not part is MeshInstance3D:
+	if origin == null or not part is MeshInstance3D or part.mesh == null:
 		return
-	var box = part.get_aabb()
-	var muzzle = Vector3(box.get_center().x, box.get_center().y, box.position.z)
 	origin.reparent(part, true)
-	origin.position = muzzle
+	origin.position = _muzzle_on(part.mesh)
+
+
+static func _muzzle_on(mesh):
+	"""the middle of the part's front: of its barrel (or pair of barrels) when the frontmost
+	5 % of the part is under half its width and height, else of its front face (a launcher).
+	A turret's barrel sits well below the middle of the turret's front face. A barrel's muzzle
+	is 1.5 barrel heights ahead of its end, so the flash is centred where the blast leaves the
+	barrel. The barrel end still shows inside the flash: it is nearer the camera than the
+	flash's depth-tested billboard, which is far wider than this offset"""
+	if mesh in _muzzles:
+		return _muzzles[mesh]
+	var box = mesh.get_aabb()
+	var muzzle = Vector3(box.get_center().x, box.get_center().y, box.position.z)
+	var limit = box.position.z + box.size.z * 0.05
+	var front = null
+	var sum = Vector3.ZERO
+	var count = 0
+	for surface in range(mesh.get_surface_count()):
+		for point in mesh.surface_get_arrays(surface)[Mesh.ARRAY_VERTEX]:
+			if point.z <= limit:
+				front = AABB(point, Vector3.ZERO) if front == null else front.expand(point)
+				sum += point
+				count += 1
+	if front != null and front.size.x < box.size.x * 0.5 and front.size.y < box.size.y * 0.5:
+		muzzle = Vector3(sum.x / count, sum.y / count, box.position.z - front.size.y * 1.5)
+	_muzzles[mesh] = muzzle
+	return muzzle
 
 
 func animate(delta):
