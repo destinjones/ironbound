@@ -3,7 +3,7 @@ extends RefCounted
 # Shared look of the in-match HUD: the brand palette (see assets/ui/theme/ironbound.tres,
 # built by tools/ui/BuildTheme.gd), resource icons and colours, and small builders for
 # the folding panel headers, the stat cells used by several panels and the command card's
-# slots (their size, hotkey tag and caption).
+# slots (their size, hotkey tag and caption), and the sizes of the bottom bar.
 
 const ICONS = "res://assets/ui/icons/hud/"
 const BG = Color("#14110d")
@@ -28,6 +28,10 @@ const COMPACT_BELOW_PX = 900
 const SLOT_GAP = 4
 const BAR_MARGIN = 8
 const CARD_ROWS = 3
+const CARD_COLUMNS = 4
+# a unit waiting in a factory's queue, on the selection card in the bottom bar
+const QUEUE_FULL_PX = 56
+const QUEUE_COMPACT_PX = 44
 # brand colours of the commodities; data/resources.json colours paint the 3D deposits
 # (oil there is almost black, unreadable on a dark bar)
 const RESOURCE_COLORS = {
@@ -70,6 +74,16 @@ static func slot_px(viewport_height):
 static func bar_height(viewport_height):
 	"""the bottom bar: three slot rows, the gaps between them and a margin above and below"""
 	return CARD_ROWS * slot_px(viewport_height) + (CARD_ROWS - 1) * SLOT_GAP + 2 * BAR_MARGIN
+
+
+static func card_width(viewport_height, columns = CARD_COLUMNS):
+	"""the command card's width: `columns` slots and the gaps between them"""
+	return columns * slot_px(viewport_height) + (columns - 1) * SLOT_GAP
+
+
+static func queue_px(viewport_height):
+	"""the side of a production queue element for a HUD this tall, read as each element is added"""
+	return QUEUE_FULL_PX if viewport_height >= COMPACT_BELOW_PX else QUEUE_COMPACT_PX
 
 
 static func unit_icon(entry):
