@@ -1525,3 +1525,12 @@ tank, and the helper fields no mobile anti-air until PR 4 (the counters PR) brin
 back on purpose. PR 1 and PR 4 ship back to back, with no release between them. A Syndicate
 helper now fields raiders, which tanks shred, until the PR that vetoes units the enemy hits
 at double damage.
+
+Re-run after the scout change, merged with main ef2c11a: helper-army-pace passes 8 of 8 on
+seeds 3 and 5 (9 and 10 tanks by 5:00, 1 and 0 skimmers, the longest stretch with no tank
+103.7 and 41.0 s; the Foundry helper never scouts, so the scout change does not touch this
+scenario and the spread is run to run), smoke 10 of 10, helper-never-attacks 5 of 5,
+CapsChecks 41 PASS and 0 failures, the validator 0 errors and 0 warnings. HelperChecks, two
+full runs: 20 PASS and 2 failures, then 23 PASS and 4; "the scout never attacks an enemy tank
+next to it at war" passes in both, and every failure is a constructor guard check that fails
+on main too.
