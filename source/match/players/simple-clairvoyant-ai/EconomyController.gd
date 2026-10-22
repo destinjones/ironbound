@@ -91,6 +91,10 @@ func provision(resources, metadata):
 		assert(false, "unexpected flow")
 
 
+func extractor_count():
+	return _count_units(Extractor)
+
+
 func _refresh():
 	_ccs = _ccs.filter(func(cc): return is_instance_valid(cc) and cc.is_inside_tree())
 	# extractors come first: more constructors and haulers only pay off once there is

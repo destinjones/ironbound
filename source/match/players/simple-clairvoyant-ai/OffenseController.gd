@@ -230,6 +230,16 @@ func _try_creating_new_battlegroup():
 	return true
 
 
+func battle_unit_count():
+	"""own battle units, at home or on the attack"""
+	return (
+		get_tree()
+		. get_nodes_in_group("units")
+		. filter(func(unit): return unit.player == _player and _is_battle_unit(unit))
+		. size()
+	)
+
+
 func _attach_current_battle_units():
 	var battle_units = get_tree().get_nodes_in_group("units").filter(
 		func(unit): return unit.player == _player and _is_battle_unit(unit)

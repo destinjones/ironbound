@@ -23,6 +23,7 @@ const ArmyPositioningController = preload(
 )
 const Diplomacy = preload("res://source/match/diplomacy/Diplomacy.gd")
 const GameData = preload("res://source/data-model/GameData.gd")
+const ARMY_CHECK_INTERVAL_S = 1.0
 
 # personalities (data/ai/*.json) override the numbers below
 @export var personality_id = "balanced"
@@ -68,6 +69,8 @@ var _resource_requests = {
 	ResourceRequestPriority.HIGH: [],
 }
 var _call_to_perform_during_process = null
+var _army_waits = false
+var _army_check_at_s = -INF
 
 @onready var _match = find_parent("Match")
 
@@ -251,9 +254,12 @@ func _try_fulfilling_resource_requests_according_to_priorities_next_frame():
 func _try_fulfilling_resource_requests_according_to_priorities():
 	if _provisioning_ongoing:
 		return
+	var skip_defense = false
 	for priority in [
 		ResourceRequestPriority.HIGH, ResourceRequestPriority.MEDIUM, ResourceRequestPriority.LOW
 	]:
+		if skip_defense and priority == ResourceRequestPriority.MEDIUM:
+			continue
 		while (
 			not _resource_requests[priority].is_empty()
 			and _can_afford(_resource_requests[priority].front()["resources"], priority)
@@ -268,7 +274,25 @@ func _try_fulfilling_resource_requests_according_to_priorities():
 			not _resource_requests[priority].is_empty()
 			and not _can_afford(_resource_requests[priority].front()["resources"], priority)
 		):
+			if priority == ResourceRequestPriority.HIGH and _army_waits_on_economy():
+				skip_defense = true
+				continue
 			break
+
+
+func _army_waits_on_economy():
+	"""true while the economy's next structure, not yet affordable, would hold back the
+	first battlegroup: the home extractors stand but the army is smaller than one first
+	wave. Then battle units are bought from what is in the bank instead of waiting, so how
+	often the AI thinks does not decide when its first tank comes. Looked at once a second."""
+	if match_time_s - _army_check_at_s < ARMY_CHECK_INTERVAL_S:
+		return _army_waits
+	_army_check_at_s = match_time_s
+	_army_waits = (
+		_economy_controller.extractor_count() >= _economy_controller.MIN_EXTRACTORS_FIRST
+		and _offense_controller.battle_unit_count() < expected_number_of_battlegroup_units()
+	)
+	return _army_waits
 
 
 func _can_afford(resources, priority):
