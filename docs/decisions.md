@@ -1759,7 +1759,7 @@ change cannot reach those scenarios: the test match counts 4 of 4 soldiers with 
 ordered on both sides, so no militia enter the helper's count there, on the base or on the
 branch.
 
-## Helper: build counters to the enemy units it has seen (PR 4)
+## 2026-10-22: the helper builds counters to the enemy units it has seen
 
 The helper's army pick ignored what the enemy fielded. In a 3-minute big_arena match at
 tier 2 where the rival flies 4 helicopters next to 4 tanks, main built 8 heavy tanks and 0
@@ -1779,6 +1779,6 @@ errors and 0 warnings, helper-army-pace seed 3 10 of 10, helper-never-attacks 5 
 counters-triangle 46 of 46, smoke 10 of 10.
 
 Risk: the counter only reads armour classes, so it does not weigh range or speed, and a
-rival that shows a single unit type early still pulls 1 slot in 10 away from tanks. The
+rival that shows a few aircraft early still pulls build slots away from tanks. The
 army-mix shape probe across longer matches was skipped to save usage; the pace check
 guards that the army still fills on time.
