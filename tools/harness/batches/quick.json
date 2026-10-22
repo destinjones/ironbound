@@ -6,6 +6,7 @@
     "place-extractors",
     "line-orders",
     "helper-never-attacks",
+    "helper-factory-early",
     "stress-40v40",
     "factions-foundry",
     "factions-syndicate",
