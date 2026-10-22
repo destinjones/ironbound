@@ -34,11 +34,7 @@ func _physics_process(_delta):
 
 
 func _setup_path():
-	var projectile_origin = (
-		_unit.global_position
-		if _unit.find_child("ProjectileOrigin") == null
-		else _unit.find_child("ProjectileOrigin").global_position
-	)
+	var projectile_origin = ShotEffects.muzzle(_unit).origin
 	_path.curve.add_point(projectile_origin)
 	_path.curve.add_point(target_unit.global_position)
 	_setup_arc(projectile_origin, target_unit.global_position)
