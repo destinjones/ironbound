@@ -130,6 +130,7 @@ func _run():
 	_check_wind(data.get("wind", {}))
 	_check_city_life(data.get("city_life", {}))
 	_check_voices(data["units"])
+	_check_looks()
 	print(
 		(
 			"validate_data: {0} units, {1} commodities, {2} maps, {3} AI personalities, "
@@ -959,6 +960,51 @@ func _check_city_life(city_life):
 					)
 			if value is Array and value[0] > value[1]:
 				_error(where, "'{0}.{1}' must be [low, high]".format([section, key]))
+
+
+func _check_looks():
+	"""data/looks: the default look exists, and a look only names weathers that exist"""
+	var look_script = load("res://source/match/environment/Look.gd")
+	var weathers = load("res://source/match/environment/Atmosphere.gd").WEATHERS
+	var ids = look_script.available_looks()
+	if not look_script.DEFAULT_LOOK in ids:
+		_error("looks", "the default look '{0}' has no file".format([look_script.DEFAULT_LOOK]))
+	for id in ids:
+		var where = "looks/{0}.json".format([id])
+		var look = look_script.load_definition(id)
+		if look == null:
+			_error(where, "is not a JSON object")
+			continue
+		if look.has("haze_color"):
+			var haze_color = look["haze_color"]
+			var is_color = haze_color is Array and haze_color.size() in [3, 4]
+			if is_color:
+				for part in haze_color:
+					is_color = is_color and (part is float or part is int)
+			if not is_color:
+				_error(where, "'haze_color' must be [r, g, b]")
+		var weather = look.get("weather", {})
+		if not weather is Dictionary:
+			_error(where, "'weather' must be an object")
+			continue
+		if weather.has("start") and not StringName(str(weather["start"])) in weathers:
+			_error(where, "'weather.start' = {0} is not a weather".format([weather["start"]]))
+		var weights = weather.get("weights", {})
+		if not weights is Dictionary:
+			_error(where, "'weather.weights' must be an object")
+			continue
+		var total = 0.0
+		for name in weathers:
+			total += weathers[name].weight
+		for name in weights:
+			if not StringName(name) in weathers:
+				_error(where, "'weather.weights.{0}' is not a weather".format([name]))
+			elif not (weights[name] is float or weights[name] is int) or weights[name] < 0.0:
+				_error(where, "'weather.weights.{0}' must be 0 or more".format([name]))
+			else:
+				total += weights[name] - weathers[StringName(name)].weight
+		if total <= 0.0:
+			_error(where, "'weather.weights' leaves no weather to pick")
 
 
 func _check_voices(units):

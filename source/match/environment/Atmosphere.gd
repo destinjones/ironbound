@@ -196,7 +196,7 @@ func _ready():
 		_cloud_image.decompress()
 	_setup_clouds()
 	_setup_cloud_shadows()
-	_weather = initial_weather
+	_weather = initial_weather if initial_weather in WEATHERS else &"clear"
 	_current = WEATHERS[_weather].duplicate()
 	_time_to_next_weather = _rng.randf_range(weather_duration_range_s.x, weather_duration_range_s.y)
 	_apply()
@@ -331,18 +331,27 @@ func _advance_weather(delta):
 
 
 func _pick_next_weather():
+	var weights = {}
 	var total = 0.0
 	for weather in WEATHERS:
 		if weather != _weather:
-			total += WEATHERS[weather].weight
+			weights[weather] = _weather_weight(weather)
+			total += weights[weather]
+	if total <= 0.0:
+		return _weather
 	var roll = _rng.randf() * total
-	for weather in WEATHERS:
-		if weather == _weather:
-			continue
-		roll -= WEATHERS[weather].weight
-		if roll <= 0.0:
+	for weather in weights:
+		roll -= weights[weather]
+		if roll <= 0.0 and weights[weather] > 0.0:
 			return weather
-	return &"clear"
+	return _weather
+
+
+func _weather_weight(weather):
+	"""the look may change how often a weather comes up (the Zone has no sandstorms)"""
+	var look = get_tree().get_first_node_in_group("look")
+	var weight = WEATHERS[weather].weight
+	return look.get_weather_weight(String(weather), weight) if look != null else weight
 
 
 func _advance_wind(delta):
@@ -396,7 +405,9 @@ func _apply():
 		environment.ambient_light_color = _ambient_base.color * hour_light.ambient_tint
 		environment.tonemap_exposure = _ambient_base.exposure * hour_light.exposure
 		environment.fog_enabled = haze > 0.01
-		environment.fog_light_color = _current.haze_color * hour_light.haze_tint
+		var look_haze_color = look.get_haze_color() if look != null else null
+		var haze_color = look_haze_color if look_haze_color != null else _current.haze_color
+		environment.fog_light_color = haze_color * hour_light.haze_tint
 		# the camera looks down at 30 degrees, so the ground is about twice its height away
 		var camera_distance = 80.0 if camera == null else max(camera.global_position.y, 1.0) * 2.0
 		environment.fog_density = haze * 0.55 / camera_distance

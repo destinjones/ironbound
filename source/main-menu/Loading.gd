@@ -1,6 +1,7 @@
 extends Control
 
 const SaveGame = preload("res://source/match/SaveGame.gd")
+const Look = preload("res://source/match/environment/Look.gd")
 
 var match_settings = null
 var map_path = null
@@ -41,6 +42,11 @@ func _ready():
 		saved_game == null and not "--no-build-up" in OS.get_cmdline_user_args()
 	)
 	a_match.saved_state = saved_game
+	# a played match opens in its look's weather (overcast in the Zone); scenes that build
+	# their own match (tests, the harness) keep the Atmosphere's own opening weather
+	var atmosphere = a_match.find_child("Atmosphere")
+	if atmosphere != null:
+		atmosphere.initial_weather = Look.starting_weather(atmosphere.initial_weather)
 	_progress_bar.value = 0.9
 
 	_label.text = tr("LOADING_STEP_STARTING_MATCH")

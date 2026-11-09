@@ -14,6 +14,9 @@ extends Node
 #                sun), tint (multiplies the weather's sun colour), shadow_blur
 #   ambient:     energy (multiplier on the weather's ambient light)
 #   haze:        multiplier on the weather's haze; base_haze: haze added in every weather
+#   haze_color:  the colour of the haze in every weather, instead of the weather's own
+#   weather:     start (the weather a match opens in) and weights (how often each weather
+#                comes up, by name; 0 never); weathers left out keep Atmosphere's weight
 #   terrain:     desert_terrain.gdshader uniforms
 #   grade:       look_grade.gdshader uniforms (colour grade, tilt-shift, vignette, grain)
 #   outline:     look_outline.gdshader uniforms; lines are drawn only when this is present
@@ -22,7 +25,7 @@ extends Node
 # weather keeps working on top of any look.
 
 const LOOKS_DIR = "res://data/looks"
-const DEFAULT_LOOK = "grounded"
+const DEFAULT_LOOK = "zone"
 const CLASSIC_LOOK = "classic"
 const GraphicsQuality = preload("res://source/options/GraphicsQuality.gd")
 const GradeShader = preload("res://source/shaders/2d/look_grade.gdshader")
@@ -141,6 +144,25 @@ func get_haze_multiplier():
 func get_base_haze():
 	"""haze present in every weather: distance softens into the air (aerial perspective)"""
 	return float(definition.get("base_haze", 0.0))
+
+
+func get_haze_color():
+	"""the look's own haze colour, or null to keep the weather's"""
+	var values = definition.get("haze_color")
+	return _color(values) if values is Array and values.size() >= 3 else null
+
+
+func get_weather_weight(weather, default_weight):
+	"""how often `weather` comes up under this look"""
+	return float(definition.get("weather", {}).get("weights", {}).get(weather, default_weight))
+
+
+static func starting_weather(default_weather):
+	"""the weather the picked look opens a played match in (Loading.gd asks)"""
+	var loaded = load_definition(picked_look())
+	if loaded == null:
+		return default_weather
+	return StringName(loaded.get("weather", {}).get("start", default_weather))
 
 
 func _apply_environment(match_node):

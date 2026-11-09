@@ -573,8 +573,11 @@ func _load_values():
 	_controls["graphics_quality"].select(options.graphics_quality)
 	_quality_hint.text = GraphicsQuality.describe(options.graphics_quality)
 	_controls["classic_unit_models"].select(1 if options.classic_unit_models else 0)
-	var art_style = options.art_style if options.art_style != "" else Look.DEFAULT_LOOK
-	_controls["art_style"].select(max(Look.available_looks().find(art_style), 0))
+	# a saved look without a file (a look that was renamed or deleted) shows as the default,
+	# which is what Look.picked_look() plays
+	var looks = Look.available_looks()
+	var art_style = options.art_style if options.art_style in looks else Look.DEFAULT_LOOK
+	_controls["art_style"].select(max(looks.find(art_style), 0))
 	_fill_resolutions()
 	_refresh_resolution_state()
 
