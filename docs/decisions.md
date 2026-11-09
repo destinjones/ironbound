@@ -2065,9 +2065,17 @@ and 310.8 ms. The look changes values, not passes, so nothing got slower; a real
 needs Destin's PC. No model was touched, so tri counts stand. A match started through
 Loading.tscn reports look zone and weather overcast; 4,000 rolls of the next weather from
 overcast gave rain 49 %, hazy 41 %, clear 10 % and no sandstorm, and under classic the old
-shares. validate_data 0 errors and 0 warnings (and 2 errors when zone.json names a weather
-that does not exist), smoke 10 of 10, SaveMenuCheck 14 of 14 on main and on the branch.
-Sheets in the project folder under game/zone/look/.
+shares. validate_data 0 errors and 0 warnings (and 3 errors for a zone.json with a null
+`haze_color`, an opening weather and a weight name that do not exist), smoke 10 of 10.
+
+Seven test scenes start their match through the loading screen and so open in overcast now:
+OptionsShots and SaveMenuCheck directly, and Playthrough, StartZonesCheck, TutorialCheck,
+MatchRulesCheck and MatchSetupCheck through the start screen (the last two set clear
+themselves before their shots). Run on the final tree, none with a script error:
+TutorialCheck 72 of 72, StartZonesCheck 16 of 16 (four_oases, 4 players), MatchRulesCheck 27
+of 27, MatchSetupCheck 140 of 140, SaveMenuCheck 14 of 14 (on main too), OptionsShots 18 of
+18. Playthrough, a 25 minute match, was not run. Sheets in the project folder under
+game/zone/look/.
 
 The self-critique against an overcast, overgrown Zone, ten gaps, harshest first: (1) at noon
 the ground was a flat pale mint, lit by ambient 1.5; (2) at 23:00 the frame was black, mean
@@ -2085,5 +2093,5 @@ Left for later. tests/screenshots/LookShots.gd runs its warmup at time scale 4 w
 clock going, so its hour depends on how fast the machine renders (a dusk frame here); the
 first tuning pass was judged on those frames and came out too pale at noon. WeatherShots
 holds the hour and is the tool to compare looks with. LookShots' usage comment still names
-grounded: tests/ is ask-first. tests/options/OptionsShots.gd starts through the loading
-screen and now opens in overcast; it was not run.
+grounded: tests/ is ask-first. docs/direction.md and tools/blender/generated_models.md still
+speak of the Grounded look and palette; they are rewritten with the new direction.
