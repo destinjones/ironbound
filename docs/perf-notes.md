@@ -51,7 +51,7 @@ a two-line change to test tooling and needs Destin's OK.
   is why primitives per unit are about twice the model's triangle count.
 - MultiMesh is used where it pays: desert scatter (source/match/maps/DesertScatter.gd),
   wildlife, wind props, rail, townsfolk and chimney smoke, each one draw call per kind.
-- The Grounded look adds SSAO and SSIL (data/looks/grounded.json); GraphicsQuality.gd
+- The Zone look (the default) adds SSAO and SSIL (data/looks/zone.json); GraphicsQuality.gd
   turns them off below High.
 
 ## What the demo does that we can use

@@ -1988,3 +1988,102 @@ The AI's first tank on Hard came earlier on seeds 3 and 5 (4:45 to 3:29, 3:46 to
 its first wave did not, and Hard ended later on every seed while a passive player lived
 longer against Normal. Dropped: it does not make Hard hit harder, and the seed spread is
 as large as the effect. Judging difficulty needs 3 or more seeds per side.
+
+## 2026-11-09: a new direction, the Zone, and the feature freeze lifted for it
+
+On 9 November Destin asked to turn Ironbound into a much darker game "like Stalker" and then
+widened the ask to "almost like a new game": infantry only (pulses kill every vehicle and
+aircraft in the Zone, and their wrecks stay as cover and scrap), no city centre, a wooded and
+overgrown land that has been left for years, a core that is "borderline evil" where humans do
+not belong, factions backed by a government, a group or an ideology, emissions that close
+around areas of the map, trade only by request (one side asks, the other accepts, both send
+goods), and a world that is alive.
+
+This overrides the feature freeze in CLAUDE.md and the Generals-style skirmish of
+docs/direction.md for the work that follows. Both files, and docs/art-direction.md's target
+feel, describe the old game until the docs PR that rewrites them; until then this entry is the
+pointer. One concern per PR, evidence on every PR and the ask-first list (pathing, save
+format, exports, test suite) stand as they were. The cuts ahead will change tests and the
+save format, and each such PR asks first.
+
+Decided with Destin the same day: the player keeps a small camp they build (HQ, barracks,
+shelter bunker, workshop, sandbags, watchtower) instead of no building at all, because where
+the shelters stand against emissions is the main base decision and the building code works.
+
+The order of work, a first playable of one forest map and two factions: the look (below),
+forest and wrecks that block sight, the city cut with the HQ as what must not be lost,
+vehicles, aircraft, ships, trains and hauling cut with the economy trimmed to supplies and
+scrap, squads (cover, pinning, losing men one at a time), capture points and scavenging,
+emissions with shelters and then pulses, creatures at night grown from the wildlife, trade
+by request with porters, and the first two factions.
+
+## 2026-11-09: the Zone look replaces Grounded as the default
+
+data/looks/zone.json takes grounded.json's place (a rename, so the game still has one default
+look and no fourth one). Look.DEFAULT_LOOK is "zone". A saved Options choice of "grounded"
+names no file any more and falls back to the default; Options.gd now shows that fallback in
+the Art style dropdown too (it showed the first look in the list, Classic, while the match
+played the default). The menu backdrop follows the look by file name, so
+assets/ui/backdrops/zone.jpg replaces grounded.jpg: the same base under overcast at 14:00,
+HUD, city ring and supply beacon hidden. Without it the menus fell back to the painted
+background.
+
+What the look sets: a low grey-green sky, sun at 0.6 with a 1.4 shadow blur so shadows go
+soft, saturation 0.62, a mud, moss and wet-earth terrain palette in place of the sands, no
+sand ripples, a grey-green split tone, vignette 0.3 and grain 0.05. Three keys are new in a
+look file and read by Atmosphere.gd, each optional so classic and stylised behave as before:
+`haze_color` (one haze colour in every weather, so the sandy weather hazes do not tint the
+Zone), `weather.start` (the weather a played match opens in: overcast) and `weather.weights` (how
+often each weather comes up: clear 6, hazy 22, overcast 40, rain 26, sandstorm 0). The
+weather table itself stays in Atmosphere.gd. Only source/main-menu/Loading.gd asks the look
+for the opening weather, so a match started from the menus (a loaded save too: saves hold no
+weather) opens in overcast, and scenes that build their own match, the tests and the
+harness, open in clear as before. The weights apply wherever the weather is left random.
+Weighted by those weights the weather costs the same as it did: ground speed 0.95 before and
+0.96 after, sight 0.90 and 0.90; the sandstorm (speed 0.7, sight 0.55) is gone and rain
+(0.85, 0.8) comes over three times as often. tools/validate_data.gd now checks every look file:
+the default look exists, `haze_color` is three or four numbers when the key is there,
+`weather.start` and the names under `weather.weights` are weathers, and the weights leave one
+to pick.
+
+data/time_of_day.json: the midnight key is lifted (moon 0.32 to 0.9, ambient 0.45 to 0.8,
+exposure 0.5 to 0.9), the twilight keys get ambient and exposure 1.0, and the dawn and dusk
+sun is cooler. The moon keys at 4:30 and 20:18 keep their energy of 0.29: the light changes
+from moon to sun between them and the next key, and a bright moon there made every shadow
+swing across the ground under strong light (found in review). Why the lift: the dark ground
+under the old keys measured a mean of 11 of 255 at 23:00 and the base could not be read; the
+old sand hid how dark those keys were. Classic and stylised get the brighter nights too,
+until they are deleted (a follow-up, with the Art style option).
+
+Measured, all in the cloud container on a software renderer (no GPU). Mean brightness of the
+1600x900 WeatherShots frames of TestDesert at camera size 22, 0 to 255: clear noon 199 on
+main, Zone overcast noon 56; rain noon 124 to 44; clear night (23:00) 44, Zone overcast night
+22; rain night 27 to 27; Zone twilight 24 at 18:30, 15 at 19:48 and 15 at 4:45. Frame time, 20 against 20 fighting on Big Arena for 60 game seconds
+in a 1280x720 window (stress-40v40 with 4 of each unit), p50 and p95: Grounded clear 277.7
+and 326.7 ms, Zone clear 274.1 and 321.4 ms; Grounded rain 280.2 and 316.7 ms, Zone rain 277.2
+and 310.8 ms. The look changes values, not passes, so nothing got slower; a real frame rate
+needs Destin's PC. No model was touched, so tri counts stand. A match started through
+Loading.tscn reports look zone and weather overcast; 4,000 rolls of the next weather from
+overcast gave rain 49 %, hazy 41 %, clear 10 % and no sandstorm, and under classic the old
+shares. validate_data 0 errors and 0 warnings (and 2 errors when zone.json names a weather
+that does not exist), smoke 10 of 10, SaveMenuCheck 14 of 14 on main and on the branch.
+Sheets in the project folder under game/zone/look/.
+
+The self-critique against an overcast, overgrown Zone, ten gaps, harshest first: (1) at noon
+the ground was a flat pale mint, lit by ambient 1.5; (2) at 23:00 the frame was black, mean
+11, and no unit could be read; (3) the haze was milky and whitened the picture instead of
+darkening the distance; (4) palms and round bright-green trees, the wrong biome; (5) orange
+sandstone pillars and ore mounds; (6) pale adobe buildings with blue trim, a desert town;
+(7) turquoise oasis water and pale sand roads; (8) dark vehicles (hauler, missile truck) lose
+their outline on the dark ground at size 15; (9) one flat ground tone, the cracked hardpan
+still desert, no leaf litter, puddles or moss; (10) no ground mist, white rain streaks, and
+an amber HUD. Fixed here, the top three: ambient 1.0 with a darker mud palette, the night
+keys above (mean 22), base haze 0.14 to 0.05 with a darker haze colour. Gaps 4 to 10 are
+props, materials and shaders, each its own slice, the forest first.
+
+Left for later. tests/screenshots/LookShots.gd runs its warmup at time scale 4 with the
+clock going, so its hour depends on how fast the machine renders (a dusk frame here); the
+first tuning pass was judged on those frames and came out too pale at noon. WeatherShots
+holds the hour and is the tool to compare looks with. LookShots' usage comment still names
+grounded: tests/ is ask-first. tests/options/OptionsShots.gd starts through the loading
+screen and now opens in overcast; it was not run.

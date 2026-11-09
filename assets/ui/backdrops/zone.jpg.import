@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c52wuvmug8wqo"
-path="res://.godot/imported/grounded.jpg-da875b4c34f5f2f8018920e3f20df7ff.ctex"
+uid="uid://dl351f7st2ayi"
+path="res://.godot/imported/zone.jpg-d3a8ce63c1d5623f5e96221acbca7b03.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ui/backdrops/grounded.jpg"
-dest_files=["res://.godot/imported/grounded.jpg-da875b4c34f5f2f8018920e3f20df7ff.ctex"]
+source_file="res://assets/ui/backdrops/zone.jpg"
+dest_files=["res://.godot/imported/zone.jpg-d3a8ce63c1d5623f5e96221acbca7b03.ctex"]
 
 [params]
 
