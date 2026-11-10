@@ -14,10 +14,13 @@ const BURST_S = 0.5
 const RADIUS = 0.55
 const HALO_SIZE = 7.0
 const ARC_COUNT = 4
-const BURST_ARC_COUNT = 9
+const BURST_ARC_COUNT = 7
 const ARC_REFRESH_S = 0.07
 const ARC_LENGTH = Vector2(1.4, 3.2)
-const ARC_WIDTH = 0.09
+const ARC_WIDTH = 0.07
+# thin arcs with a narrow glow: the wide glow of a bolt reads as paper strips this close up
+const ARC_LAYERS = [[2.6, 0.22], [1.0, 1.0]]
+const BURST_REACH = 2.2  # how much further the burst throws its arcs
 const DRIFT_SPEED = 0.7
 const LIGHT_ENERGY = 3.0
 const BURST_LIGHT_ENERGY = 12.0
@@ -134,7 +137,9 @@ func _build_arcs():
 	the burst throws more of them further"""
 	var camera = get_viewport().get_camera_3d()
 	var towards_camera = Vector3.BACK if camera == null else camera.global_transform.basis.z
-	var reach = 2.6 if _has_burst else 1.0
+	# the burst throws its arcs outwards over its first moments
+	var burst_t = clamp((_age - _hang_s) / BURST_S, 0.0, 1.0)
+	var reach = lerp(1.0, BURST_REACH, smoothstep(0.0, 0.35, burst_t))
 	var mesh = ImmediateMesh.new()
 	mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
 	for i in range(BURST_ARC_COUNT if _has_burst else ARC_COUNT):
@@ -144,7 +149,7 @@ func _build_arcs():
 		direction = Vector3.DOWN if direction.length() < 0.2 else direction.normalized()
 		var end = direction * _rng.randf_range(ARC_LENGTH.x, ARC_LENGTH.y) * reach
 		var points = Lightning.jagged(_rng, direction * RADIUS * 0.5, end, 6, 0.35 * reach)
-		Lightning.ribbon(mesh, points, towards_camera, ARC_WIDTH)
+		Lightning.ribbon(mesh, points, towards_camera, ARC_WIDTH, ARC_LAYERS)
 	mesh.surface_end()
 	return mesh
 

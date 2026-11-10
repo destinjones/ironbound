@@ -51,6 +51,7 @@ const DRY_PER_S = 1.0 / 120.0
 const WETNESS_STEP = 0.01  # the terrain material is only touched when wetness moves this much
 const FOG_PERIOD = 150.0
 const FOG_BREATH_S = 80.0  # banks of ground fog swell and shrink over about this long
+const FOG_BREATH = 0.28  # and lose this share of their cover at the low point
 const BALL_LIGHTNING_HEIGHT = Vector2(8.0, 12.0)
 const WEATHERS = {
 	&"clear":
@@ -151,7 +152,7 @@ const WEATHERS = {
 		"sun_energy": 0.5,
 		"sun_color": Color(0.86, 0.88, 0.9),
 		"ambient_energy": 1.0,
-		"haze": 0.5,
+		"haze": 0.35,
 		"haze_color": Color(0.7, 0.72, 0.74),
 		"rain": 0.0,
 		"dust": 0.0,
@@ -159,7 +160,7 @@ const WEATHERS = {
 		"vision": 0.65,
 		"ground_speed": 1.0,
 		"wood_growth": 1.2,
-		"fog": 0.9,
+		"fog": 0.76,
 	},
 }
 const BLENDED_KEYS = [
@@ -453,7 +454,7 @@ func _apply():
 	_ground_fog.visible = fog_banks > 0.01
 	if _ground_fog.visible:
 		var fog_material = _ground_fog.material_override
-		var breath = 0.85 + 0.15 * sin(_fog_time * TAU / FOG_BREATH_S)
+		var breath = 1.0 - FOG_BREATH * (0.5 - 0.5 * sin(_fog_time * TAU / FOG_BREATH_S))
 		fog_material.set_shader_parameter("coverage", fog_banks * breath)
 		fog_material.set_shader_parameter("offset", _fog_offset)
 		fog_material.set_shader_parameter("offset_fine", _fog_offset_fine)

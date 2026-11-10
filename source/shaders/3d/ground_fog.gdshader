@@ -14,7 +14,7 @@ uniform vec2 offset = vec2(0.0);
 uniform vec2 offset_fine = vec2(0.0);
 uniform float coverage = 0.0;  // 0 no fog, 1 fog nearly everywhere
 uniform float softness = 0.34;
-uniform float density = 0.8;  // how much the thickest fog hides
+uniform float density = 0.7;  // how much the thickest fog hides
 uniform float top = 5.0;  // metres above the ground where a bank has thinned out
 uniform vec3 fog_color : source_color = vec3(0.45, 0.48, 0.47);
 

@@ -14,6 +14,8 @@ const FLICKER_GAP_S = Vector2(0.07, 0.15)
 const LIGHT_ENERGY = 9.0
 const LIGHT_RANGE = 22.0
 const COLOR = Color(0.82, 0.88, 1.0)
+# a ribbon is drawn in layers, each [width as a multiple of the core, opacity]
+const GLOWING_LAYERS = [[7.0, 0.12], [2.5, 0.3], [1.0, 1.0]]
 
 var _rng = RandomNumberGenerator.new()
 var _age = LIFETIME_S
@@ -99,13 +101,13 @@ static func jagged(rng, from, to, segments, spread):
 	return points
 
 
-static func ribbon(mesh, points, towards_camera, width):
+static func ribbon(mesh, points, towards_camera, width, layers = GLOWING_LAYERS):
 	"""a strip that faces the camera, a soft wide glow under a thin bright core"""
-	for layer in [[width * 7.0, 0.12], [width * 2.5, 0.3], [width, 1.0]]:
+	for layer in layers:
 		for i in range(points.size() - 1):
 			var a = points[i]
 			var b = points[i + 1]
-			var side = (b - a).cross(towards_camera).normalized() * layer[0] * 0.5
+			var side = (b - a).cross(towards_camera).normalized() * width * layer[0] * 0.5
 			var color = Color(1.0, 1.0, 1.0, layer[1])
 			for vertex in [a - side, a + side, b + side, a - side, b + side, b - side]:
 				mesh.surface_set_color(color)
