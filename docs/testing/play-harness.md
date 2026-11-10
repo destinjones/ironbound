@@ -130,7 +130,7 @@ what you want to test. A short one:
 | `view` | `fast` | `fast` or `window` |
 | `players` | you + balanced AI | `{"type": "human", "helper": true, "color": "red", "start_zone": 0}` or `{"type": "ai", "personality": "raider", "difficulty": "hard", "faction": "syndicate"}` (`faction`: `foundry`, `syndicate` or `random`; left out, the player may build every unit) |
 | `fog` | true | false reveals the whole map |
-| `weather` | `clear` | `clear`, `overcast`, `rain`, `sandstorm`, or `random` for the map's own changing weather |
+| `weather` | `clear` | `clear`, `hazy`, `overcast`, `rain`, `fog`, `sandstorm`, or `random` for the map's own changing weather |
 | `tutorial` | false | true keeps the tutorial panel; a name from `data/tutorial/` (e.g. `"first_match"`) plays that tutorial script |
 | `city_build_up` | false | true plays the starter-city build-up first |
 | `match_end` | false | true lets the match end on victory, defeat or the match limits; the run then goes on past the `match_end` event until the results are up (the `ending` event) and the hold and results screenshots are saved |

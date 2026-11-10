@@ -2095,3 +2095,105 @@ first tuning pass was judged on those frames and came out too pale at noon. Weat
 holds the hour and is the tool to compare looks with. LookShots' usage comment still names
 grounded: tests/ is ask-first. docs/direction.md and tools/blender/generated_models.md still
 speak of the Grounded look and palette; they are rewritten with the new direction.
+
+## 2026-11-10: ground fog that comes and goes, a fog weather, lightning out of a dry sky and ball lightning
+
+Destin's ask: "Have the fog move in and out. Have random day lightning sometimes and also the
+ball of lightning in the sky that randomly will popup and burst." Four pieces, all in the
+match atmosphere and all switched on by keys in the look file, so classic and stylised, which
+set none of them, look and play as before.
+
+Ground fog. source/shaders/3d/ground_fog.gdshader is a full-screen pass like the cloud
+shadows: it rebuilds each pixel's world position from the depth buffer and lays fog on what
+is there, so terrain, props, units and buildings all sink into a bank, and roofs and treetops
+stand out of it (the fog thins out over the first 5 m above the ground). The banks are two
+layers of the cloud noise drifting with the wind at different speeds, so they change shape as
+they move, and Atmosphere.gd swells and shrinks their cover over 80 s (up to 28 % off at the
+low point), so the fog moves in and out even while the weather holds. How much fog a weather
+has is a new blended key in the weather table, `fog`: clear 0, hazy 0.3, overcast 0.25, rain
+0.2, sandstorm 0. It is multiplied by the look's `weather.fog_banks` (1.0 in the Zone, absent
+and so 0 elsewhere). Measured on the noise, a cover of 0.25 puts thick fog (over half of
+full strength) on 6 % of the ground, 0.55 on 45 % and 0.76 on 74 %.
+
+Why a pass of our own and not the engine's volumetric fog: the web build and any machine
+without Vulkan run the Compatibility renderer, which has none, and the Environment's depth
+fog (the haze) is one even veil that cannot have banks. The pass uses the depth helper the
+cloud shadows and the fog of war use, which already run under both renderers.
+
+A fog weather. `fog` joins the weather table: cover 0.76, little wind (2 m/s, so the banks
+creep), sun 0.5, sight 0.65, ground speed 1.0. Its weight in the table is 0, so only a look
+that gives it a weight gets it. The Zone's weights are now clear 6, hazy 16, overcast 34, rain
+24, fog 20 (they were 6, 22, 40, 26). This changes play and is meant to: one time in five
+sight is two thirds of normal. Weighted by the weights, sight falls from 0.90 to 0.85 and
+ground speed stays 0.96. Sight is cut everywhere in a fog weather, by the weather's one
+multiplier; a bank does not hide what stands in it (left for later, below).
+
+A veil that hides 70 % by day wipes out a night picture: in the first render the base under a
+fog weather at 23:00 could not be read at all. So the pass is thinner in the dark.
+Atmosphere.gd takes the hour's haze tint as its measure of daylight and scales the thickest
+fog from 0.70 by day to 0.42 at night, smoothly through dawn and dusk.
+
+Lightning out of a dry sky and ball lightning. `weather.dry_lightning_s` and
+`weather.ball_lightning_s` in a look are [shortest, longest] waits in seconds (Zone: 60 to
+180 and 90 to 240). The dry bolt is the rain's bolt (Lightning.gd), struck by day when it is
+not raining. Ball lightning is new, source/match/environment/BallLightning.gd: a pale ball
+8 to 12 m up, over ground in the lower part of the view, with a soft halo, a light on the
+ground under it and small arcs crawling off it. It drifts and flickers for 3.5 to 6.5 s, then
+bursts in half a second: a flash, the ball gone in the first fifth of a second, its glow
+swelling and its arcs thrown outwards. It comes at any hour and in any weather. Both are
+pictures only: no damage, no effect on units. Atmosphere emits `ball_lightning_burst` beside
+the `lightning_struck` it already had, for whatever reacts later (sound, emissions). Both
+show up where the camera looks, as the rain's lightning always has, so they are not yet
+events at a place in the world that two players would both see.
+
+A held weather keeps a quiet sky: dry and ball lightning only come while `random_weather`
+is on, so screenshots, tests and harness scenarios, which hold the weather, stay the same
+from run to run. `atmosphere.strike_lightning()` and `atmosphere.show_ball_lightning()` ask
+for one on the spot. tools/validate_data.gd checks the three new look keys.
+
+Measured, all in the cloud container on a software renderer (no GPU). Mean brightness of
+1600x900 frames of TestDesert at camera size 22 after the same 40 game seconds, 0 to 255:
+overcast at 13:00 60.5 before and 61.7 after (the wisps); the fog weather at 13:00 83.8 with
+the banks full and 73.3 at their low; overcast at 23:00 21.1 before and 21.2 after; the fog
+weather at 23:00 25.9 (30.3 before the night scaling, where the base could not be read). The
+dry bolt's frame 86.8; the ball hanging 62.9 at 13:00 and 27.8 at 23:00, the flash of its
+burst 87.8 and 57.6. Frame time, 20 against 20 fighting on Big Arena for 60
+game seconds in a 1280x720 window (the bench of the Zone look entry), p50 and p95: overcast
+before 248.5 and 280.3 ms, and 248.1 and 281.7 ms in a second run; overcast after 255.4 and
+291.1 ms; the fog weather after 259.5 and 293.6 ms. So the pass costs about 7 ms of 250
+here (3 %), and 11 ms with banks nearly everywhere (4 %). This is a CPU drawing every pixel of
+a full-screen pass; the cost on a graphics card needs Destin's PC, and so does a look at the
+pass under Forward+, which this container cannot run. The pass is drawn whenever the weather
+has any fog under a look with `fog_banks`: in the Zone that is every weather but clear. It
+is not on the graphics quality setting yet. No model was touched, so tri counts stand.
+validate_data 0 errors and 0 warnings (and 3 errors for a zone.json with a negative
+`fog_banks`, a range written longest first and a range that is a word), gdformat and gdlint
+clean on 265 files, smoke 10 of 10.
+
+No reference image for these: Destin's sentence above was the brief, and the frames were
+judged against it. The self-critique of the first render, ten gaps, harshest first: (1) the
+fog weather was a pale sheet over nine tenths of the ground, mean 84 against 49 for
+overcast, and washed the base out; (2) the burst's arcs read as paper strips: the bolt's wide
+glow layer shows as grey slabs this close, and the arcs stood at full length from the first
+frame; (3) nothing came and went while the weather held, the swell being 15 % of an almost
+full cover; (4) at 23:00 the fog hid the base completely; (5) the banks are flat sheets on
+the ground with no depth and no visible top; (6) no sound for any of it, no thunder, hum or
+bang; (7) a bank hides nothing in play: sight is cut everywhere or nowhere; (8) the ball
+has no cue for its height, no shadow and no ring on the ground, so it can read as lying on
+the ground; (9) the burst is a flash, a glow and arcs: no ring, no sparks, no scorch, and
+late in the burst the ball itself showed as a flat grey disc; (10) the dry bolt is the
+rain's bolt unchanged, and both it and the ball only happen where the camera looks. Fixed
+here, the top three: the fog weather's cover 0.9 to 0.76, the thickest fog 0.8 to 0.7 and
+its haze 0.5 to 0.35; thin arcs with a narrow glow that the burst throws outwards; a swell
+of 28 %, which takes the thick fog from 74 % of the ground to 45 % and back. Also fixed: (4)
+with the night scaling above, and the grey disc of (9) by fading the ball out early in the
+burst.
+
+Left for later. Sound: thunder for the bolt and a hum and a bang for the ball; both signals
+are there and nothing listens yet. Banks that hide what stands in them: WeatherEffects
+already has sight zones (the thick-cloud zones for aircraft), and fog banks could write
+ground-sight zones the same way. Lightning and ball lightning as events at a place in the
+world, which is what emissions and anomalies will want. The fog pass on the graphics quality
+setting, once its cost on a real GPU is known. tests/screenshots/WeatherShots.gd takes
+`--weathers=fog` as it stands (run here with `--lightning`); its usage comment does not
+list it (tests/ is ask-first). Sheets in the project folder under game/zone/weather/.

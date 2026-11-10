@@ -65,11 +65,21 @@
 		"start": "overcast",
 		"weights": {
 			"clear": 6.0,
-			"hazy": 22.0,
-			"overcast": 40.0,
-			"rain": 26.0,
+			"hazy": 16.0,
+			"overcast": 34.0,
+			"rain": 24.0,
+			"fog": 20.0,
 			"sandstorm": 0.0
-		}
+		},
+		"fog_banks": 1.0,
+		"dry_lightning_s": [
+			60.0,
+			180.0
+		],
+		"ball_lightning_s": [
+			90.0,
+			240.0
+		]
 	},
 	"terrain": {
 		"sand_pale": [

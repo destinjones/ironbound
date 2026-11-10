@@ -14,6 +14,8 @@ const FLICKER_GAP_S = Vector2(0.07, 0.15)
 const LIGHT_ENERGY = 9.0
 const LIGHT_RANGE = 22.0
 const COLOR = Color(0.82, 0.88, 1.0)
+# a ribbon is drawn in layers, each [width as a multiple of the core, opacity]
+const GLOWING_LAYERS = [[7.0, 0.12], [2.5, 0.3], [1.0, 1.0]]
 
 var _rng = RandomNumberGenerator.new()
 var _age = LIFETIME_S
@@ -73,24 +75,25 @@ func _build_bolt(ground, towards_camera):
 	var mesh = ImmediateMesh.new()
 	mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
 	var top = ground + Vector3(_rng.randf_range(-6.0, 6.0), BOLT_TOP, _rng.randf_range(-6.0, 6.0))
-	var points = _jagged(top, ground, SEGMENTS, 2.6)
-	_ribbon(mesh, points, towards_camera, WIDTH)
+	var points = jagged(_rng, top, ground, SEGMENTS, 2.6)
+	ribbon(mesh, points, towards_camera, WIDTH)
 	for i in range(_rng.randi_range(1, 3)):
 		var from_index = _rng.randi_range(2, SEGMENTS / 2)
 		var start = points[from_index]
 		var away = Vector3(_rng.randf_range(-1.0, 1.0), 0.0, _rng.randf_range(-1.0, 1.0))
 		var end = start + away.normalized() * _rng.randf_range(5.0, 10.0) + Vector3.DOWN * 8.0
-		_ribbon(mesh, _jagged(start, end, 10, 1.0), towards_camera, WIDTH * 0.5)
+		ribbon(mesh, jagged(_rng, start, end, 10, 1.0), towards_camera, WIDTH * 0.5)
 	mesh.surface_end()
 	return mesh
 
 
-func _jagged(from, to, segments, spread):
-	"""a random walk around the straight line, pulled back to it so the bolt ends on target"""
+static func jagged(rng, from, to, segments, spread):
+	"""a random walk around the straight line, pulled back to it so the bolt ends on target
+	(BallLightning.gd draws its arcs with this too)"""
 	var points = [from]
 	var drift = Vector3.ZERO
 	for i in range(1, segments):
-		var step = Vector3(_rng.randf_range(-1.0, 1.0), 0.0, _rng.randf_range(-1.0, 1.0)) * spread
+		var step = Vector3(rng.randf_range(-1.0, 1.0), 0.0, rng.randf_range(-1.0, 1.0)) * spread
 		var pull = 1.0 - float(i) / segments
 		drift = (drift + step) * (0.6 + 0.4 * pull)
 		points.append(from.lerp(to, float(i) / segments) + drift * pull)
@@ -98,13 +101,13 @@ func _jagged(from, to, segments, spread):
 	return points
 
 
-func _ribbon(mesh, points, towards_camera, width):
+static func ribbon(mesh, points, towards_camera, width, layers = GLOWING_LAYERS):
 	"""a strip that faces the camera, a soft wide glow under a thin bright core"""
-	for layer in [[width * 7.0, 0.12], [width * 2.5, 0.3], [width, 1.0]]:
+	for layer in layers:
 		for i in range(points.size() - 1):
 			var a = points[i]
 			var b = points[i + 1]
-			var side = (b - a).cross(towards_camera).normalized() * layer[0] * 0.5
+			var side = (b - a).cross(towards_camera).normalized() * width * layer[0] * 0.5
 			var color = Color(1.0, 1.0, 1.0, layer[1])
 			for vertex in [a - side, a + side, b + side, a - side, b + side, b - side]:
 				mesh.surface_set_color(color)

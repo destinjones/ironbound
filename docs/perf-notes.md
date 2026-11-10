@@ -53,6 +53,10 @@ a two-line change to test tooling and needs Destin's OK.
   wildlife, wind props, rail, townsfolk and chimney smoke, each one draw call per kind.
 - The Zone look (the default) adds SSAO and SSIL (data/looks/zone.json); GraphicsQuality.gd
   turns them off below High.
+- Ground fog (source/shaders/3d/ground_fog.gdshader) is one more full-screen pass beside the
+  cloud shadows, drawn while the weather has fog under a look with `weather.fog_banks`: in
+  the Zone that is every weather but clear. On the software renderer it costs 7 to 11 ms of
+  a 250 ms frame (docs/decisions.md 2026-11-10); it is not on the quality setting yet.
 
 ## What the demo does that we can use
 
