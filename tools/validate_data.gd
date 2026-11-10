@@ -963,7 +963,8 @@ func _check_city_life(city_life):
 
 
 func _check_looks():
-	"""data/looks: the default look exists, and a look only names weathers that exist"""
+	"""data/looks: the default look exists, a look only names weathers that exist, and its
+	fog and lightning settings are numbers that make sense"""
 	var look_script = load("res://source/match/environment/Look.gd")
 	var weathers = load("res://source/match/environment/Atmosphere.gd").WEATHERS
 	var ids = look_script.available_looks()
@@ -1005,6 +1006,19 @@ func _check_looks():
 				total += weights[name] - weathers[StringName(name)].weight
 		if total <= 0.0:
 			_error(where, "'weather.weights' leaves no weather to pick")
+		var fog_banks = weather.get("fog_banks", 0.0)
+		if not (fog_banks is float or fog_banks is int) or fog_banks < 0.0:
+			_error(where, "'weather.fog_banks' must be 0 or more")
+		for key in ["dry_lightning_s", "ball_lightning_s"]:
+			if not weather.has(key):
+				continue
+			var seconds = weather[key]
+			var is_range = seconds is Array and seconds.size() == 2
+			if is_range:
+				for part in seconds:
+					is_range = is_range and (part is float or part is int)
+			if not is_range or seconds[0] <= 0.0 or seconds[1] < seconds[0]:
+				_error(where, "'weather.{0}' must be [shortest, longest] seconds".format([key]))
 
 
 func _check_voices(units):

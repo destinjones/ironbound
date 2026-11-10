@@ -16,7 +16,10 @@ extends Node
 #   haze:        multiplier on the weather's haze; base_haze: haze added in every weather
 #   haze_color:  the colour of the haze in every weather, instead of the weather's own
 #   weather:     start (the weather a match opens in) and weights (how often each weather
-#                comes up, by name; 0 never); weathers left out keep Atmosphere's weight
+#                comes up, by name; 0 never); weathers left out keep Atmosphere's weight;
+#                fog_banks (how much of the weather's ground fog shows, 0 none),
+#                dry_lightning_s and ball_lightning_s ([shortest, longest] seconds between
+#                lightning out of a dry sky by day, and between balls of lightning)
 #   terrain:     desert_terrain.gdshader uniforms
 #   grade:       look_grade.gdshader uniforms (colour grade, tilt-shift, vignette, grain)
 #   outline:     look_outline.gdshader uniforms; lines are drawn only when this is present
@@ -155,6 +158,31 @@ func get_haze_color():
 func get_weather_weight(weather, default_weight):
 	"""how often `weather` comes up under this look"""
 	return float(definition.get("weather", {}).get("weights", {}).get(weather, default_weight))
+
+
+func get_fog_banks():
+	"""how much of each weather's ground fog this look shows (0: no banks at all)"""
+	return float(definition.get("weather", {}).get("fog_banks", 0.0))
+
+
+func get_dry_lightning_range():
+	"""shortest and longest seconds between lightning out of a dry sky by day, or null"""
+	return _seconds_range("dry_lightning_s")
+
+
+func get_ball_lightning_range():
+	"""shortest and longest seconds between balls of lightning, or null for none"""
+	return _seconds_range("ball_lightning_s")
+
+
+func _seconds_range(key):
+	var values = definition.get("weather", {}).get(key)
+	if not (values is Array and values.size() == 2):
+		return null
+	for value in values:
+		if not (value is float or value is int):
+			return null
+	return Vector2(values[0], values[1])
 
 
 static func starting_weather(default_weather):

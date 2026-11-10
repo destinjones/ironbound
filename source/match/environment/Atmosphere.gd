@@ -19,6 +19,7 @@ extends Node3D
 #   atmosphere.get_wetness() -> float                # 0..1 how soaked the ground is
 #   atmosphere.lightning_struck                      # signal(world_position: Vector3)
 #   atmosphere.strike_lightning()                    # a bolt in view now
+#   atmosphere.show_ball_lightning()                 # ball lightning in view now
 # Multipliers blend smoothly during weather transitions.
 
 signal weather_changed(weather)
@@ -29,6 +30,8 @@ const CloudTexture = preload("res://assets/textures/clouds_tile.png")
 const CloudShadowShader = preload("res://source/shaders/3d/cloud_shadows.gdshader")
 const TimeOfDay = preload("res://source/match/environment/TimeOfDay.gd")
 const Lightning = preload("res://source/match/environment/Lightning.gd")
+const BallLightning = preload("res://source/match/environment/BallLightning.gd")
+const GroundFogShader = preload("res://source/shaders/3d/ground_fog.gdshader")
 const TerrainMaterial = preload(
 	"res://source/match/resources/materials/desert_terrain.material.tres"
 )
@@ -46,6 +49,9 @@ const MIN_SUN_ELEVATION_DEG = 6.0
 const SOAK_PER_S = 1.0 / 30.0
 const DRY_PER_S = 1.0 / 120.0
 const WETNESS_STEP = 0.01  # the terrain material is only touched when wetness moves this much
+const FOG_PERIOD = 150.0
+const FOG_BREATH_S = 80.0  # banks of ground fog swell and shrink over about this long
+const BALL_LIGHTNING_HEIGHT = Vector2(8.0, 12.0)
 const WEATHERS = {
 	&"clear":
 	{
@@ -63,6 +69,7 @@ const WEATHERS = {
 		"vision": 1.0,
 		"ground_speed": 1.0,
 		"wood_growth": 1.0,
+		"fog": 0.0,
 	},
 	&"hazy":
 	{
@@ -80,6 +87,7 @@ const WEATHERS = {
 		"vision": 0.9,
 		"ground_speed": 1.0,
 		"wood_growth": 0.9,
+		"fog": 0.3,
 	},
 	&"overcast":
 	{
@@ -97,6 +105,7 @@ const WEATHERS = {
 		"vision": 0.95,
 		"ground_speed": 1.0,
 		"wood_growth": 1.15,
+		"fog": 0.25,
 	},
 	&"rain":
 	{
@@ -114,6 +123,7 @@ const WEATHERS = {
 		"vision": 0.8,
 		"ground_speed": 0.85,
 		"wood_growth": 1.6,
+		"fog": 0.2,
 	},
 	&"sandstorm":
 	{
@@ -131,6 +141,25 @@ const WEATHERS = {
 		"vision": 0.55,
 		"ground_speed": 0.7,
 		"wood_growth": 0.8,
+		"fog": 0.0,
+	},
+	&"fog":
+	{
+		"weight": 0.0,  # only under looks that give it a weight
+		"coverage": 0.8,
+		"shadow_opacity": 0.15,
+		"sun_energy": 0.5,
+		"sun_color": Color(0.86, 0.88, 0.9),
+		"ambient_energy": 1.0,
+		"haze": 0.5,
+		"haze_color": Color(0.7, 0.72, 0.74),
+		"rain": 0.0,
+		"dust": 0.0,
+		"wind_speed": 2.0,
+		"vision": 0.65,
+		"ground_speed": 1.0,
+		"wood_growth": 1.2,
+		"fog": 0.9,
 	},
 }
 const BLENDED_KEYS = [
@@ -147,6 +176,7 @@ const BLENDED_KEYS = [
 	"vision",
 	"ground_speed",
 	"wood_growth",
+	"fog",
 ]
 
 @export var initial_weather = &"clear"
@@ -171,6 +201,13 @@ var _cloud_zone_timer = 0.0
 var _particle_areas = {}  # particles -> emission half-size last applied
 var _time_of_day = TimeOfDay.new()
 var _lightning = Lightning.new()
+var _ball_lightning = BallLightning.new()
+var _dry_lightning_cooldown = -1.0  # below 0: not drawn yet
+var _ball_lightning_cooldown = -1.0
+var _ground_fog = MeshInstance3D.new()
+var _fog_offset = Vector2.ZERO
+var _fog_offset_fine = Vector2.ZERO
+var _fog_time = 0.0
 var _wetness = 0.0
 var _applied_wetness = -1.0
 var _ambient_base = {"environment": null, "color": Color.WHITE, "exposure": 1.0}
@@ -191,11 +228,15 @@ func _ready():
 	_lightning.name = "Lightning"
 	_lightning.struck.connect(func(world_position): lightning_struck.emit(world_position))
 	add_child(_lightning)
+	_ball_lightning.name = "BallLightning"
+	_ball_lightning.burst.connect(func(_world_position): _flash = 0.5)
+	add_child(_ball_lightning)
 	_cloud_image = CloudTexture.get_image()
 	if _cloud_image.is_compressed():
 		_cloud_image.decompress()
 	_setup_clouds()
 	_setup_cloud_shadows()
+	_setup_ground_fog()
 	_weather = initial_weather if initial_weather in WEATHERS else &"clear"
 	_current = WEATHERS[_weather].duplicate()
 	_time_to_next_weather = _rng.randf_range(weather_duration_range_s.x, weather_duration_range_s.y)
@@ -313,6 +354,24 @@ func _setup_cloud_shadows():
 	add_child(_cloud_shadows)
 
 
+func _setup_ground_fog():
+	_ground_fog.name = "GroundFog"
+	var quad = QuadMesh.new()
+	quad.size = Vector2(2.0, 2.0)
+	quad.flip_faces = true
+	_ground_fog.mesh = quad
+	_ground_fog.extra_cull_margin = 16384.0
+	_ground_fog.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var material = ShaderMaterial.new()
+	material.shader = GroundFogShader
+	material.render_priority = 1  # below the fog of war overlay, like the cloud shadows
+	material.set_shader_parameter("noise_texture", CloudTexture)
+	material.set_shader_parameter("period", FOG_PERIOD)
+	_ground_fog.material_override = material
+	_ground_fog.visible = false
+	add_child(_ground_fog)
+
+
 func _advance_weather(delta):
 	if _transition_progress < 1.0:
 		_transition_progress = min(_transition_progress + delta / _transition_duration, 1.0)
@@ -357,6 +416,10 @@ func _weather_weight(weather):
 func _advance_wind(delta):
 	_wind_angle += sin(Time.get_ticks_msec() / 40000.0) * delta * 0.01
 	_cloud_offset += get_wind() * delta * 0.6
+	# ground fog creeps along slower than the clouds, its two layers at different speeds
+	_fog_offset += get_wind() * delta * 0.3
+	_fog_offset_fine += get_wind().rotated(0.7) * delta * 0.5
+	_fog_time += delta
 
 
 func _apply():
@@ -382,6 +445,19 @@ func _apply():
 	shadow_material.set_shader_parameter("coverage", _current.coverage)
 	shadow_material.set_shader_parameter("offset", _cloud_offset)
 	var hour_light = _time_of_day.get_light()
+	var look_haze_color = look.get_haze_color() if look != null else null
+	var haze_color = look_haze_color if look_haze_color != null else _current.haze_color
+	# banks of ground fog, under looks that show them: they drift with the wind and swell and
+	# shrink, so the fog moves in and out even while the weather holds
+	var fog_banks = _current.fog * (look.get_fog_banks() if look != null else 0.0)
+	_ground_fog.visible = fog_banks > 0.01
+	if _ground_fog.visible:
+		var fog_material = _ground_fog.material_override
+		var breath = 0.85 + 0.15 * sin(_fog_time * TAU / FOG_BREATH_S)
+		fog_material.set_shader_parameter("coverage", fog_banks * breath)
+		fog_material.set_shader_parameter("offset", _fog_offset)
+		fog_material.set_shader_parameter("offset_fine", _fog_offset_fine)
+		fog_material.set_shader_parameter("fog_color", haze_color * hour_light.haze_tint)
 	var sun = _get_sun()
 	if sun != null:
 		if _time_of_day.enabled:
@@ -405,8 +481,6 @@ func _apply():
 		environment.ambient_light_color = _ambient_base.color * hour_light.ambient_tint
 		environment.tonemap_exposure = _ambient_base.exposure * hour_light.exposure
 		environment.fog_enabled = haze > 0.01
-		var look_haze_color = look.get_haze_color() if look != null else null
-		var haze_color = look_haze_color if look_haze_color != null else _current.haze_color
 		environment.fog_light_color = haze_color * hour_light.haze_tint
 		# the camera looks down at 30 degrees, so the ground is about twice its height away
 		var camera_distance = 80.0 if camera == null else max(camera.global_position.y, 1.0) * 2.0
@@ -478,30 +552,63 @@ func _follow_camera():
 
 func _update_lightning(delta):
 	_flash = max(_flash - delta * 6.0, 0.0)
-	if _current.rain < 0.8:
-		return
-	_lightning_cooldown -= delta
-	if _lightning_cooldown <= 0.0:
-		_lightning_cooldown = _rng.randf_range(5.0, 18.0)
-		_flash = 1.0
-		_strike_in_view()
+	var raining = _current.rain >= 0.8
+	if raining:
+		_lightning_cooldown -= delta
+		if _lightning_cooldown <= 0.0:
+			_lightning_cooldown = _rng.randf_range(5.0, 18.0)
+			strike_lightning()
+	var look = get_tree().get_first_node_in_group("look")
+	if look == null or not random_weather:
+		return  # a held weather (screenshots, tests, the harness) keeps a quiet sky
+	# some looks have lightning out of a dry sky by day, and ball lightning at any hour
+	var dry_range = look.get_dry_lightning_range()
+	if dry_range != null and not raining and not _time_of_day.is_night():
+		if _dry_lightning_cooldown < 0.0:
+			_dry_lightning_cooldown = _rng.randf_range(dry_range.x, dry_range.y)
+		_dry_lightning_cooldown -= delta
+		if _dry_lightning_cooldown <= 0.0:
+			_dry_lightning_cooldown = -1.0
+			strike_lightning()
+	var ball_range = look.get_ball_lightning_range()
+	if ball_range != null and not _ball_lightning.is_active():
+		if _ball_lightning_cooldown < 0.0:
+			_ball_lightning_cooldown = _rng.randf_range(ball_range.x, ball_range.y)
+		_ball_lightning_cooldown -= delta
+		if _ball_lightning_cooldown <= 0.0:
+			_ball_lightning_cooldown = -1.0
+			show_ball_lightning()
 
 
 func strike_lightning():
 	"""a bolt somewhere in view now, whatever the weather (screenshots, missions)"""
 	_flash = 1.0
-	_strike_in_view()
-
-
-func _strike_in_view():
-	var camera = get_viewport().get_camera_3d()
-	if camera == null or not camera.has_method("get_ray_intersection"):
-		return
-	var size = get_viewport().get_visible_rect().size
-	var screen_point = Vector2(_rng.randf_range(0.15, 0.85), _rng.randf_range(0.2, 0.8)) * size
-	var ground = camera.get_ray_intersection(screen_point)
+	var ground = _ground_in_view(Vector2(0.15, 0.85), Vector2(0.2, 0.8))
 	if ground != null:
 		_lightning.strike(ground)
+
+
+func show_ball_lightning():
+	"""ball lightning in the sky in view now: it hangs a few seconds, then bursts
+	(screenshots, missions)"""
+	# the camera looks down at an angle, so what hangs in the sky shows well above the ground
+	# under it: pick ground low on the screen
+	var ground = _ground_in_view(Vector2(0.15, 0.85), Vector2(0.6, 0.95))
+	if ground != null:
+		var height = _rng.randf_range(BALL_LIGHTNING_HEIGHT.x, BALL_LIGHTNING_HEIGHT.y)
+		_ball_lightning.appear(ground + Vector3.UP * height)
+
+
+func _ground_in_view(across, down):
+	"""a random ground point on screen, `across` and `down` being ranges in screen fractions"""
+	var camera = get_viewport().get_camera_3d()
+	if camera == null or not camera.has_method("get_ray_intersection"):
+		return null
+	var size = get_viewport().get_visible_rect().size
+	var screen_point = (
+		Vector2(_rng.randf_range(across.x, across.y), _rng.randf_range(down.x, down.y)) * size
+	)
+	return camera.get_ray_intersection(screen_point)
 
 
 func set_wetness(wetness):
