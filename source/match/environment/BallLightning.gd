@@ -116,15 +116,16 @@ func _process(delta):
 			burst.emit(global_position)
 		var t = (_age - _hang_s) / BURST_S
 		var fade = 1.0 - smoothstep(0.1, 1.0, t)
-		_show(fade, BURST_LIGHT_ENERGY * fade, 1.0 + t * 3.0)
+		# the ball itself is gone early in the burst; its glow and arcs carry the rest
+		_show(fade, BURST_LIGHT_ENERGY * fade, 1.0 + t * 3.0, 1.0 - smoothstep(0.0, 0.4, t))
 	_arc_timer -= delta
 	if _arc_timer <= 0.0:
 		_arc_timer = ARC_REFRESH_S
 		_arcs.mesh = _build_arcs()
 
 
-func _show(brightness, light_energy, size):
-	_core_material.albedo_color = Color(COLOR.lerp(Color.WHITE, 0.6), brightness)
+func _show(brightness, light_energy, size, core = 1.0):
+	_core_material.albedo_color = Color(COLOR.lerp(Color.WHITE, 0.6), brightness * core)
 	_halo_material.albedo_color = Color(COLOR, brightness)
 	_arc_material.albedo_color = Color(COLOR, brightness)
 	_light.light_energy = light_energy
