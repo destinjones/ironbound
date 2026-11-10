@@ -19,11 +19,13 @@ extends Node3D
 #   atmosphere.get_wetness() -> float                # 0..1 how soaked the ground is
 #   atmosphere.lightning_struck                      # signal(world_position: Vector3)
 #   atmosphere.strike_lightning()                    # a bolt in view now
+#   atmosphere.ball_lightning_burst                  # signal(world_position: Vector3)
 #   atmosphere.show_ball_lightning()                 # ball lightning in view now
 # Multipliers blend smoothly during weather transitions.
 
 signal weather_changed(weather)
 signal lightning_struck(world_position)  # for thunder: the bolt lands here
+signal ball_lightning_burst(world_position)  # the moment a ball of lightning goes off
 
 const CloudShader = preload("res://source/shaders/3d/clouds.gdshader")
 const CloudTexture = preload("res://assets/textures/clouds_tile.png")
@@ -52,6 +54,8 @@ const WETNESS_STEP = 0.01  # the terrain material is only touched when wetness m
 const FOG_PERIOD = 150.0
 const FOG_BREATH_S = 80.0  # banks of ground fog swell and shrink over about this long
 const FOG_BREATH = 0.28  # and lose this share of their cover at the low point
+const FOG_DENSITY = 0.7  # how much the thickest fog hides by day
+const FOG_NIGHT_DENSITY = 0.6  # that share of it at night: a dark picture has less to lose
 const BALL_LIGHTNING_HEIGHT = Vector2(8.0, 12.0)
 const WEATHERS = {
 	&"clear":
@@ -230,7 +234,7 @@ func _ready():
 	_lightning.struck.connect(func(world_position): lightning_struck.emit(world_position))
 	add_child(_lightning)
 	_ball_lightning.name = "BallLightning"
-	_ball_lightning.burst.connect(func(_world_position): _flash = 0.5)
+	_ball_lightning.burst.connect(_on_ball_lightning_burst)
 	add_child(_ball_lightning)
 	_cloud_image = CloudTexture.get_image()
 	if _cloud_image.is_compressed():
@@ -455,7 +459,11 @@ func _apply():
 	if _ground_fog.visible:
 		var fog_material = _ground_fog.material_override
 		var breath = 1.0 - FOG_BREATH * (0.5 - 0.5 * sin(_fog_time * TAU / FOG_BREATH_S))
+		# the haze tint of the hour is the measure of daylight: about 0.5 at night, 1 at noon
+		var daylight = smoothstep(0.5, 0.75, hour_light.haze_tint.get_luminance())
+		var density = FOG_DENSITY * lerp(FOG_NIGHT_DENSITY, 1.0, daylight)
 		fog_material.set_shader_parameter("coverage", fog_banks * breath)
+		fog_material.set_shader_parameter("density", density)
 		fog_material.set_shader_parameter("offset", _fog_offset)
 		fog_material.set_shader_parameter("offset_fine", _fog_offset_fine)
 		fog_material.set_shader_parameter("fog_color", haze_color * hour_light.haze_tint)
@@ -598,6 +606,11 @@ func show_ball_lightning():
 	if ground != null:
 		var height = _rng.randf_range(BALL_LIGHTNING_HEIGHT.x, BALL_LIGHTNING_HEIGHT.y)
 		_ball_lightning.appear(ground + Vector3.UP * height)
+
+
+func _on_ball_lightning_burst(world_position):
+	_flash = 0.5
+	ball_lightning_burst.emit(world_position)
 
 
 func _ground_in_view(across, down):
